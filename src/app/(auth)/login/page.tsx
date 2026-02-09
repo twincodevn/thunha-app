@@ -30,22 +30,13 @@ export default function LoginPage() {
     async function onSubmit(data: LoginInput) {
         setIsLoading(true);
         try {
-            const result = await signIn("credentials", {
+            await signIn("credentials", {
                 email: data.email,
                 password: data.password,
-                redirect: false,
+                callbackUrl: "/dashboard",
             });
-
-            if (result?.error) {
-                toast.error("Email hoặc mật khẩu không đúng");
-                return;
-            }
-
-            toast.success("Đăng nhập thành công!");
-            window.location.href = "/dashboard";
         } catch {
             toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
-        } finally {
             setIsLoading(false);
         }
     }

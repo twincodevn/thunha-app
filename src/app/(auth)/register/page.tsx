@@ -47,28 +47,13 @@ export default function RegisterPage() {
             // Auto-login after successful registration
             toast.success("Đăng ký thành công! Đang đăng nhập...");
 
-            const signInResult = await signIn("credentials", {
+            await signIn("credentials", {
                 email: data.email,
                 password: data.password,
-                redirect: false,
+                callbackUrl: "/dashboard",
             });
-
-            console.log("SignIn result:", signInResult);
-
-            if (signInResult?.ok) {
-                window.location.href = "/dashboard";
-            } else {
-                // Show error for debugging
-                console.error("SignIn failed:", signInResult?.error);
-                toast.error(`Auto-login thất bại: ${signInResult?.error || "Unknown error"}`);
-                // Fallback to login page if auto-login fails
-                setTimeout(() => {
-                    window.location.href = "/login";
-                }, 2000);
-            }
         } catch {
             toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
-        } finally {
             setIsLoading(false);
         }
     }
