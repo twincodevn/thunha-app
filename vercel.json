@@ -1,0 +1,33 @@
+{
+    "framework": "nextjs",
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "outputDirectory": ".next",
+    "regions": [
+        "sin1"
+    ],
+    "crons": [
+        {
+            "path": "/api/cron/overdue-bills",
+            "schedule": "0 23 * * *"
+        },
+        {
+            "path": "/api/cron/plan-expiry",
+            "schedule": "0 0 * * *"
+        },
+        {
+            "path": "/api/cron/send-reminders",
+            "schedule": "0 1 * * *"
+        }
+    ],
+    "env": {
+        "DATABASE_URL": "@database_url",
+        "AUTH_SECRET": "@auth_secret",
+        "NEXTAUTH_URL": "@nextauth_url",
+        "VNPAY_TMN_CODE": "@vnpay_tmn_code",
+        "VNPAY_HASH_SECRET": "@vnpay_hash_secret",
+        "VNPAY_URL": "@vnpay_url",
+        "VNPAY_RETURN_URL": "@vnpay_return_url",
+        "CRON_SECRET": "@cron_secret"
+    }
+}

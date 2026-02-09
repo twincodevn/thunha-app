@@ -1,0 +1,80 @@
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
+
+// Routes that require specific plans
+const PROTECTED_ROUTES: Record<string, string[]> = {
+    // "/dashboard/analytics": ["PRO", "BUSINESS"],
+    "/api/payments/vnpay": ["PRO", "BUSINESS"],
+};
+
+// Routes that require authentication
+const AUTH_ROUTES = ["/dashboard"];
+
+// Public routes (no auth needed)
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
+
+export async function proxy(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+
+    // Skip middleware for static files and API auth routes
+    if (
+        pathname.startsWith("/_next") ||
+        pathname.startsWith("/api/auth") ||
+        pathname.includes(".")
+    ) {
+        return NextResponse.next();
+    }
+
+    // Get JWT token
+    const token = await getToken({
+        req: request,
+        secret: process.env.AUTH_SECRET
+    });
+
+    // Check if route requires authentication
+    const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+    const _isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route);
+
+    // Redirect unauthenticated users to login
+    if (isAuthRoute && !token) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    // Redirect authenticated users away from auth pages
+    if (token && (pathname === "/login" || pathname === "/register")) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // Check plan-based route restrictions
+    const userPlan = (token?.plan as string) || "FREE";
+
+    for (const [route, allowedPlans] of Object.entries(PROTECTED_ROUTES)) {
+        if (pathname.startsWith(route)) {
+            if (!allowedPlans.includes(userPlan)) {
+                // Redirect to upgrade page or show error
+                const upgradeUrl = new URL("/dashboard/settings", request.url);
+                upgradeUrl.searchParams.set("upgrade", "required");
+                upgradeUrl.searchParams.set("feature", pathname);
+                return NextResponse.redirect(upgradeUrl);
+            }
+        }
+    }
+
+    return NextResponse.next();
+}
+
+export const config = {
+    matcher: [
+        /*
+         * Match all request paths except:
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public folder
+         */
+        "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    ],
+};
