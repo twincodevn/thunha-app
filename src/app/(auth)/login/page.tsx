@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,10 +12,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { loginSchema, LoginInput } from "@/lib/validators";
 import { toast } from "sonner";
 import { GoogleLoginButton } from "@/components/auth/google-login-button";
+import { loginAction } from "./actions";
 
 export default function LoginPage() {
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
     const form = useForm<LoginInput>({
         resolver: zodResolver(loginSchema),
@@ -27,18 +26,20 @@ export default function LoginPage() {
         },
     });
 
-    async function onSubmit(data: LoginInput) {
-        setIsLoading(true);
-        try {
-            await signIn("credentials", {
-                email: data.email,
-                password: data.password,
-                callbackUrl: "/dashboard",
-            });
-        } catch {
-            toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
-            setIsLoading(false);
-        }
+    function onSubmit(data: LoginInput) {
+        setError(null);
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.append("email", data.email);
+            formData.append("password", data.password);
+
+            const result = await loginAction(formData);
+
+            if (result?.error) {
+                setError(result.error);
+                toast.error(result.error);
+            }
+        });
     }
 
     return (
@@ -90,7 +91,7 @@ export default function LoginPage() {
                                                     type="email"
                                                     placeholder="ten@email.com"
                                                     autoComplete="email"
-                                                    disabled={isLoading}
+                                                    disabled={isPending}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -109,7 +110,7 @@ export default function LoginPage() {
                                                     type="password"
                                                     placeholder="••••••••"
                                                     autoComplete="current-password"
-                                                    disabled={isLoading}
+                                                    disabled={isPending}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -128,9 +129,9 @@ export default function LoginPage() {
                                 <Button
                                     type="submit"
                                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
-                                    disabled={isLoading}
+                                    disabled={isPending}
                                 >
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Đăng nhập
                                 </Button>
                             </form>

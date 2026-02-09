@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { Loader2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { registerSchema, RegisterInput } from "@/lib/validators";
 import { toast } from "sonner";
+import { registerAction } from "./actions";
 
 export default function RegisterPage() {
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
     const form = useForm<RegisterInput>({
         resolver: zodResolver(registerSchema),
@@ -28,34 +27,25 @@ export default function RegisterPage() {
         },
     });
 
-    async function onSubmit(data: RegisterInput) {
-        setIsLoading(true);
-        try {
-            const response = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
+    function onSubmit(data: RegisterInput) {
+        setError(null);
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.append("name", data.name);
+            formData.append("email", data.email);
+            formData.append("password", data.password);
+            formData.append("confirmPassword", data.confirmPassword);
 
-            const result = await response.json();
+            toast.info("Đang xử lý đăng ký...");
+            const result = await registerAction(formData);
 
-            if (!response.ok) {
-                toast.error(result.error || "Đăng ký thất bại");
-                return;
+            if (result?.error) {
+                setError(result.error);
+                toast.error(result.error);
+            } else if (result?.success) {
+                toast.success("Đăng ký thành công!");
             }
-
-            // Auto-login after successful registration
-            toast.success("Đăng ký thành công! Đang đăng nhập...");
-
-            await signIn("credentials", {
-                email: data.email,
-                password: data.password,
-                callbackUrl: "/dashboard",
-            });
-        } catch {
-            toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
-            setIsLoading(false);
-        }
+        });
     }
 
     return (
@@ -92,7 +82,7 @@ export default function RegisterPage() {
                                                 <Input
                                                     placeholder="Nguyễn Văn A"
                                                     autoComplete="name"
-                                                    disabled={isLoading}
+                                                    disabled={isPending}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -111,7 +101,7 @@ export default function RegisterPage() {
                                                     type="email"
                                                     placeholder="ten@email.com"
                                                     autoComplete="email"
-                                                    disabled={isLoading}
+                                                    disabled={isPending}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -130,7 +120,7 @@ export default function RegisterPage() {
                                                     type="password"
                                                     placeholder="Tối thiểu 6 ký tự"
                                                     autoComplete="new-password"
-                                                    disabled={isLoading}
+                                                    disabled={isPending}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -149,7 +139,7 @@ export default function RegisterPage() {
                                                     type="password"
                                                     placeholder="Nhập lại mật khẩu"
                                                     autoComplete="new-password"
-                                                    disabled={isLoading}
+                                                    disabled={isPending}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -160,9 +150,9 @@ export default function RegisterPage() {
                                 <Button
                                     type="submit"
                                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
-                                    disabled={isLoading}
+                                    disabled={isPending}
                                 >
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Đăng ký
                                 </Button>
                             </form>
