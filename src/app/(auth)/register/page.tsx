@@ -53,12 +53,18 @@ export default function RegisterPage() {
                 redirect: false,
             });
 
+            console.log("SignIn result:", signInResult);
+
             if (signInResult?.ok) {
                 window.location.href = "/dashboard";
             } else {
+                // Show error for debugging
+                console.error("SignIn failed:", signInResult?.error);
+                toast.error(`Auto-login thất bại: ${signInResult?.error || "Unknown error"}`);
                 // Fallback to login page if auto-login fails
-                toast.info("Vui lòng đăng nhập với tài khoản vừa tạo");
-                window.location.href = "/login";
+                setTimeout(() => {
+                    window.location.href = "/login";
+                }, 2000);
             }
         } catch {
             toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
