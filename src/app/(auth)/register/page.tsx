@@ -54,12 +54,11 @@ export default function RegisterPage() {
             });
 
             if (signInResult?.ok) {
-                router.push("/dashboard");
-                router.refresh();
+                window.location.href = "/dashboard";
             } else {
                 // Fallback to login page if auto-login fails
                 toast.info("Vui lòng đăng nhập với tài khoản vừa tạo");
-                router.push("/login");
+                window.location.href = "/login";
             }
         } catch {
             toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");

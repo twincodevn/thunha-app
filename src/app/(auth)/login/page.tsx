@@ -42,8 +42,7 @@ export default function LoginPage() {
             }
 
             toast.success("Đăng nhập thành công!");
-            router.push("/dashboard");
-            router.refresh();
+            window.location.href = "/dashboard";
         } catch {
             toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
         } finally {
