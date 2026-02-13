@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { revalidatePath } from "next/cache";
+import { ServiceSettingsForm } from "@/components/properties/service-settings-form";
 
 async function getProperty(id: string, userId: string) {
     return prisma.property.findFirst({
@@ -51,6 +52,9 @@ export default async function EditPropertyPage({
     const property = await getProperty(id, session.user.id);
 
     if (!property) notFound();
+
+    // Cast the JSON type safely
+    const services = (property.services as unknown as { name: string; price: number }[]) || [];
 
     return (
         <div className="space-y-6">
@@ -146,6 +150,8 @@ export default async function EditPropertyPage({
                     </form>
                 </CardContent>
             </Card>
+
+            <ServiceSettingsForm propertyId={property.id} initialServices={services} />
         </div>
     );
 }

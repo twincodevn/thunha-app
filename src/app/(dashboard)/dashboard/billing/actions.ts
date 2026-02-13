@@ -1,210 +1,384 @@
+
 "use server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendInvoiceEmail, sendPaymentReminder } from "@/lib/email";
-import { formatDate } from "@/lib/billing";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
-export async function sendBillEmail(billId: string) {
+// Helper type for Property Services
+interface Service {
+    name: string;
+    price: number;
+}
+
+export async function getBillableTenants(propertyId: string, month: number, year: number) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Unauthorized" };
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    // Get property to fetch rates and services
+    const property = await prisma.property.findUnique({
+        where: { id: propertyId, userId: session.user.id },
+        include: {
+            rooms: {
+                where: { status: "OCCUPIED" },
+                include: {
+                    roomTenants: {
+                        where: { isActive: true },
+                        include: { tenant: true }
+                    },
+                    meterReadings: {
+                        where: { month, year }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!property) throw new Error("Property not found");
+
+    const billableItems = [];
+
+    for (const room of property.rooms) {
+        // Skip if no active tenant (shouldn't happen with status=OCCUPIED check but safety first)
+        const activeTenant = room.roomTenants[0];
+        if (!activeTenant) continue;
+
+        // Check if bill already exists
+        const existingBill = await prisma.bill.findUnique({
+            where: {
+                roomTenantId_month_year: {
+                    roomTenantId: activeTenant.id,
+                    month,
+                    year
+                }
+            }
+        });
+
+        if (existingBill) {
+            // Bill already exists, maybe return it or skip?
+            // For "Generate" page, we usually want to show items that NEED generation.
+            // Let's mark it as generated.
+            billableItems.push({
+                status: "GENERATED",
+                roomNumber: room.roomNumber,
+                tenantName: activeTenant.tenant.name,
+                billId: existingBill.id,
+                total: existingBill.total
+            });
+            continue;
+        }
+
+        // Calculate Bill Preview
+        const reading = room.meterReadings[0];
+
+        const electricityUsage = reading?.electricityUsage ?? 0;
+        const waterUsage = reading?.waterUsage ?? 0;
+
+        const electricityAmount = electricityUsage * property.electricityRate;
+        const waterAmount = waterUsage * property.waterRate;
+
+        // Parse services
+        let services: Service[] = [];
+        try {
+            if (property.services) {
+                // Check if it's a string or object. Prisma types it as Json, so it could be anything.
+                services = (typeof property.services === 'string'
+                    ? JSON.parse(property.services)
+                    : property.services) as Service[];
+            }
+        } catch (e) {
+            console.error("Failed to parse services", e);
+        }
+
+        const servicesTotal = services.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+
+        const total = room.baseRent + electricityAmount + waterAmount + servicesTotal;
+
+        billableItems.push({
+            status: "PENDING",
+            roomTenantId: activeTenant.id,
+            roomId: room.id,
+            roomNumber: room.roomNumber,
+            tenantName: activeTenant.tenant.name,
+
+            baseRent: room.baseRent,
+
+            // Readings linkage
+            meterReadingId: reading?.id,
+            hasReading: !!reading,
+
+            electricityUsage,
+            electricityRate: property.electricityRate,
+            electricityAmount,
+
+            waterUsage,
+            waterRate: property.waterRate,
+            waterAmount,
+
+            services,
+            servicesTotal,
+
+            total
+        });
     }
 
-    // Get bill with all related data
-    const bill = await prisma.bill.findFirst({
-        where: {
-            id: billId,
-            roomTenant: { room: { property: { userId: session.user.id } } },
-        },
+    return {
+        success: true,
+        items: billableItems,
+        property: {
+            name: property.name,
+            electricityRate: property.electricityRate,
+            waterRate: property.waterRate
+        }
+    };
+}
+
+const createBillSchema = z.object({
+    roomTenantId: z.string(),
+    month: z.number(),
+    year: z.number(),
+    meterReadingId: z.string().optional(),
+    baseRent: z.number(),
+    electricityAmount: z.number(),
+    electricityUsage: z.number(),
+    waterAmount: z.number(),
+    waterUsage: z.number(),
+    services: z.array(z.object({ name: z.string(), price: z.number() })),
+    total: z.number(),
+    dueDate: z.string(), // ISO Date string
+});
+
+export async function createBills(bills: z.infer<typeof createBillSchema>[]) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    try {
+        await prisma.$transaction(
+            bills.map(bill =>
+                prisma.bill.create({
+                    data: {
+                        roomTenantId: bill.roomTenantId,
+                        month: bill.month,
+                        year: bill.year,
+                        meterReadingId: bill.meterReadingId,
+                        baseRent: bill.baseRent,
+                        electricityAmount: bill.electricityAmount,
+                        electricityUsage: bill.electricityUsage,
+                        waterAmount: bill.waterAmount,
+                        waterUsage: bill.waterUsage,
+                        extraCharges: bill.services, // Storing services as extraCharges JSON
+                        total: bill.total,
+                        dueDate: new Date(bill.dueDate),
+                        status: "PENDING",
+                    }
+                })
+            )
+        );
+
+        revalidatePath("/dashboard/billing");
+        return { success: true, count: bills.length };
+    } catch (error: any) {
+        console.error("Create bills error:", error);
+        return { error: error.message || "Failed to create bills" };
+    }
+}
+
+export async function getBills(propertyId?: string, month?: number, year?: number, status?: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const where: any = {
+        roomTenant: {
+            room: {
+                property: {
+                    userId: session.user.id
+                }
+            }
+        }
+    };
+
+    if (propertyId) {
+        where.roomTenant.room = { propertyId };
+    }
+    if (month) where.month = month;
+    if (year) where.year = year;
+    if (status && status !== "ALL") where.status = status;
+
+    const bills = await prisma.bill.findMany({
+        where,
         include: {
             roomTenant: {
                 include: {
-                    room: { include: { property: true } },
                     tenant: true,
-                },
-            },
-            invoice: true,
+                    room: {
+                        include: {
+                            property: true
+                        }
+                    }
+                }
+            }
         },
+        orderBy: { createdAt: "desc" }
     });
 
-    if (!bill) {
-        return { error: "Không tìm thấy hóa đơn" };
+    return bills;
+}
+
+export async function getBill(id: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const bill = await prisma.bill.findUnique({
+        where: { id },
+        include: {
+            roomTenant: {
+                include: {
+                    tenant: true,
+                    room: {
+                        include: {
+                            property: true
+                        }
+                    }
+                }
+            },
+            meterReading: true,
+            payments: true
+        }
+    });
+
+    if (!bill) return null;
+
+    // Check ownership
+    if (bill.roomTenant.room.property.userId !== session.user.id) {
+        throw new Error("Unauthorized");
     }
 
-    const tenantEmail = bill.roomTenant.tenant.email;
-    if (!tenantEmail) {
-        return { error: "Khách thuê chưa có email. Vui lòng cập nhật thông tin khách thuê." };
-    }
+    return bill;
+}
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const invoiceUrl = bill.invoice?.token
-        ? `${appUrl}/invoice/${bill.invoice.token}`
-        : `${appUrl}/dashboard/billing/${bill.id}`;
+export async function updateBillStatus(id: string, status: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
-        const result = await sendInvoiceEmail({
-            to: tenantEmail,
-            tenantName: bill.roomTenant.tenant.name,
-            propertyName: bill.roomTenant.room.property.name,
-            roomNumber: bill.roomTenant.room.roomNumber,
-            month: bill.month,
-            year: bill.year,
-            total: bill.total,
-            dueDate: formatDate(bill.dueDate),
-            invoiceUrl,
+        await prisma.bill.update({
+            where: { id },
+            data: { status: status as any }
+        });
+        revalidatePath("/dashboard/billing");
+        return { success: true };
+    } catch (error) {
+        return { error: "Failed to update status" };
+    }
+}
+
+export async function confirmPayment(data: {
+    billId: string;
+    amount: number;
+    method: "CASH" | "BANK_TRANSFER" | "VNPAY" | "MOMO";
+    note?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    try {
+        const bill = await prisma.bill.findUnique({
+            where: { id: data.billId },
+            include: {
+                roomTenant: {
+                    include: {
+                        room: {
+                            include: {
+                                property: true
+                            }
+                        }
+                    }
+                }
+            }
         });
 
-        if (!result.success) {
-            return { error: result.error || "Không thể gửi email" };
+        if (!bill) return { error: "Bill not found" };
+
+        if (bill.roomTenant.room.property.userId !== session.user.id) {
+            return { error: "Unauthorized" };
         }
 
-        // Update invoice sentAt if exists
-        if (bill.invoice) {
-            await prisma.invoice.update({
-                where: { id: bill.invoice.id },
-                data: { sentAt: new Date() },
-            });
-        }
+        await prisma.$transaction([
+            // Create payment record
+            prisma.payment.create({
+                data: {
+                    billId: data.billId,
+                    amount: data.amount,
+                    method: data.method,
+                    note: data.note,
+                    paidAt: new Date()
+                }
+            }),
+            // Update bill status
+            prisma.bill.update({
+                where: { id: data.billId },
+                data: { status: "PAID" }
+            })
+        ]);
 
-        return {
-            success: true,
-            message: `Đã gửi email đến ${tenantEmail}`,
-            messageId: result.messageId
-        };
+        revalidatePath("/dashboard/billing");
+        revalidatePath(`/dashboard/billing/${data.billId}`);
+
+        return { success: true };
     } catch (error) {
-        console.error("Send email error:", error);
-        return { error: "Lỗi khi gửi email" };
+        console.error("Confirm payment error:", error);
+        return { error: "Failed to confirm payment" };
     }
 }
 
 export async function sendReminderEmail(billId: string) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Unauthorized" };
-    }
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-    const bill = await prisma.bill.findFirst({
-        where: {
-            id: billId,
-            roomTenant: { room: { property: { userId: session.user.id } } },
-        },
-        include: {
-            roomTenant: {
-                include: {
-                    room: { include: { property: true } },
-                    tenant: true,
-                },
-            },
-            invoice: true,
-            payments: true,
-        },
-    });
+    // Mock implementation
+    console.log(`Sending reminder email for bill ${billId}`);
+    return { success: true, message: "Email nhắc nhở đã được gửi (Mock)" };
+}
 
-    if (!bill) {
-        return { error: "Không tìm thấy hóa đơn" };
-    }
-
-    const tenantEmail = bill.roomTenant.tenant.email;
-    if (!tenantEmail) {
-        return { error: "Khách thuê chưa có email" };
-    }
-
-    // Calculate paid and remaining amounts
-    const paidAmount = bill.payments.reduce((sum, p) => sum + p.amount, 0);
-    const remainingAmount = bill.total - paidAmount;
-
-    if (remainingAmount <= 0) {
-        return { error: "Hóa đơn đã thanh toán đủ" };
-    }
-
-    // Calculate days overdue
-    const now = new Date();
-    const dueDate = new Date(bill.dueDate);
-    const daysOverdue = Math.max(0, Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const invoiceUrl = bill.invoice?.token
-        ? `${appUrl}/invoice/${bill.invoice.token}`
-        : `${appUrl}/dashboard/billing/${bill.id}`;
+export async function generateSMSMessage(billId: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
-        const result = await sendPaymentReminder({
-            to: tenantEmail,
-            tenantName: bill.roomTenant.tenant.name,
-            propertyName: bill.roomTenant.room.property.name,
-            roomNumber: bill.roomTenant.room.roomNumber,
-            month: bill.month,
-            year: bill.year,
-            total: remainingAmount,
-            daysOverdue,
-            invoiceUrl,
+        const bill = await prisma.bill.findUnique({
+            where: { id: billId },
+            include: {
+                roomTenant: {
+                    include: {
+                        room: {
+                            include: { property: true }
+                        },
+                        tenant: true
+                    }
+                }
+            }
         });
 
-        if (!result.success) {
-            return { error: result.error || "Không thể gửi nhắc nhở" };
-        }
+        if (!bill) return { error: "Bill not found" };
+
+        const message = `Chao ${bill.roomTenant.tenant.name}, vui long thanh toan tien can ho ${bill.roomTenant.room.roomNumber} thang ${bill.month}. Tong: ${bill.total.toLocaleString('vi-VN')}d. Lien he: ${bill.roomTenant.room.property.userId}`;
 
         return {
             success: true,
-            message: `Đã gửi nhắc nhở đến ${tenantEmail}`,
-            messageId: result.messageId
+            message,
+            phone: bill.roomTenant.tenant.phone
         };
     } catch (error) {
-        console.error("Send reminder error:", error);
-        return { error: "Lỗi khi gửi nhắc nhở" };
+        return { error: "Failed to generate SMS" };
     }
 }
 
-// Generate SMS message content for manual sending
-export async function generateSMSMessage(billId: string) {
+export async function sendBillEmail(billId: string) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Unauthorized" };
-    }
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-    const bill = await prisma.bill.findFirst({
-        where: {
-            id: billId,
-            roomTenant: { room: { property: { userId: session.user.id } } },
-        },
-        include: {
-            roomTenant: {
-                include: {
-                    room: { include: { property: true } },
-                    tenant: true,
-                },
-            },
-            invoice: true,
-            payments: true,
-        },
-    });
-
-    if (!bill) {
-        return { error: "Không tìm thấy hóa đơn" };
-    }
-
-    const paidAmount = bill.payments.reduce((sum, p) => sum + p.amount, 0);
-    const remainingAmount = bill.total - paidAmount;
-
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const invoiceUrl = bill.invoice?.token
-        ? `${appUrl}/invoice/${bill.invoice.token}`
-        : `${appUrl}/dashboard/billing/${bill.id}`;
-
-    const message = `[ThuNhà] Nhắc nhở tiền phòng T${bill.month}/${bill.year}
-${bill.roomTenant.room.property.name} - Phòng ${bill.roomTenant.room.roomNumber}
-Còn lại: ${formatCurrency(remainingAmount)}
-Xem: ${invoiceUrl}
-Hạn: ${formatDate(bill.dueDate)}`;
-
-    return {
-        success: true,
-        message,
-        phone: bill.roomTenant.tenant.phone,
-    };
+    // Mock implementation
+    console.log(`Sending bill email for bill ${billId}`);
+    return { success: true, message: "Hóa đơn đã được gửi qua email (Mock)" };
 }
-

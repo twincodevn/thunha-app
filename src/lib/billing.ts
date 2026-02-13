@@ -133,3 +133,58 @@ export function slugify(str: string): string {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 }
+
+/**
+ * Generate SMS content for bill
+ */
+export function getBillSMSContent(billInfo: {
+    month: number;
+    year: number;
+    propertyName: string;
+    roomNumber: string;
+    total: number;
+    invoiceUrl: string;
+}): string {
+    return `[ThuNhà] Thông báo tiền phòng T${billInfo.month}/${billInfo.year}
+
+${billInfo.propertyName} - Phòng ${billInfo.roomNumber}
+Tổng cộng: ${formatCurrency(billInfo.total)}
+
+Xem chi tiết: ${billInfo.invoiceUrl}
+
+Vui lòng thanh toán trước ngày 10. Cảm ơn!`;
+}
+
+/**
+ * Generate Zalo message content
+ */
+export function getBillZaloContent(billInfo: {
+    month: number;
+    year: number;
+    propertyName: string;
+    roomNumber: string;
+    tenantName: string;
+    total: number;
+    invoiceUrl: string;
+}): string {
+    return `📝 HÓA ĐƠN TIỀN PHÒNG - T${billInfo.month}/${billInfo.year}
+
+🏠 ${billInfo.propertyName} - Phòng ${billInfo.roomNumber}
+👤 Khách: ${billInfo.tenantName}
+💰 Tổng cộng: ${formatCurrency(billInfo.total)}
+
+🔗 Xem chi tiết: ${billInfo.invoiceUrl}
+
+Hạn đóng: Trước ngày 10.
+---
+Gửi từ ThuNhà`;
+}
+
+/**
+ * Get Zalo direct chat URL
+ */
+export function getZaloChatUrl(phone: string): string {
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, "");
+    return `https://zalo.me/${cleanPhone}`;
+}

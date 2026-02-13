@@ -18,6 +18,17 @@ export const loginSchema = z.object({
     password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự").max(100),
 });
 
+export const tenantLoginSchema = z.object({
+    username: z.string().min(1, "Vui lòng nhập tên đăng nhập").max(MAX_NAME),
+    password: z.string().min(1, "Vui lòng nhập mật khẩu").max(100),
+});
+
+export const incidentSchema = z.object({
+    title: z.string().min(1, "Vui lòng nhập tiêu đề").max(100),
+    description: z.string().min(1, "Vui lòng nhập mô tả chi tiết"),
+    images: z.any().optional(), // For now, handle as array of strings or file list in component
+});
+
 export const registerSchema = z.object({
     name: z.string().min(2, "Tên phải có ít nhất 2 ký tự").max(MAX_NAME, "Tên quá dài"),
     email: z.string().email("Email không hợp lệ").max(MAX_EMAIL),
@@ -138,6 +149,7 @@ export const paymentSchema = z.object({
 // TYPE EXPORTS
 // =============================================
 export type LoginInput = z.infer<typeof loginSchema>;
+export type TenantLoginInput = z.infer<typeof tenantLoginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

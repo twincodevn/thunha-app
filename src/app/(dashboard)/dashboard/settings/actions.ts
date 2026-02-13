@@ -1,33 +1,82 @@
+
 "use server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { compare, hash } from "bcryptjs";
 
-export async function saveBankAccount(formData: FormData): Promise<void> {
+export async function updateProfile(data: { name: string; phone?: string; image?: string }) {
     const session = await auth();
-    if (!session?.user?.id) {
-        throw new Error("Unauthorized");
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+                name: data.name,
+                phone: data.phone,
+                avatar: data.image
+            }
+        });
+
+        revalidatePath("/dashboard/settings/profile");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update profile", error);
+        return { error: "Failed to update profile" };
     }
+}
 
-    const bankName = formData.get("bankName") as string;
-    const bankAccountNumber = formData.get("bankAccountNumber") as string;
-    const bankAccountName = formData.get("bankAccountName") as string;
+export async function changePassword(current: string, newPass: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-    if (!bankName || !bankAccountNumber) {
-        throw new Error("Vui lòng nhập đủ thông tin ngân hàng");
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id }
+        });
+
+        if (!user || !user.password) {
+            return { error: "User not found or no password set" };
+        }
+
+        const isValid = await compare(current, user.password);
+        if (!isValid) {
+            return { error: "Mật khẩu hiện tại không đúng" };
+        }
+
+        const hashedPassword = await hash(newPass, 10);
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { password: hashedPassword }
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to change password", error);
+        return { error: "Failed to change password" };
     }
+}
 
-    await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-            bankName,
-            bankAccountNumber,
-            bankAccountName: bankAccountName?.toUpperCase() || null,
-        },
-    });
+export async function updateBankInfo(data: { bankName: string; bankAccountNumber: string; bankAccountName: string }) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
-    revalidatePath("/dashboard/settings");
-    redirect("/dashboard/settings?saved=true");
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+                bankName: data.bankName,
+                bankAccountNumber: data.bankAccountNumber,
+                bankAccountName: data.bankAccountName
+            }
+        });
+
+        revalidatePath("/dashboard/settings/billing");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update bank info", error);
+        return { error: "Failed to update bank info" };
+    }
 }

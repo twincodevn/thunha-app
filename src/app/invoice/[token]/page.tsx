@@ -243,15 +243,6 @@ export default async function PublicInvoicePage({
                                             </div>
                                         </div>
                                     )}
-
-                                {/* VNPay Button */}
-                                <Button className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600">
-                                    <CreditCard className="mr-2 h-4 w-4" />
-                                    Thanh toán qua VNPay
-                                </Button>
-                                <p className="text-xs text-center text-muted-foreground">
-                                    Hỗ trợ thẻ ATM, Visa, Master, MoMo và QR Code
-                                </p>
                             </div>
                         )}
 

@@ -27,6 +27,7 @@ const navigation = [
     { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
     { name: "Tòa nhà", href: "/dashboard/properties", icon: Home },
     { name: "Khách thuê", href: "/dashboard/tenants", icon: Users },
+    { name: "Điện nước", href: "/dashboard/utilities", icon: Zap },
     { name: "Hóa đơn", href: "/dashboard/billing", icon: Receipt },
     { name: "Phân tích", href: "/dashboard/analytics", icon: BarChart3 },
 ];
@@ -42,7 +43,9 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
         <>
             <nav className="flex-1 space-y-1 px-3 py-4">
                 {navigation.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isActive = item.href === "/dashboard"
+                        ? pathname === "/dashboard"
+                        : pathname === item.href || pathname.startsWith(item.href + "/");
                     return (
                         <Link
                             key={item.name}
@@ -180,12 +183,4 @@ export function MobileNav() {
     );
 }
 
-export function Header() {
-    return (
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-white px-4 lg:px-6">
-            <MobileNav />
-            <div className="flex-1" />
-            {/* Add notifications, search, etc. here */}
-        </header>
-    );
-}
+// Header component moved to ./header.tsx

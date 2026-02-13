@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/billing";
 import { DeleteRoomButton } from "@/components/rooms/delete-room-button";
+import { AssetManager } from "@/components/assets/asset-manager";
 
 async function getRoom(propertyId: string, roomId: string, userId: string) {
     return prisma.room.findFirst({
@@ -22,7 +23,10 @@ async function getRoom(propertyId: string, roomId: string, userId: string) {
                 where: { isActive: true },
                 include: { tenant: true },
             },
-        },
+            assets: {
+                orderBy: { name: "asc" },
+            },
+        } as any,
     });
 }
 
@@ -39,7 +43,7 @@ export default async function RoomDetailPage({
 
     if (!room) notFound();
 
-    const currentTenant = room.roomTenants[0];
+    const currentTenant = (room as any).roomTenants?.[0];
 
     const statusColors: Record<string, string> = {
         VACANT: "bg-gray-100 text-gray-800",
@@ -65,7 +69,7 @@ export default async function RoomDetailPage({
                     <h1 className="text-2xl font-bold tracking-tight">
                         Phòng {room.roomNumber}
                     </h1>
-                    <p className="text-muted-foreground">{room.property.name}</p>
+                    <p className="text-muted-foreground">{(room as any).property?.name}</p>
                 </div>
                 <Badge className={statusColors[room.status]}>{statusLabels[room.status]}</Badge>
             </div>
@@ -170,6 +174,14 @@ export default async function RoomDetailPage({
                     />
                 </CardContent>
             </Card>
+
+            <AssetManager
+                roomId={roomId}
+                initialAssets={room.assets.map((asset: any) => ({
+                    ...asset,
+                    images: asset.images ? JSON.parse(asset.images) : []
+                }))}
+            />
         </div>
     );
 }

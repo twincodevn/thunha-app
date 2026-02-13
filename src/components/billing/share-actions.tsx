@@ -21,6 +21,9 @@ interface ShareActionsProps {
 export function ShareActions({ invoiceToken: _invoiceToken, invoiceUrl, billInfo }: ShareActionsProps) {
     const [copied, setCopied] = useState(false);
     const [smsCopied, setSmsCopied] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
+    const [dialogContent, setDialogContent] = useState("");
+    const [dialogTitle, setDialogTitle] = useState("");
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("vi-VN", {
@@ -29,19 +32,27 @@ export function ShareActions({ invoiceToken: _invoiceToken, invoiceUrl, billInfo
         }).format(amount);
     };
 
-    const handleCopyLink = async () => {
+    const copyToClipboard = async (text: string, onSuccess: () => void) => {
         try {
-            await navigator.clipboard.writeText(invoiceUrl);
-            setCopied(true);
-            toast.success("Đã copy link hóa đơn!");
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            toast.error("Không thể copy link");
+            await navigator.clipboard.writeText(text);
+            onSuccess();
+        } catch (err) {
+            // Fallback: Show dialog
+            setDialogContent(text);
+            setDialogTitle("Sao chép nội dung");
+            setShowDialog(true);
         }
     };
 
-    const handleCopySMS = async () => {
-        const smsMessage = `[ThuNhà] Thông báo tiền phòng T${billInfo.month}/${billInfo.year}
+    const handleCopyLink = () => {
+        copyToClipboard(invoiceUrl, () => {
+            setCopied(true);
+            toast.success("Đã copy link hóa đơn!");
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    const getSMSContent = () => `[ThuNhà] Thông báo tiền phòng T${billInfo.month}/${billInfo.year}
 
 ${billInfo.propertyName} - Phòng ${billInfo.roomNumber}
 Tổng cộng: ${formatCurrency(billInfo.total)}
@@ -50,21 +61,15 @@ Xem chi tiết: ${invoiceUrl}
 
 Vui lòng thanh toán trước ngày 10. Cảm ơn!`;
 
-        try {
-            await navigator.clipboard.writeText(smsMessage);
+    const handleCopySMS = () => {
+        copyToClipboard(getSMSContent(), () => {
             setSmsCopied(true);
             toast.success("Đã copy tin nhắn SMS!");
             setTimeout(() => setSmsCopied(false), 2000);
-        } catch {
-            toast.error("Không thể copy");
-        }
+        });
     };
 
     const handleZaloShare = () => {
-        // Zalo sharing requires a public URL. Localhost will fail.
-        const isLocalhost = invoiceUrl.includes("localhost") || invoiceUrl.includes("127.0.0.1");
-
-        // Format message
         const message = `📝 HÓA ĐƠN TIỀN PHÒNG - T${billInfo.month}/${billInfo.year}
 
 🏠 ${billInfo.propertyName} - Phòng ${billInfo.roomNumber}
@@ -77,55 +82,81 @@ Hạn đóng: Trước ngày 10.
 ---
 Gửi từ ThuNhà`;
 
-        if (isLocalhost) {
-            // Fallback for development: Copy message and open Zalo Web
-            navigator.clipboard.writeText(message);
+        // Always try to copy the message content first (better UX than just link)
+        copyToClipboard(message, () => {
+            toast.info("Đã copy nội dung. Đang mở Zalo...");
             window.open("https://chat.zalo.me/", "_blank");
-            toast.info("Link localhost không thể chia sẻ trực tiếp. Đã copy nội dung, hãy dán vào Zalo!");
-        } else {
-            // Production: Use Zalo Share API
-            const zaloShareUrl = `https://zalo.me/share?url=${encodeURIComponent(invoiceUrl)}&title=${encodeURIComponent(`Hóa đơn T${billInfo.month}/${billInfo.year} - ${formatCurrency(billInfo.total)}`)}`;
-            window.open(zaloShareUrl, "_blank", "width=600,height=600");
-            toast.success("Đang mở Zalo để chia sẻ...");
-        }
+        });
     };
 
     return (
-        <div className="space-y-3">
-            <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleCopyLink}
-            >
-                {copied ? (
-                    <Check className="mr-2 h-4 w-4 text-green-600" />
-                ) : (
-                    <Copy className="mr-2 h-4 w-4" />
-                )}
-                {copied ? "Đã copy!" : "Copy link hóa đơn"}
-            </Button>
+        <>
+            <div className="space-y-3">
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleCopyLink}
+                >
+                    {copied ? (
+                        <Check className="mr-2 h-4 w-4 text-green-600" />
+                    ) : (
+                        <Copy className="mr-2 h-4 w-4" />
+                    )}
+                    {copied ? "Đã copy!" : "Copy link hóa đơn"}
+                </Button>
 
-            <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleCopySMS}
-            >
-                {smsCopied ? (
-                    <Check className="mr-2 h-4 w-4 text-green-600" />
-                ) : (
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                )}
-                {smsCopied ? "Đã copy!" : "Copy tin nhắn SMS"}
-            </Button>
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleCopySMS}
+                >
+                    {smsCopied ? (
+                        <Check className="mr-2 h-4 w-4 text-green-600" />
+                    ) : (
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                    )}
+                    {smsCopied ? "Đã copy!" : "Copy tin nhắn SMS"}
+                </Button>
 
-            <Button
-                variant="outline"
-                className="w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                onClick={handleZaloShare}
-            >
-                <Share2 className="mr-2 h-4 w-4" />
-                Gửi qua Zalo
-            </Button>
-        </div>
+                <Button
+                    variant="outline"
+                    className="w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                    onClick={handleZaloShare}
+                >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Gửi qua Zalo (Copy & Mở Web)
+                </Button>
+            </div>
+
+            {/* Fallback Dialog for non-secure contexts or failures */}
+            {showDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+                        <h3 className="text-lg font-semibold">{dialogTitle}</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Không thể tự động sao chép. Vui lòng sao chép thủ công bên dưới:
+                        </p>
+                        <textarea
+                            className="w-full h-32 p-2 text-sm border rounded-md bg-muted"
+                            readOnly
+                            value={dialogContent}
+                            onClick={(e) => e.currentTarget.select()}
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setShowDialog(false)}>
+                                Đóng
+                            </Button>
+                            <Button onClick={() => {
+                                navigator.clipboard.writeText(dialogContent)
+                                    .then(() => toast.success("Đã copy!"))
+                                    .catch(() => toast.error("Vẫn không thể copy, hãy chọn và Ctrl+C"));
+                            }}>
+                                Thử lại
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

@@ -1,211 +1,171 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Receipt, Download } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
+import { Plus, Search, Filter, FileText, Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatMonthYear, getCurrentMonthYear } from "@/lib/billing";
-import { BILL_STATUS_LABELS } from "@/lib/constants";
-import { BulkBillingButton } from "@/components/billing/bulk-billing-button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getBills } from "./actions";
 
-async function getBills(userId: string) {
-    getCurrentMonthYear(); // For future month filtering
+// Enum mapping for display
+const statusMap: Record<string, { label: string; color: string }> = {
+    DRAFT: { label: "Nháp", color: "bg-gray-500" },
+    PENDING: { label: "Chờ thanh toán", color: "bg-yellow-500" },
+    PAID: { label: "Đã thanh toán", color: "bg-green-500" },
+    OVERDUE: { label: "Quá hạn", color: "bg-red-500" },
+    CANCELLED: { label: "Đã hủy", color: "bg-gray-400" },
+};
 
-    return prisma.bill.findMany({
-        where: {
-            roomTenant: { room: { property: { userId } } },
-        },
-        include: {
-            roomTenant: {
-                include: {
-                    room: { include: { property: true } },
-                    tenant: true,
-                },
-            },
-            payments: true,
-        },
-        orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
-    });
-}
+export default function BillingPage() {
+    const [bills, setBills] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-async function getBillStats(userId: string) {
-    const stats = await prisma.bill.groupBy({
-        by: ["status"],
-        where: { roomTenant: { room: { property: { userId } } } },
-        _count: { id: true },
-        _sum: { total: true },
-    });
+    const [month, setMonth] = useState<string>(String(new Date().getMonth() + 1));
+    const [year, setYear] = useState<string>(String(new Date().getFullYear()));
+    const [status, setStatus] = useState<string>("ALL");
 
-    return {
-        pending: stats.find((s) => s.status === "PENDING"),
-        overdue: stats.find((s) => s.status === "OVERDUE"),
-        paid: stats.find((s) => s.status === "PAID"),
+    useEffect(() => {
+        async function fetchBills() {
+            setIsLoading(true);
+            try {
+                const data = await getBills(undefined, parseInt(month), parseInt(year), status);
+                setBills(data);
+            } catch (error) {
+                console.error("Failed to fetch bills", error);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchBills();
+    }, [month, year, status]);
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
     };
-}
-
-export default async function BillingPage() {
-    const session = await auth();
-    if (!session?.user) return null;
-
-    const [bills, stats] = await Promise.all([
-        getBills(session.user.id),
-        getBillStats(session.user.id),
-    ]);
-
-    // Future: filter by current month
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Hóa đơn</h1>
-                    <p className="text-muted-foreground">
-                        Quản lý hóa đơn và thanh toán hàng tháng
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">Quản lý hóa đơn</h1>
+                    <p className="text-muted-foreground">Theo dõi và quản lý hóa đơn tiền nhà hàng tháng</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                        <a href="/api/bills/export" download>
-                            <Download className="mr-2 h-4 w-4" />
-                            Xuất Excel
-                        </a>
-                    </Button>
-                    <BulkBillingButton />
-                    <Button asChild>
-                        <Link href="/dashboard/billing/new">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tạo hóa đơn
-                        </Link>
-                    </Button>
-                </div>
+                <Button asChild>
+                    <Link href="/dashboard/billing/generate">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Lập hóa đơn mới
+                    </Link>
+                </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Chờ thanh toán
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">
-                            {stats.pending?._count.id || 0} hóa đơn
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex items-center gap-2">
+                            <Select value={month} onValueChange={setMonth}>
+                                <SelectTrigger className="w-[120px]">
+                                    <SelectValue placeholder="Tháng" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                        <SelectItem key={m} value={String(m)}>Tháng {m}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={year} onValueChange={setYear}>
+                                <SelectTrigger className="w-[100px]">
+                                    <SelectValue placeholder="Năm" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {["2024", "2025", "2026"].map((y) => (
+                                        <SelectItem key={y} value={y}>{y}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            {formatCurrency(stats.pending?._sum.total || 0)}
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Quá hạn
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
-                            {stats.overdue?._count.id || 0} hóa đơn
+                        <div className="flex items-center gap-2">
+                            <Select value={status} onValueChange={setStatus}>
+                                <SelectTrigger className="w-[150px]">
+                                    <SelectValue placeholder="Trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">Tất cả</SelectItem>
+                                    {Object.entries(statusMap).map(([key, value]) => (
+                                        <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            {formatCurrency(stats.overdue?._sum.total || 0)}
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Đã thanh toán
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                            {stats.paid?._count.id || 0} hóa đơn
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                            {formatCurrency(stats.paid?._sum.total || 0)}
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Bills List */}
-            {bills.length === 0 ? (
-                <Card className="border-dashed border-2 bg-muted/50">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <Receipt className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Chưa có hóa đơn nào</h3>
-                        <p className="text-muted-foreground text-center mb-4 max-w-md">
-                            Tạo hóa đơn để bắt đầu thu tiền phòng hàng tháng.
-                        </p>
-                        <Button asChild>
-                            <Link href="/dashboard/billing/new">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Tạo hóa đơn đầu tiên
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Danh sách hóa đơn</CardTitle>
-                        <CardDescription>
-                            Tất cả hóa đơn của bạn, sắp xếp theo thời gian mới nhất
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {bills.map((bill) => {
-                                const paidAmount = bill.payments.reduce((sum, p) => sum + p.amount, 0);
-                                return (
-                                    <Link
-                                        key={bill.id}
-                                        href={`/dashboard/billing/${bill.id}`}
-                                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                                                <Receipt className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium">
-                                                    {bill.roomTenant.room.property.name} - Phòng {bill.roomTenant.room.roomNumber}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {bill.roomTenant.tenant.name} · {formatMonthYear(bill.month, bill.year)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-semibold">{formatCurrency(bill.total)}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Badge
-                                                    variant={
-                                                        bill.status === "PAID"
-                                                            ? "default"
-                                                            : bill.status === "OVERDUE"
-                                                                ? "destructive"
-                                                                : "secondary"
-                                                    }
-                                                >
-                                                    {BILL_STATUS_LABELS[bill.status]}
+                    ) : bills.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                            Chưa có hóa đơn nào cho tháng này.
+                        </div>
+                    ) : (
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Mã HĐ</TableHead>
+                                        <TableHead>Phòng</TableHead>
+                                        <TableHead>Khách thuê</TableHead>
+                                        <TableHead className="text-right">Tổng tiền</TableHead>
+                                        <TableHead>Hạn thanh toán</TableHead>
+                                        <TableHead>Trạng thái</TableHead>
+                                        <TableHead className="text-right">Thao tác</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {bills.map((bill) => (
+                                        <TableRow key={bill.id}>
+                                            <TableCell className="font-medium">#{bill.id.slice(-6).toUpperCase()}</TableCell>
+                                            <TableCell>
+                                                <div>
+                                                    <div className="font-medium">{bill.roomTenant.room.roomNumber}</div>
+                                                    <div className="text-xs text-muted-foreground">{bill.roomTenant.room.property.name}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{bill.roomTenant.tenant.name}</TableCell>
+                                            <TableCell className="text-right font-bold">
+                                                {formatCurrency(bill.total)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {format(new Date(bill.dueDate), "dd/MM/yyyy")}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge className={`${statusMap[bill.status]?.color || "bg-gray-500"} hover:${statusMap[bill.status]?.color}`}>
+                                                    {statusMap[bill.status]?.label || bill.status}
                                                 </Badge>
-                                                {paidAmount > 0 && bill.status !== "PAID" && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Đã nhận {formatCurrency(paidAmount)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href={`/dashboard/billing/${bill.id}`}>
+                                                        <FileText className="h-4 w-4 mr-1" />
+                                                        Chi tiết
+                                                    </Link>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -1,298 +1,234 @@
+
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Users, Home, DollarSign, Lock } from "lucide-react";
-import { formatCurrency } from "@/lib/billing";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
-    AreaChart,
-    Area,
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    BarChart,
-    Bar,
-    Cell,
     PieChart,
     Pie,
+    Cell,
     Legend
 } from "recharts";
+import {
+    Loader2,
+    DollarSign,
+    Users,
+    Home,
+    AlertCircle,
+    TrendingUp
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
-interface AnalyticsData {
-    period: string;
-    revenue: {
-        total: number;
-        byDay: { date: string; amount: number }[];
-        byMethod: Record<string, number>;
-    };
-    bills: {
-        stats: { status: string; count: number; total: number }[];
-        collectionRate: number;
-    };
-    rooms: {
-        total: number;
-        occupied: number;
-        vacant: number;
-        maintenance: number;
-        occupancyRate: number;
-    };
-    tenants: {
-        total: number;
-        active: number;
-    };
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-async function fetchAnalytics(period: string): Promise<AnalyticsData> {
-    const res = await fetch(`/api/reports/analytics?period=${period}`);
-    if (!res.ok) {
-        throw new Error("Failed to fetch analytics");
-    }
-    return res.json();
-}
+import { getDashboardStats, getRevenueChartData, getOccupancyStats } from "./actions";
 
 export default function AnalyticsPage() {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["analytics", "month"],
-        queryFn: () => fetchAnalytics("month"),
-        retry: false,
-    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [stats, setStats] = useState<any>(null);
+    const [revenueData, setRevenueData] = useState<any[]>([]);
+    const [occupancyData, setOccupancyData] = useState<any[]>([]);
 
-    // Check if user doesn't have access (403)
-    if (error) {
-        return (
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Phân tích doanh thu</h1>
-                    <p className="text-muted-foreground">Báo cáo chi tiết về hoạt động kinh doanh</p>
-                </div>
+    const [selectedPropertyId, setSelectedPropertyId] = useState<string>("ALL");
+    const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
+    const [year, setYear] = useState<string>(String(new Date().getFullYear()));
 
-                <Card className="border-2 border-dashed bg-muted/50">
-                    <CardContent className="flex flex-col items-center justify-center py-16">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 mb-6">
-                            <Lock className="h-8 w-8 text-amber-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">Tính năng Business</h3>
-                        <p className="text-muted-foreground text-center mb-6 max-w-md">
-                            Phân tích nâng cao chỉ có trong gói Business. Nâng cấp để xem báo cáo doanh thu,
-                            tỷ lệ thu tiền, và xu hướng kinh doanh.
-                        </p>
-                        <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600">
-                            <Link href="/dashboard/settings/billing">Nâng cấp lên Business</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
+    // Fetch properties
+    useEffect(() => {
+        async function fetchProperties() {
+            try {
+                const res = await fetch("/api/properties");
+                if (res.ok) {
+                    const data = await res.json();
+                    setProperties(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch properties", error);
+            }
+        }
+        fetchProperties();
+    }, []);
+
+    // Fetch analytics data
+    useEffect(() => {
+        async function fetchData() {
+            setIsLoading(true);
+            try {
+                const propertyId = selectedPropertyId === "ALL" ? undefined : selectedPropertyId;
+                const [statsResult, revenueResult, occupancyResult] = await Promise.all([
+                    getDashboardStats(propertyId, undefined, parseInt(year)),
+                    getRevenueChartData(propertyId, parseInt(year)),
+                    getOccupancyStats(propertyId)
+                ]);
+
+                setStats(statsResult);
+                setRevenueData(revenueResult);
+                setOccupancyData(occupancyResult);
+            } catch (error) {
+                console.error("Failed to fetch analytics", error);
+                toast.error("Không thể tải dữ liệu phân tích");
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchData();
+    }, [selectedPropertyId, year]);
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+    };
 
     if (isLoading) {
         return (
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Phân tích doanh thu</h1>
-                    <p className="text-muted-foreground">Đang tải dữ liệu...</p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <Card key={i}>
-                            <CardContent className="p-6">
-                                <div className="h-20 bg-muted animate-pulse rounded" />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+            <div className="flex h-full items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
     }
 
-    if (!data) return null;
-
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Phân tích doanh thu</h1>
-                    <p className="text-muted-foreground">Báo cáo chi tiết về hoạt động kinh doanh</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Thống kê & Phân tích</h1>
+                    <p className="text-muted-foreground">Tổng quan hiệu quả kinh doanh của bạn</p>
                 </div>
-                <Tabs defaultValue="month" className="w-[300px]">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="month">Tháng</TabsTrigger>
-                        <TabsTrigger value="quarter">Quý</TabsTrigger>
-                        <TabsTrigger value="year">Năm</TabsTrigger>
-                    </TabsList>
-                </Tabs>
+                <div className="flex items-center gap-2">
+                    <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Tất cả tòa nhà" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">Tất cả tòa nhà</SelectItem>
+                            {properties.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={year} onValueChange={setYear}>
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {["2024", "2025", "2026"].map((y) => (
+                                <SelectItem key={y} value={y}>{y}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Doanh thu</CardTitle>
+                        <CardTitle className="text-sm font-medium">Doanh thu tháng này</CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                            {formatCurrency(data.revenue.total)}
-                        </div>
-                        <p className="text-xs text-muted-foreground">Thống kê tháng này</p>
+                        <div className="text-2xl font-bold">{formatCurrency(stats?.revenue || 0)}</div>
+                        <p className="text-xs text-muted-foreground">
+                            Đã thanh toán trong tháng {new Date().getMonth() + 1}
+                        </p>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Tỷ lệ thu tiền</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{data.bills.collectionRate}%</div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                            <div
-                                className="bg-green-600 h-2 rounded-full transition-all"
-                                style={{ width: `${data.bills.collectionRate}%` }}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Tỷ lệ lấp đầy</CardTitle>
                         <Home className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{data.rooms.occupancyRate}%</div>
+                        <div className="text-2xl font-bold">{stats?.occupancyRate || 0}%</div>
                         <p className="text-xs text-muted-foreground">
-                            {data.rooms.occupied}/{data.rooms.total} phòng đang thuê
+                            {stats?.occupiedRooms || 0}/{stats?.totalRooms || 0} phòng đang thuê
                         </p>
                     </CardContent>
                 </Card>
-
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Khách thuê</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{data.tenants.active}</div>
+                        <div className="text-2xl font-bold">{stats?.activeTenants || 0}</div>
                         <p className="text-xs text-muted-foreground">
-                            Đang thuê / {data.tenants.total} tổng số
+                            Đang hoạt động
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Cần thu</CardTitle>
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-orange-600">
+                            {formatCurrency(stats?.outstanding || 0)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Chờ thanh toán & Quá hạn
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Charts */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                {/* Revenue by Day - Area Chart */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                {/* Revenue Chart */}
                 <Card className="col-span-4">
                     <CardHeader>
-                        <CardTitle>Doanh thu theo thời gian</CardTitle>
-                        <CardDescription>Biến động doanh thu trong kỳ</CardDescription>
+                        <CardTitle>Biểu Đồ Doanh Thu</CardTitle>
+                        <CardDescription>
+                            Doanh thu theo tháng trong năm {year}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data.revenue.byDay}>
-                                    <defs>
-                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <XAxis
-                                        dataKey="date"
-                                        tickFormatter={(date: string) => new Date(date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                                        fontSize={12}
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
+                                <BarChart data={revenueData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis
-                                        tickFormatter={(value: number) => `${value / 1000000}M`}
                                         fontSize={12}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickCount={5}
-                                    />
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <Tooltip
-                                        formatter={(value: number | undefined) => formatCurrency(value || 0)}
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        labelFormatter={(label: any) => new Date(label).toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" })}
-                                        contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="amount"
-                                        stroke="#2563eb"
-                                        fillOpacity={1}
-                                        fill="url(#colorRevenue)"
-                                        strokeWidth={2}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Revenue by Method - Bar Chart */}
-                <Card className="col-span-3">
-                    <CardHeader>
-                        <CardTitle>Phương thức thanh toán</CardTitle>
-                        <CardDescription>Tỷ lệ theo phương thức</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart layout="vertical" data={Object.entries(data.revenue.byMethod).map(([name, value]) => ({
-                                    name: name === "CASH" ? "Tiền mặt" : name === "BANK_TRANSFER" ? "Chuyển khoản" : name,
-                                    value
-                                }))}>
-                                    <XAxis type="number" hide />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        width={100}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        fontSize={12}
+                                        tickFormatter={(value) => `${value / 1000000}M`}
                                     />
                                     <Tooltip
-                                        formatter={(value: number | undefined) => formatCurrency(value || 0)}
-                                        cursor={{ fill: 'transparent' }}
-                                        contentStyle={{ borderRadius: "8px" }}
+                                        formatter={(value: any) => formatCurrency(value)}
+                                        labelStyle={{ color: "black" }}
                                     />
-                                    <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={32}>
-                                        {Object.entries(data.revenue.byMethod).map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={["#22c55e", "#3b82f6", "#ef4444", "#ec4899"][index % 4]} />
-                                        ))}
-                                    </Bar>
+                                    <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Doanh thu" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Room Status - Pie Chart */}
+                {/* Occupancy Pie Chart */}
                 <Card className="col-span-3">
                     <CardHeader>
-                        <CardTitle>Tình trạng phòng</CardTitle>
-                        <CardDescription>Phân bổ trạng thái phòng</CardDescription>
+                        <CardTitle>Trạng Thái Phòng</CardTitle>
+                        <CardDescription>
+                            Phân bố trạng thái phòng hiện tại
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={[
-                                            { name: "Đang thuê", value: data.rooms.occupied, color: "#22c55e" },
-                                            { name: "Trống", value: data.rooms.vacant, color: "#9ca3af" },
-                                            { name: "Bảo trì", value: data.rooms.maintenance, color: "#f97316" },
-                                        ].filter(i => i.value > 0)}
+                                        data={occupancyData}
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={60}
@@ -300,50 +236,13 @@ export default function AnalyticsPage() {
                                         paddingAngle={5}
                                         dataKey="value"
                                     >
-                                        {/* Cells handled by data color */}
-                                        {[
-                                            { name: "Đang thuê", value: data.rooms.occupied, color: "#22c55e" },
-                                            { name: "Trống", value: data.rooms.vacant, color: "#9ca3af" },
-                                            { name: "Bảo trì", value: data.rooms.maintenance, color: "#f97316" },
-                                        ].filter(i => i.value > 0).map((entry, index) => (
+                                        {occupancyData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
                                     <Tooltip />
-                                    <Legend verticalAlign="bottom" height={36} />
+                                    <Legend iconType="circle" />
                                 </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Bill Status - Bar Chart */}
-                <Card className="col-span-4">
-                    <CardHeader>
-                        <CardTitle>Trạng thái hóa đơn</CardTitle>
-                        <CardDescription>Số lượng hóa đơn theo trạng thái</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[300px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={data.bills.stats.map(s => ({
-                                    ...s,
-                                    name: s.status === "PAID" ? "Đã thanh toán" : s.status === "PENDING" ? "Chờ thanh toán" : s.status === "DRAFT" ? "Nháp" : s.status
-                                }))}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                                    <Tooltip cursor={{ fill: 'transparent' }} />
-                                    <Bar dataKey="count" name="Số lượng" fill="#8884d8" radius={[4, 4, 0, 0]} barSize={40}>
-                                        {data.bills.stats.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={
-                                                entry.status === "PAID" ? "#22c55e" :
-                                                    entry.status === "PENDING" ? "#f97316" :
-                                                        entry.status === "OVERDUE" ? "#ef4444" : "#94a3b8"
-                                            } />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </CardContent>

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ROOM_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/billing";
+import { RoomGrid } from "@/components/properties/room-grid";
 
 async function getProperty(id: string, userId: string) {
     return prisma.property.findFirst({
@@ -64,6 +65,12 @@ export default async function PropertyDetailPage({
                     </div>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="secondary" size="sm" asChild>
+                        <Link href={`/dashboard/properties/${id}/readings`}>
+                            <Zap className="mr-2 h-4 w-4" />
+                            Ghi điện nước
+                        </Link>
+                    </Button>
                     <Button variant="outline" size="sm" asChild>
                         <Link href={`/dashboard/properties/${id}/edit`}>
                             <Settings className="mr-2 h-4 w-4" />
@@ -147,49 +154,7 @@ export default async function PropertyDetailPage({
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {property.rooms.map((room) => {
-                            const currentTenant = room.roomTenants[0]?.tenant;
-                            return (
-                                <Link key={room.id} href={`/dashboard/properties/${id}/rooms/${room.id}`}>
-                                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-center justify-between">
-                                                <CardTitle>Phòng {room.roomNumber}</CardTitle>
-                                                <Badge
-                                                    variant={
-                                                        room.status === "OCCUPIED"
-                                                            ? "default"
-                                                            : room.status === "VACANT"
-                                                                ? "outline"
-                                                                : "secondary"
-                                                    }
-                                                >
-                                                    {ROOM_STATUS_LABELS[room.status]}
-                                                </Badge>
-                                            </div>
-                                            <CardDescription>
-                                                {room.area && `${room.area}m² · `}Tầng {room.floor}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="pt-0">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-lg font-semibold">
-                                                    {formatCurrency(room.baseRent)}
-                                                </span>
-                                                <span className="text-muted-foreground">/tháng</span>
-                                            </div>
-                                            {currentTenant && (
-                                                <p className="text-sm text-muted-foreground mt-2">
-                                                    👤 {currentTenant.name}
-                                                </p>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            );
-                        })}
-                    </div>
+                    <RoomGrid propertyId={property.id} rooms={property.rooms as any} />
                 )}
             </div>
         </div>

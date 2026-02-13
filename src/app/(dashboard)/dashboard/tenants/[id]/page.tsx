@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/billing";
 import { CheckoutButton } from "@/components/tenants/checkout-button";
+import { ContractManager } from "@/components/tenants/contract-manager";
 
 async function getTenant(id: string, userId: string) {
     return prisma.tenant.findFirst({
@@ -20,6 +21,9 @@ async function getTenant(id: string, userId: string) {
                     bills: {
                         orderBy: { createdAt: "desc" },
                         take: 5,
+                    },
+                    contracts: {
+                        orderBy: { createdAt: "desc" },
                     },
                 },
                 orderBy: { startDate: "desc" },
@@ -197,6 +201,8 @@ export default async function TenantDetailPage({
                                             {formatCurrency(activeRoomTenant.room.baseRent)}/tháng
                                         </p>
                                     </div>
+                                    <Separator />
+                                    <ContractManager roomTenant={activeRoomTenant} />
                                 </div>
                             ) : (
                                 <p className="text-center text-muted-foreground py-4">

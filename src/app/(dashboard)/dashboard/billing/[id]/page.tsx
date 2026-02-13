@@ -1,270 +1,281 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Check, Printer } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { ArrowLeft, Download, Loader2, Send } from "lucide-react";
+import { toast } from "sonner";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDate, formatMonthYear } from "@/lib/billing";
-import { BILL_STATUS_LABELS } from "@/lib/constants";
-import { VNPayButton } from "@/components/payment/vnpay-button";
-import { PaymentResultHandler } from "@/components/payment/payment-result-handler";
-import { ShareActions } from "@/components/billing/share-actions";
-import { SendEmailButton } from "@/components/billing/send-email-button";
-import { ReminderActions } from "@/components/billing/reminder-actions";
-import { Suspense } from "react";
+import { Label } from "@/components/ui/label";
 
-async function getBill(id: string, userId: string) {
-    return prisma.bill.findFirst({
-        where: {
-            id,
-            roomTenant: { room: { property: { userId } } },
-        },
-        include: {
-            roomTenant: {
-                include: {
-                    room: { include: { property: true } },
-                    tenant: true,
+import { getBill, updateBillStatus } from "../actions";
+
+export default function BillDetailPage() {
+    const params = useParams();
+    const id = Array.isArray(params?.id) ? params.id[0] : params?.id as string;
+
+    const [bill, setBill] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    useEffect(() => {
+        if (!id) return;
+        async function fetchBill() {
+            try {
+                const data = await getBill(id);
+                setBill(data);
+            } catch (error) {
+                console.error("Failed to fetch bill", error);
+                toast.error("Không thể tải thông tin hóa đơn");
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchBill();
+    }, [params.id]);
+
+    const handleUpdateStatus = async (status: string) => {
+        setIsUpdating(true);
+        try {
+            const result = await updateBillStatus(bill.id, status);
+            if (result.success) {
+                toast.success("Đã cập nhật trạng thái");
+                // Refresh data
+                const data = await getBill(id);
+                setBill(data);
+            } else {
+                toast.error("Cập nhật thất bại");
+            }
+        } catch (error) {
+            toast.error("Đã xảy ra lỗi");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleDownloadPDF = () => {
+        if (!bill) return;
+
+        const doc = new jsPDF();
+
+        // Font setup (using standard font for MVP, robust setup needs custom font for Vietnamese)
+        // For MVP we might see garbled text for Vietnamese if we don't add a font.
+        // Assuming we rely on basic ASCII or hope for the best for now, 
+        // OR we can add a VFS font. 
+        // Since I don't have a ttf file handy to add via code without downloading it,
+        // I will use standard font and try to stick to unaccented or standard chars if possible, 
+        // or just accept that "hóa đơn" might look weird. 
+        // actually, modern browsers/OS might handle it if we just use HTML? 
+        // But jspdf needs font.
+        // Let's use `doc.html` on a hidden div like we did for Contracts?
+        // Yes, that was reliable.
+
+        const element = document.getElementById("invoice-content");
+        if (element) {
+            doc.html(element, {
+                callback: function (doc) {
+                    doc.save(`bill-${bill.roomTenant.room.roomNumber}-${bill.month}-${bill.year}.pdf`);
                 },
-            },
-            payments: { orderBy: { paidAt: "desc" } },
-            invoice: true,
-            meterReading: true,
-        },
-    });
-}
+                x: 15,
+                y: 15,
+                width: 180, // target width in the PDF document
+                windowWidth: 800 // window width in CSS pixels
+            });
+        }
+    };
 
-export default async function BillDetailPage({
-    params,
-}: {
-    params: Promise<{ id: string }>;
-}) {
-    const session = await auth();
-    if (!session?.user) return null;
+    if (isLoading) {
+        return (
+            <div className="flex h-full items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
 
-    const { id } = await params;
-    const bill = await getBill(id, session.user.id);
+    if (!bill) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 p-8">
+                <p className="text-muted-foreground">Không tìm thấy hóa đơn</p>
+                <Button asChild variant="secondary">
+                    <Link href="/dashboard/billing">Quay lại</Link>
+                </Button>
+            </div>
+        );
+    }
 
-    if (!bill) notFound();
-
-    const paidAmount = bill.payments.reduce((sum, p) => sum + p.amount, 0);
-    const remainingAmount = bill.total - paidAmount;
-
-    // Compute display status based on actual payments
-    const displayStatus = paidAmount >= bill.total ? "PAID" : bill.status;
-
-    const statusColors: Record<string, string> = {
-        DRAFT: "bg-gray-100 text-gray-800",
-        PENDING: "bg-orange-100 text-orange-800",
-        PAID: "bg-green-100 text-green-800",
-        OVERDUE: "bg-red-100 text-red-800",
-        CANCELLED: "bg-gray-100 text-gray-500",
+    const services = bill.extraCharges as any[] || [];
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
     };
 
     return (
         <div className="space-y-6">
-            <Suspense fallback={null}>
-                <PaymentResultHandler />
-            </Suspense>
-
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/dashboard/billing">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Link>
-                </Button>
-                <div className="flex-1">
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        Hóa đơn {formatMonthYear(bill.month, bill.year)}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {bill.roomTenant.room.property.name} - Phòng {bill.roomTenant.room.roomNumber}
-                    </p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href="/dashboard/billing">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Chi tiết hóa đơn</h1>
+                        <p className="text-muted-foreground">
+                            {bill.roomTenant.room.roomNumber} - Tháng {bill.month}/{bill.year}
+                        </p>
+                    </div>
                 </div>
-                <Badge className={statusColors[displayStatus]}>
-                    {BILL_STATUS_LABELS[displayStatus]}
-                </Badge>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-                {/* Left column - Bill details */}
-                <div className="md:col-span-2 space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Chi tiết hóa đơn</CardTitle>
-                            <CardDescription>
-                                Khách thuê: {bill.roomTenant.tenant.name} · {bill.roomTenant.tenant.phone}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">Tiền phòng</span>
-                                <span className="font-medium">{formatCurrency(bill.baseRent)}</span>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">
-                                    Tiền điện ({bill.electricityUsage} kWh)
-                                </span>
-                                <span className="font-medium">{formatCurrency(bill.electricityAmount)}</span>
-                            </div>
-                            {bill.meterReading && (
-                                <p className="text-xs text-muted-foreground -mt-2">
-                                    Chỉ số: {bill.meterReading.electricityPrev} → {bill.meterReading.electricityCurrent}
-                                </p>
-                            )}
-                            <Separator />
-                            <div className="flex justify-between py-2">
-                                <span className="text-muted-foreground">
-                                    Tiền nước ({bill.waterUsage} m³)
-                                </span>
-                                <span className="font-medium">{formatCurrency(bill.waterAmount)}</span>
-                            </div>
-                            {bill.meterReading && (
-                                <p className="text-xs text-muted-foreground -mt-2">
-                                    Chỉ số: {bill.meterReading.waterPrev} → {bill.meterReading.waterCurrent}
-                                </p>
-                            )}
-                            {bill.discount > 0 && (
-                                <>
-                                    <Separator />
-                                    <div className="flex justify-between py-2 text-green-600">
-                                        <span>Giảm giá</span>
-                                        <span className="font-medium">-{formatCurrency(bill.discount)}</span>
-                                    </div>
-                                </>
-                            )}
-                            <Separator />
-                            <div className="flex justify-between py-3 text-lg">
-                                <span className="font-semibold">Tổng cộng</span>
-                                <span className="font-bold text-blue-600">{formatCurrency(bill.total)}</span>
-                            </div>
-                            {paidAmount > 0 && bill.status !== "PAID" && (
-                                <div className="flex justify-between py-2 text-green-600">
-                                    <span>Đã thanh toán</span>
-                                    <span className="font-medium">{formatCurrency(paidAmount)}</span>
-                                </div>
-                            )}
-                            {remainingAmount > 0 && bill.status !== "PAID" && (
-                                <div className="flex justify-between py-2 text-orange-600">
-                                    <span className="font-medium">Còn lại</span>
-                                    <span className="font-bold">{formatCurrency(remainingAmount)}</span>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Payments history */}
-                    {bill.payments.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Lịch sử thanh toán</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {bill.payments.map((payment) => (
-                                        <div key={payment.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                            <div>
-                                                <p className="font-medium">{formatCurrency(payment.amount)}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {payment.method} · {formatDate(payment.paidAt)}
-                                                </p>
-                                            </div>
-                                            <Check className="h-5 w-5 text-green-600" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleDownloadPDF}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Tải PDF
+                    </Button>
+                    {bill.status === "PENDING" && (
+                        <Button onClick={() => handleUpdateStatus("PAID")} disabled={isUpdating}>
+                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Xác nhận thanh toán
+                        </Button>
                     )}
                 </div>
+            </div>
 
-                {/* Right column - Actions */}
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* Invoice View */}
+                <Card className="md:col-span-2 lg:col-span-1 border shadow-sm">
+                    <CardHeader className="bg-muted/50">
+                        <CardTitle>Hóa đơn tiền nhà</CardTitle>
+                        <CardDescription>Mã HĐ: #{bill.id.slice(-6).toUpperCase()}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        {/* Hidden element for PDF generation - styling needs to be pdf-friendly */}
+                        <div id="invoice-content" className="bg-white p-4 text-sm space-y-4">
+                            <div className="text-center border-b pb-4">
+                                <h2 className="text-xl font-bold uppercase">{bill.roomTenant.room.property.name}</h2>
+                                <p className="text-muted-foreground">{bill.roomTenant.room.property.address}</p>
+                                <h3 className="text-lg font-semibold mt-4">HÓA ĐƠN TIỀN NHÀ</h3>
+                                <p>Tháng {bill.month} năm {bill.year}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 py-2">
+                                <div>
+                                    <p><span className="font-semibold">Phòng:</span> {bill.roomTenant.room.roomNumber}</p>
+                                    <p><span className="font-semibold">Khách thuê:</span> {bill.roomTenant.tenant.name}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p><span className="font-semibold">Ngày tạo:</span> {format(new Date(bill.createdAt), "dd/MM/yyyy")}</p>
+                                    <p><span className="font-semibold">Hạn thanh toán:</span> {format(new Date(bill.dueDate), "dd/MM/yyyy")}</p>
+                                </div>
+                            </div>
+
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-black">
+                                        <th className="py-2">Khoản mục</th>
+                                        <th className="py-2 text-right">Chi tiết</th>
+                                        <th className="py-2 text-right">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    <tr>
+                                        <td className="py-2">Tiền phòng</td>
+                                        <td className="py-2 text-right">-</td>
+                                        <td className="py-2 text-right">{formatCurrency(bill.baseRent)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="py-2">Điện</td>
+                                        <td className="py-2 text-right">{bill.electricityUsage} số ({formatCurrency(bill.roomTenant.room.property.electricityRate)}/số)</td>
+                                        <td className="py-2 text-right">{formatCurrency(bill.electricityAmount)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="py-2">Nước</td>
+                                        <td className="py-2 text-right">{bill.waterUsage} khối ({formatCurrency(bill.roomTenant.room.property.waterRate)}/khối)</td>
+                                        <td className="py-2 text-right">{formatCurrency(bill.waterAmount)}</td>
+                                    </tr>
+                                    {services.map((s, i) => (
+                                        <tr key={i}>
+                                            <td className="py-2">Dịch vụ: {s.name}</td>
+                                            <td className="py-2 text-right">-</td>
+                                            <td className="py-2 text-right">{formatCurrency(s.price)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="border-t-2 border-black font-bold text-lg">
+                                        <td className="py-4">Tổng cộng</td>
+                                        <td className="py-4"></td>
+                                        <td className="py-4 text-right">{formatCurrency(bill.total)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            <div className="pt-8 text-center text-xs text-muted-foreground">
+                                <p>Cảm ơn quý khách đã thuê phòng!</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Info / Actions */}
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Thao tác</CardTitle>
+                            <CardTitle>Thông tin thanh toán</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3">
-                            {bill.status !== "PAID" && remainingAmount > 0 && (
-                                <VNPayButton billId={bill.id} amount={remainingAmount} />
-                            )}
-                            <Button variant="outline" className="w-full" asChild>
-                                <a href={`/api/invoices/${bill.id}/pdf`} download>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Tải PDF
-                                </a>
-                            </Button>
-                            <SendEmailButton
-                                billId={bill.id}
-                                tenantEmail={bill.roomTenant.tenant.email}
-                            />
-                            <Button variant="outline" className="w-full" asChild>
-                                <a
-                                    href={`/api/invoices/${bill.id}/pdf`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    <Printer className="mr-2 h-4 w-4" />
-                                    In hóa đơn
-                                </a>
-                            </Button>
-                            <Separator />
-                            <ShareActions
-                                invoiceToken={bill.invoice?.token}
-                                invoiceUrl={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invoice/${bill.invoice?.token || bill.id}`}
-                                billInfo={{
-                                    tenantName: bill.roomTenant.tenant.name,
-                                    propertyName: bill.roomTenant.room.property.name,
-                                    roomNumber: bill.roomTenant.room.roomNumber,
-                                    month: bill.month,
-                                    year: bill.year,
-                                    total: bill.total,
-                                }}
-                            />
-                            <Separator />
-                            <ReminderActions
-                                billId={bill.id}
-                                tenantEmail={bill.roomTenant.tenant.email}
-                                tenantPhone={bill.roomTenant.tenant.phone}
-                                isPaid={displayStatus === "PAID"}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Thông tin</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Ngày tạo</span>
-                                <span>{formatDate(bill.createdAt)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Hạn thanh toán</span>
-                                <span className={bill.status === "OVERDUE" ? "text-red-600 font-medium" : ""}>
-                                    {formatDate(bill.dueDate)}
-                                </span>
-                            </div>
-                            {bill.invoice?.sentAt && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Đã gửi</span>
-                                    <span>{formatDate(bill.invoice.sentAt)}</span>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <Label>Trạng thái</Label>
+                                <div className="mt-1">
+                                    <Badge variant={bill.status === "PAID" ? "default" : "secondary"} className={bill.status === "PAID" ? "bg-green-600" : ""}>
+                                        {bill.status === "PAID" ? "Đã thanh toán" : bill.status === "PENDING" ? "Chờ thanh toán" : bill.status}
+                                    </Badge>
                                 </div>
-                            )}
+                            </div>
+                            <Separator />
+                            {/* We could add bank info here if we had it in property settings */}
+                            <div className="bg-muted p-4 rounded-md">
+                                <p className="text-sm font-medium">Thông tin chuyển khoản:</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Ngân hàng: ...<br />
+                                    Số tài khoản: ...<br />
+                                    Chủ tài khoản: ...<br />
+                                    Nội dung: {bill.roomTenant.room.roomNumber} T{bill.month}
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    {bill.notes && (
+                    {bill.meterReading && (
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">Ghi chú</CardTitle>
+                                <CardTitle>Chi tiết chỉ số</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-muted-foreground">{bill.notes}</p>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Điện cũ:</span>
+                                        <span>{bill.meterReading.electricityPrev}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Điện mới:</span>
+                                        <span>{bill.meterReading.electricityCurrent}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between">
+                                        <span>Nước cũ:</span>
+                                        <span>{bill.meterReading.waterPrev}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Nước mới:</span>
+                                        <span>{bill.meterReading.waterCurrent}</span>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     )}

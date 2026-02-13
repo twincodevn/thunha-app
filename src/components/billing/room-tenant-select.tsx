@@ -16,10 +16,16 @@ interface RoomTenant {
 interface RoomTenantSelectProps {
     roomTenants: RoomTenant[];
     defaultValue?: string;
+    onValueChange?: (value: string) => void;
 }
 
-export function RoomTenantSelect({ roomTenants, defaultValue = "" }: RoomTenantSelectProps) {
+export function RoomTenantSelect({ roomTenants, defaultValue = "", onValueChange }: RoomTenantSelectProps) {
     const [value, setValue] = useState(defaultValue);
+
+    const handleChange = (newValue: string) => {
+        setValue(newValue);
+        onValueChange?.(newValue);
+    };
 
     const options = roomTenants.map((rt) => ({
         value: rt.id,
@@ -32,7 +38,7 @@ export function RoomTenantSelect({ roomTenants, defaultValue = "" }: RoomTenantS
             <SearchableSelect
                 options={options}
                 value={value}
-                onChange={setValue}
+                onChange={handleChange}
                 placeholder="Chọn phòng..."
                 searchPlaceholder="Tìm phòng hoặc khách thuê..."
                 emptyMessage="Không tìm thấy phòng"

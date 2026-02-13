@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/billing";
+import { EmptyState } from "@/components/ui/empty-state";
 
 async function getProperties(userId: string) {
     return prisma.property.findMany({
@@ -19,6 +20,13 @@ async function getProperties(userId: string) {
         orderBy: { createdAt: "desc" },
     });
 }
+
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Tòa nhà",
+    description: "Quản lý tòa nhà và phòng cho thuê",
+};
 
 export default async function PropertiesPage() {
     const session = await auth();
@@ -44,21 +52,13 @@ export default async function PropertiesPage() {
             </div>
 
             {properties.length === 0 ? (
-                <Card className="border-dashed border-2 bg-muted/50">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                        <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Chưa có tòa nhà nào</h3>
-                        <p className="text-muted-foreground text-center mb-4 max-w-md">
-                            Bắt đầu bằng cách thêm tòa nhà đầu tiên của bạn để quản lý phòng và khách thuê.
-                        </p>
-                        <Button asChild>
-                            <Link href="/dashboard/properties/new">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Thêm tòa nhà đầu tiên
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
+                <EmptyState
+                    icon={Building2}
+                    title="Chưa có tòa nhà nào"
+                    description="Bắt đầu bằng cách thêm tòa nhà đầu tiên của bạn để quản lý phòng và khách thuê."
+                    actionLabel="Thêm tòa nhà đầu tiên"
+                    actionHref="/dashboard/properties/new"
+                />
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {properties.map((property) => {

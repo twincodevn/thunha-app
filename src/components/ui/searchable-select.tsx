@@ -76,19 +76,27 @@ export function SearchableSelect({
 
     return (
         <div ref={containerRef} className={cn("relative", className)}>
-            {/* Trigger button */}
-            <button
-                type="button"
+            {/* Trigger area - Changed from button to div to avoid nested buttons */}
+            <div
+                role="combobox"
+                aria-expanded={open}
+                aria-controls="options-list"
+                tabIndex={0}
                 onClick={() => !disabled && setOpen(!open)}
-                disabled={disabled}
+                onKeyDown={(e) => {
+                    if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setOpen(!open);
+                    }
+                }}
                 className={cn(
-                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                    "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer",
                     "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                    "disabled:cursor-not-allowed disabled:opacity-50",
+                    disabled && "cursor-not-allowed opacity-50",
                     open && "ring-2 ring-ring ring-offset-2"
                 )}
             >
-                <span className={cn(!selectedOption && "text-muted-foreground")}>
+                <span className={cn(!selectedOption && "text-muted-foreground", "truncate")}>
                     {selectedOption ? (
                         <span className="flex items-center gap-2">
                             <span>{selectedOption.label}</span>
@@ -102,19 +110,20 @@ export function SearchableSelect({
                         placeholder
                     )}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                     {value && (
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="rounded-full p-0.5 hover:bg-muted"
+                            className="rounded-full p-0.5 hover:bg-muted z-10"
+                            tabIndex={0}
                         >
                             <X className="h-3 w-3 text-muted-foreground" />
                         </button>
                     )}
                     <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
                 </div>
-            </button>
+            </div>
 
             {/* Dropdown */}
             {open && (
@@ -129,11 +138,16 @@ export function SearchableSelect({
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                            onClick={(e) => e.stopPropagation()}
                         />
                         {search && (
                             <button
                                 type="button"
-                                onClick={() => setSearch("")}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSearch("");
+                                    inputRef.current?.focus();
+                                }}
                                 className="ml-2 rounded-full p-0.5 hover:bg-muted"
                             >
                                 <X className="h-3 w-3 text-muted-foreground" />
@@ -142,7 +156,7 @@ export function SearchableSelect({
                     </div>
 
                     {/* Options list */}
-                    <div className="max-h-60 overflow-y-auto p-1">
+                    <div className="max-h-60 overflow-y-auto p-1" id="options-list">
                         {filteredOptions.length === 0 ? (
                             <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                                 {emptyMessage}
@@ -152,7 +166,10 @@ export function SearchableSelect({
                                 <button
                                     key={option.value}
                                     type="button"
-                                    onClick={() => handleSelect(option.value)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelect(option.value);
+                                    }}
                                     className={cn(
                                         "flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm",
                                         "hover:bg-accent hover:text-accent-foreground",
@@ -160,7 +177,7 @@ export function SearchableSelect({
                                         value === option.value && "bg-accent"
                                     )}
                                 >
-                                    <div className="flex flex-col items-start">
+                                    <div className="flex flex-col items-start text-left">
                                         <span>{option.label}</span>
                                         {option.sublabel && (
                                             <span className="text-xs text-muted-foreground">
@@ -169,7 +186,7 @@ export function SearchableSelect({
                                         )}
                                     </div>
                                     {value === option.value && (
-                                        <Check className="h-4 w-4 text-primary" />
+                                        <Check className="h-4 w-4 text-primary shrink-0" />
                                     )}
                                 </button>
                             ))
