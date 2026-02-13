@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Metadata } from "next";
+import { TenantBottomNav } from "@/components/tenant/bottom-nav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function TenantLayout({
                         {/* Constants padding-bottom for mobile nav if needed */}
                         {children}
                     </main>
+                    <TenantBottomNav />
                     <Toaster />
                 </div>
             </body>

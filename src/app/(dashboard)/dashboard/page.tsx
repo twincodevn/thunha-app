@@ -411,31 +411,50 @@ export default async function DashboardPage() {
                         <OccupancyRateCard totalRooms={data.totalRooms} occupiedRooms={data.occupiedRooms} />
 
                         <div className="grid gap-4">
-                            <Card className="border-0 shadow-sm">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                            <Card className="border-0 shadow-lg overflow-hidden relative">
+                                <div className="absolute top-0 right-0 p-3 opacity-10">
+                                    <TrendingUp className="h-16 w-16" />
+                                </div>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                                    <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">
                                         Doanh thu dự kiến
                                     </CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                    <DollarSign className="h-4 w-4 text-blue-600" />
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(data.expectedIncome)}</div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Tiền thuê tháng này
+                                <CardContent className="pt-4">
+                                    <div className="text-3xl font-extrabold tracking-tight text-blue-900 dark:text-blue-100">
+                                        {formatCurrency(data.expectedIncome)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1 font-medium">
+                                        Tiền thuê căn bản tháng này
                                     </p>
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-0 shadow-sm">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                            <Card className="border-0 shadow-lg overflow-hidden relative">
+                                <div className="absolute top-0 right-0 p-3 opacity-10">
+                                    <CheckCircle2 className="h-16 w-16" />
+                                </div>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                                    <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                                         Thực thu tháng {data.month}
                                     </CardTitle>
-                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                 </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-green-600">
+                                <CardContent className="pt-4">
+                                    <div className="text-3xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300">
                                         {formatCurrency(data.collected)}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="h-1 w-full bg-emerald-100 dark:bg-emerald-900 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-emerald-500 transition-all duration-500"
+                                                style={{ width: `${Math.min(100, (data.collected / (data.expectedIncome || 1)) * 100)}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-emerald-600">
+                                            {((data.collected / (data.expectedIncome || 1)) * 100).toFixed(0)}%
+                                        </span>
                                     </div>
                                 </CardContent>
                             </Card>

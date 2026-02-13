@@ -15,7 +15,34 @@ export default async function TenantDashboard() {
         redirect("/portal/login");
     }
 
-    // Fetch tenant's pending bills
+    // Fetch tenant details including Room, Property, and Contract
+    const tenant = await prisma.tenant.findUnique({
+        where: { id: session.user.id },
+        include: {
+            roomTenants: {
+                where: { isActive: true },
+                include: {
+                    room: {
+                        include: {
+                            property: true
+                        }
+                    },
+                    contracts: {
+                        where: { status: "SIGNED" },
+                        orderBy: { createdAt: "desc" },
+                        take: 1
+                    }
+                }
+            }
+        }
+    });
+
+    const currentTenancy = tenant?.roomTenants[0];
+    const room = currentTenancy?.room;
+    const property = room?.property;
+    const activeContract = currentTenancy?.contracts[0];
+
+    // Fetch pending bills
     const pendingBills = await prisma.bill.findMany({
         where: {
             roomTenant: {

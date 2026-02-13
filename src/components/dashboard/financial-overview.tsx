@@ -155,8 +155,18 @@ export function FinancialOverview() {
                                         labelStyle={{ color: "black" }}
                                     />
                                     <Legend />
-                                    <Bar dataKey="revenue" name="Doanh thu" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="expenses" name="Chi phí" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="revenue" name="Doanh thu" fill="url(#colorRevenue)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="expenses" name="Chi phí" fill="url(#colorExpenses)" radius={[4, 4, 0, 0]} />
+                                    <defs>
+                                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                                        </linearGradient>
+                                        <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
+                                        </linearGradient>
+                                    </defs>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

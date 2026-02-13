@@ -75,27 +75,51 @@ export default async function TenantIncidentsPage() {
                         </Link>
                     </div>
                 ) : (
-                    incidents.map((incident) => (
-                        <Card key={incident.id} className="hover:bg-gray-50 transition-colors">
-                            <CardContent className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-gray-900 line-clamp-1">{incident.title}</h3>
-                                    {getStatusBadge(incident.status)}
-                                </div>
-                                <p className="text-sm text-gray-500 line-clamp-2 mb-3">
-                                    {incident.description}
-                                </p>
-                                <div className="flex items-center justify-between text-xs text-gray-400">
-                                    <span>{formatDate(incident.createdAt)}</span>
-                                    {incident.cost ? (
-                                        <span className="font-medium text-gray-600">
-                                            Chi phí: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(incident.cost)}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                    incidents.map((incident) => {
+                        let images: string[] = [];
+                        try {
+                            images = incident.images ? JSON.parse(incident.images) : [];
+                        } catch (e) {
+                            images = [];
+                        }
+
+                        return (
+                            <Card key={incident.id} className="hover:bg-gray-50 transition-colors">
+                                <CardContent className="p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-gray-900 line-clamp-1">{incident.title}</h3>
+                                        {getStatusBadge(incident.status)}
+                                    </div>
+                                    <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                                        {incident.description}
+                                    </p>
+
+                                    {images.length > 0 && (
+                                        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+                                            {images.map((img, idx) => (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    key={idx}
+                                                    src={img}
+                                                    alt="Evidence"
+                                                    className="h-16 w-16 object-cover rounded-md border bg-gray-100"
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between text-xs text-gray-400">
+                                        <span>{formatDate(incident.createdAt)}</span>
+                                        {incident.cost ? (
+                                            <span className="font-medium text-gray-600">
+                                                Chi phí: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(incident.cost)}
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })
                 )}
             </div>
         </div>

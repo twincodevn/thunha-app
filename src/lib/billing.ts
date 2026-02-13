@@ -1,32 +1,56 @@
 import { ELECTRICITY_TIERS } from "./constants";
 
-/**
- * Calculate electricity cost using Vietnam's tiered pricing
- * @param usage - kWh used
- * @param customRate - Optional custom rate per kWh (if 0 or undefined, use tiers)
- * @returns Total electricity cost in VND
- */
-export function calculateElectricityCost(usage: number, customRate?: number): number {
-    // If custom rate is provided and > 0, use it
+export interface ElectricityTierBreakdown {
+    tier: string;
+    range: string;
+    units: number;
+    price: number;
+    amount: number;
+}
+
+export function calculateElectricityBreakdown(usage: number, customRate?: number): { total: number; breakdown: ElectricityTierBreakdown[] } {
     if (customRate && customRate > 0) {
-        return Math.round(usage * customRate);
+        return {
+            total: Math.round(usage * customRate),
+            breakdown: [{
+                tier: "Giá cố định",
+                range: "Toàn bộ",
+                units: usage,
+                price: customRate,
+                amount: Math.round(usage * customRate)
+            }]
+        };
     }
 
-    // Otherwise, use Vietnam tiered pricing
     let remaining = usage;
     let totalCost = 0;
+    const breakdown: ElectricityTierBreakdown[] = [];
 
-    for (const tier of ELECTRICITY_TIERS) {
+    for (let i = 0; i < ELECTRICITY_TIERS.length; i++) {
+        const tier = ELECTRICITY_TIERS[i];
         if (remaining <= 0) break;
 
         const tierRange = tier.max === Infinity ? remaining : tier.max - tier.min + 1;
         const unitsInTier = Math.min(remaining, tierRange);
+        const amount = unitsInTier * tier.price;
 
-        totalCost += unitsInTier * tier.price;
+        breakdown.push({
+            tier: `Bậc ${i + 1}`,
+            range: tier.max === Infinity ? `>${tier.min}` : `${tier.min}-${tier.max}`,
+            units: unitsInTier,
+            price: tier.price,
+            amount: Math.round(amount)
+        });
+
+        totalCost += amount;
         remaining -= unitsInTier;
     }
 
-    return Math.round(totalCost);
+    return { total: Math.round(totalCost), breakdown };
+}
+
+export function calculateElectricityCost(usage: number, customRate?: number): number {
+    return calculateElectricityBreakdown(usage, customRate).total;
 }
 
 /**

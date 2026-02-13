@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { sendInvoiceEmail, sendPaymentReminder } from "@/lib/email";
+import { formatDate, calculateElectricityCost } from "@/lib/billing";
 
 // Helper type for Property Services
 interface Service {
@@ -75,7 +77,7 @@ export async function getBillableTenants(propertyId: string, month: number, year
         const electricityUsage = reading?.electricityUsage ?? 0;
         const waterUsage = reading?.waterUsage ?? 0;
 
-        const electricityAmount = electricityUsage * property.electricityRate;
+        const electricityAmount = calculateElectricityCost(electricityUsage);
         const waterAmount = waterUsage * property.waterRate;
 
         // Parse services
@@ -332,13 +334,60 @@ export async function confirmPayment(data: {
     }
 }
 
+
+
 export async function sendReminderEmail(billId: string) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
 
-    // Mock implementation
-    console.log(`Sending reminder email for bill ${billId}`);
-    return { success: true, message: "Email nhắc nhở đã được gửi (Mock)" };
+    try {
+        const bill = await prisma.bill.findUnique({
+            where: { id: billId },
+            include: {
+                roomTenant: {
+                    include: {
+                        room: { include: { property: true } },
+                        tenant: true
+                    }
+                },
+                invoice: true
+            }
+        });
+
+        if (!bill) return { error: "Không tìm thấy hóa đơn" };
+
+        const tenantEmail = bill.roomTenant.tenant.email;
+        if (!tenantEmail) return { error: "Khách thuê chưa cập nhật email" };
+
+        const daysOverdue = Math.floor(
+            (new Date().getTime() - new Date(bill.dueDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        const invoiceUrl = bill.invoice?.token
+            ? `${process.env.AUTH_URL}/invoice/${bill.invoice.token}`
+            : "#";
+
+        const result = await sendPaymentReminder({
+            to: tenantEmail,
+            tenantName: bill.roomTenant.tenant.name,
+            propertyName: bill.roomTenant.room.property.name,
+            roomNumber: bill.roomTenant.room.roomNumber,
+            month: bill.month,
+            year: bill.year,
+            total: bill.total,
+            daysOverdue: Math.max(1, daysOverdue),
+            invoiceUrl
+        });
+
+        if (!result.success) {
+            return { error: "Gửi email thất bại: " + result.error };
+        }
+
+        return { success: true, message: "Đã gửi email nhắc nhở" };
+    } catch (error) {
+        console.error("Send reminder error:", error);
+        return { error: "Lỗi hệ thống khi gửi email" };
+    }
 }
 
 export async function generateSMSMessage(billId: string) {
@@ -378,7 +427,57 @@ export async function sendBillEmail(billId: string) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
 
-    // Mock implementation
-    console.log(`Sending bill email for bill ${billId}`);
-    return { success: true, message: "Hóa đơn đã được gửi qua email (Mock)" };
+    try {
+        const bill = await prisma.bill.findUnique({
+            where: { id: billId },
+            include: {
+                roomTenant: {
+                    include: {
+                        room: { include: { property: true } },
+                        tenant: true
+                    }
+                },
+                invoice: true
+            }
+        });
+
+        if (!bill) return { error: "Không tìm thấy hóa đơn" };
+
+        const tenantEmail = bill.roomTenant.tenant.email;
+        if (!tenantEmail) return { error: "Khách thuê chưa cập nhật email" };
+
+        const invoiceLink = bill.invoice?.token
+            ? `${process.env.AUTH_URL}/invoice/${bill.invoice.token}`
+            : "#";
+
+        const result = await sendInvoiceEmail({
+            to: tenantEmail,
+            tenantName: bill.roomTenant.tenant.name,
+            propertyName: bill.roomTenant.room.property.name,
+            roomNumber: bill.roomTenant.room.roomNumber,
+            month: bill.month,
+            year: bill.year,
+            total: bill.total,
+            dueDate: formatDate(bill.dueDate),
+            invoiceUrl: invoiceLink
+        });
+
+        if (!result.success) {
+            return { error: "Gửi email thất bại. Vui lòng kiểm tra API Key." };
+        }
+
+        // Update sent status
+        if (bill.invoice) {
+            await prisma.invoice.update({
+                where: { id: bill.invoice.id },
+                data: { sentVia: "EMAIL", sentAt: new Date() }
+            });
+        }
+
+        return { success: true, message: "Đã gửi hóa đơn qua email" };
+    } catch (error) {
+        console.error("Send bill email error:", error);
+        return { error: "Lỗi hệ thống khi gửi email" };
+    }
 }
+

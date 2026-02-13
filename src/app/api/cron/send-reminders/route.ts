@@ -105,7 +105,7 @@ export async function GET(request: Request) {
                         billId: bill.id,
                         tenantEmail: tenant.email,
                         status: "sent",
-                        messageId: result.messageId,
+                        messageId: (result.data as any)?.id,
                     });
                 } else {
                     failCount++;

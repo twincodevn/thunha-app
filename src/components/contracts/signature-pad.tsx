@@ -3,7 +3,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Eraser, Check } from "lucide-react";
+import { Eraser, Check, PenTool } from "lucide-react";
 
 interface SignaturePadProps {
     onSave: (signatureData: string) => void;
@@ -41,9 +41,13 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        ctx.beginPath();
         const { x, y } = getCoordinates(e, canvas);
+        ctx.beginPath();
         ctx.moveTo(x, y);
+
+        // Add subtle shadow for more "ink" feel
+        ctx.shadowBlur = 1;
+        ctx.shadowColor = "rgba(0,0,0,0.2)";
     };
 
     const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -98,10 +102,16 @@ export function SignaturePad({ onSave }: SignaturePadProps) {
 
     return (
         <div className="space-y-4">
-            <div className="border rounded-md bg-white touch-none h-40 w-full relative">
+            <div className="group relative border-2 border-dashed rounded-xl bg-slate-50/50 hover:bg-slate-50 hover:border-blue-400 transition-all duration-300 touch-none h-48 w-full overflow-hidden shadow-inner">
+                {!hasSignature && !isDrawing && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none">
+                        <PenTool className="h-8 w-8 mb-2 opacity-20" />
+                        <p className="text-xs font-medium">Ký tên tại đây</p>
+                    </div>
+                )}
                 <canvas
                     ref={canvasRef}
-                    className="w-full h-full cursor-crosshair block rounded-md absolute inset-0"
+                    className="w-full h-full cursor-crosshair block absolute inset-0 z-10"
                     onMouseDown={startDrawing}
                     onMouseMove={draw}
                     onMouseUp={stopDrawing}

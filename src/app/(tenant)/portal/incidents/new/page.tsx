@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { incidentSchema } from "@/lib/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Send, ImagePlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -103,9 +103,95 @@ export default function NewIncidentPage() {
                             />
 
                             {/* Image upload placeholder */}
-                            <div className="p-4 border-2 border-dashed rounded-lg text-center text-gray-400 text-sm bg-gray-50">
-                                Tính năng tải ảnh đang được phát triển
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="images"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hình ảnh đính kèm</FormLabel>
+                                        <div className="space-y-4">
+                                            <div className="flex flex-wrap gap-4">
+                                                {field.value?.map((image: string, index: number) => (
+                                                    <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img src={image} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newImages = [...field.value];
+                                                                newImages.splice(index, 1);
+                                                                field.onChange(newImages);
+                                                            }}
+                                                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full p-1"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                                    <ImagePlus className="h-6 w-6 text-gray-400 mb-1" />
+                                                    <span className="text-xs text-gray-400">Thêm ảnh</span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        className="hidden"
+                                                        onChange={(e) => {
+                                                            const files = e.target.files;
+                                                            if (files) {
+                                                                Array.from(files).forEach((file) => {
+                                                                    // Compress image before adding
+                                                                    const reader = new FileReader();
+                                                                    reader.onload = (event) => {
+                                                                        const img = new Image();
+                                                                        img.onload = () => {
+                                                                            const canvas = document.createElement('canvas');
+                                                                            const MAX_WIDTH = 800;
+                                                                            const MAX_HEIGHT = 800;
+                                                                            let width = img.width;
+                                                                            let height = img.height;
+
+                                                                            if (width > height) {
+                                                                                if (width > MAX_WIDTH) {
+                                                                                    height *= MAX_WIDTH / width;
+                                                                                    width = MAX_WIDTH;
+                                                                                }
+                                                                            } else {
+                                                                                if (height > MAX_HEIGHT) {
+                                                                                    width *= MAX_HEIGHT / height;
+                                                                                    height = MAX_HEIGHT;
+                                                                                }
+                                                                            }
+                                                                            canvas.width = width;
+                                                                            canvas.height = height;
+                                                                            const ctx = canvas.getContext('2d');
+                                                                            ctx?.drawImage(img, 0, 0, width, height);
+                                                                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+                                                                            const currentImages = field.value || [];
+                                                                            if (currentImages.length < 3) {
+                                                                                field.onChange([...currentImages, dataUrl]);
+                                                                            } else {
+                                                                                toast.error("Tối đa 3 ảnh");
+                                                                            }
+                                                                        };
+                                                                        img.src = event.target?.result as string;
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                });
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+                                            <FormDescription>
+                                                Tải lên tối đa 3 ảnh mô tả sự cố (JPG, PNG).
+                                            </FormDescription>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             <Button
                                 type="submit"

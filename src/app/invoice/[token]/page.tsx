@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDate, formatMonthYear } from "@/lib/billing";
+import { formatCurrency, formatDate, formatMonthYear, calculateElectricityBreakdown, formatNumber } from "@/lib/billing";
 import { BILL_STATUS_LABELS } from "@/lib/constants";
 
 // Helper to get bank BIN from code
@@ -154,11 +154,26 @@ export default async function PublicInvoicePage({
                                 <span className="text-muted-foreground">Tiền phòng</span>
                                 <span className="font-medium">{formatCurrency(bill.baseRent)}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                    Tiền điện ({bill.electricityUsage} kWh)
-                                </span>
-                                <span className="font-medium">{formatCurrency(bill.electricityAmount)}</span>
+                            <div className="flex flex-col gap-1">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Tiền điện ({bill.electricityUsage} kWh)
+                                    </span>
+                                    <span className="font-medium">{formatCurrency(bill.electricityAmount)}</span>
+                                </div>
+                                {bill.roomTenant.room.property.electricityRate === 0 && bill.electricityUsage > 0 && (
+                                    <div className="ml-4 text-[10px] text-muted-foreground border-l-2 border-blue-100 pl-2 py-1 space-y-1">
+                                        {(() => {
+                                            const { breakdown } = calculateElectricityBreakdown(bill.electricityUsage);
+                                            return breakdown.map((b, i) => (
+                                                <div key={i} className="flex justify-between italic">
+                                                    <span>{b.tier} ({b.units} số * {formatNumber(b.price)}đ):</span>
+                                                    <span>{formatNumber(b.amount)}đ</span>
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                )}
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">
