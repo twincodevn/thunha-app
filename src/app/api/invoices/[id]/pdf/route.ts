@@ -3,25 +3,22 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateInvoicePDF, InvoiceData } from "@/lib/pdf";
 import { formatDate } from "@/lib/billing";
+import { getBankByCode } from "@/lib/vietqr";
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const session = await auth();
-        if (!session?.user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const { id } = await params;
+        const { searchParams } = new URL(request.url);
+        const token = searchParams.get("token");
 
-        // Get bill with all related data
-        const bill = await prisma.bill.findFirst({
-            where: {
-                id,
-                roomTenant: { room: { property: { userId: session.user.id } } },
-            },
+        const session = await auth();
+
+        // 1. Find bill first with all necessary data
+        const bill = await prisma.bill.findUnique({
+            where: { id },
             include: {
                 roomTenant: {
                     include: {
@@ -37,23 +34,51 @@ export async function GET(
             return NextResponse.json({ error: "Bill not found" }, { status: 404 });
         }
 
+        // 2. Authorization check
+        let authorized = false;
+        let invoice = bill.invoice;
+        let userId = bill.roomTenant.room.property.userId;
+
+        // Either landlord session matches property OR token matches invoice
+        if (session?.user && userId === session.user.id) {
+            authorized = true;
+        } else if (token && invoice?.token === token) {
+            authorized = true;
+        }
+
+        if (!authorized) {
+            return NextResponse.json({
+                error: "Unauthorized",
+                details: token ? "Token mismatch" : "Login required"
+            }, { status: 401 });
+        }
+
         // Get user info for landlord details
         const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
+            where: { id: userId },
         });
 
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Create or get invoice
-        let invoice = bill.invoice;
-        if (!invoice) {
+        // Create or get invoice (should already exist if using token)
+        if (!invoice && bill) {
+            invoice = await prisma.invoice.findUnique({
+                where: { billId: bill.id }
+            });
+        }
+
+        if (!invoice && bill) {
             invoice = await prisma.invoice.create({
                 data: {
                     billId: bill.id,
                 },
             });
+        }
+
+        if (!invoice || !bill) {
+            return NextResponse.json({ error: "Invoice could not be loaded" }, { status: 500 });
         }
 
         // Generate PDF
@@ -89,15 +114,37 @@ export async function GET(
                 discount: bill.discount,
                 total: bill.total,
             },
+            bank: user.bankName && user.bankAccountNumber ? {
+                name: user.bankName,
+                bin: getBankByCode(user.bankName)?.bin || "",
+                accountNumber: user.bankAccountNumber,
+                accountName: user.bankAccountName || undefined,
+            } : undefined,
         };
 
-        const pdfBuffer = generateInvoicePDF(invoiceData);
+        // Fetch QR code image if bank info exists
+        let qrCodeDataURL: string | undefined = undefined;
+        if (invoiceData.bank) {
+            try {
+                const qrUrl = `https://img.vietqr.io/image/${invoiceData.bank.bin}-${invoiceData.bank.accountNumber}-compact2.png?amount=${Math.round(bill.total)}&addInfo=${encodeURIComponent(`Tien phong T${bill.month}/${bill.year} - ${bill.roomTenant.room.roomNumber}`)}`;
+                const qrResponse = await fetch(qrUrl);
+                if (qrResponse.ok) {
+                    const qrBuffer = await qrResponse.arrayBuffer();
+                    qrCodeDataURL = `data:image/png;base64,${Buffer.from(qrBuffer).toString("base64")}`;
+                }
+            } catch (error) {
+                console.error("Error fetching QR code for PDF:", error);
+            }
+        }
 
-        // Return PDF - convert Uint8Array to Buffer for NextResponse
+        const pdfBuffer = generateInvoicePDF({ ...invoiceData, qrCodeDataURL });
+
+        // Return PDF as Buffer for best compatibility with Next.js Response
         return new NextResponse(Buffer.from(pdfBuffer), {
             headers: {
                 "Content-Type": "application/pdf",
                 "Content-Disposition": `attachment; filename="hoadon-${bill.month}-${bill.year}.pdf"`,
+                "Content-Length": pdfBuffer.length.toString(),
             },
         });
     } catch (error) {

@@ -5,15 +5,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeft, Download, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Send, Copy, MessageSquareText } from "lucide-react";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { getBillZaloContent } from "@/lib/billing";
 import { Label } from "@/components/ui/label";
 
 import { getBill, updateBillStatus } from "../actions";
@@ -235,6 +237,72 @@ export default function BillDetailPage() {
                                     <Badge variant={bill.status === "PAID" ? "default" : "secondary"} className={bill.status === "PAID" ? "bg-green-600" : ""}>
                                         {bill.status === "PAID" ? "Đã thanh toán" : bill.status === "PENDING" ? "Chờ thanh toán" : bill.status}
                                     </Badge>
+                                </div>
+                            </div>
+                            <Separator />
+                            <div>
+                                <Label>Hóa đơn công khai</Label>
+                                <div className="mt-1 flex items-center gap-2">
+                                    <Input
+                                        readOnly
+                                        value={bill.invoice?.token ? `${window.location.origin}/invoice/${bill.invoice.token}` : "Đang tạo..."}
+                                        className="text-xs"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const url = `${window.location.origin}/invoice/${bill.invoice.token}`;
+                                            navigator.clipboard.writeText(url);
+                                            toast.success("Đã sao chép liên kết");
+                                        }}
+                                    >
+                                        Chép
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-1">Gửi link này cho khách thuê để xem hóa đơn và QR thanh toán</p>
+                            </div>
+                            <Separator />
+
+                            <div>
+                                <Label>Gửi thông báo</Label>
+                                <div className="mt-2 grid grid-cols-2 gap-2">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full flex items-center gap-2 border-blue-200 hover:bg-blue-50 text-blue-700"
+                                        onClick={() => {
+                                            const content = getBillZaloContent({
+                                                month: bill.month,
+                                                year: bill.year,
+                                                propertyName: bill.roomTenant.room.property.name,
+                                                roomNumber: bill.roomTenant.room.roomNumber,
+                                                tenantName: bill.roomTenant.tenant.name,
+                                                total: bill.total,
+                                                invoiceUrl: `${window.location.origin}/invoice/${bill.invoice?.token}`
+                                            });
+                                            navigator.clipboard.writeText(content);
+                                            toast.success("Đã copy lời nhắn. Hãy dán vào Zalo/Messenger.");
+                                        }}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                        Copy lời nhắn
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full flex items-center gap-2 border-teal-200 hover:bg-teal-50 text-teal-700"
+                                        onClick={() => {
+                                            const phone = bill.roomTenant.tenant.phone;
+                                            if (!phone) {
+                                                toast.error("Khách này chưa có số điện thoại");
+                                                return;
+                                            }
+                                            const cleanPhone = phone.replace(/\D/g, "");
+                                            window.open(`https://zalo.me/${cleanPhone}`, "_blank");
+                                        }}
+                                    >
+                                        <MessageSquareText className="h-4 w-4" />
+                                        Mở Zalo
+                                    </Button>
                                 </div>
                             </div>
                             <Separator />

@@ -1,6 +1,7 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatCurrency } from "./billing";
+import { robotoBase64 } from "./fonts";
 
 export interface InvoiceData {
     invoiceNumber: string;
@@ -34,6 +35,13 @@ export interface InvoiceData {
         discount: number;
         total: number;
     };
+    bank?: {
+        name: string;
+        bin: string;
+        accountNumber: string;
+        accountName?: string;
+    };
+    qrCodeDataURL?: string;
 }
 
 /**
@@ -41,6 +49,13 @@ export interface InvoiceData {
  */
 export function generateInvoicePDF(data: InvoiceData): Uint8Array {
     const doc = new jsPDF();
+
+    // Add Roboto font for Vietnamese support
+    doc.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "bold"); // Use same font for bold to ensure Unicode support
+    doc.setFont("Roboto", "normal");
+
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Header with gradient-like background
@@ -50,12 +65,12 @@ export function generateInvoicePDF(data: InvoiceData): Uint8Array {
     // Company name
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold"); // Fallback for header branding
     doc.text("ThuNhà", 20, 25);
 
     // Invoice title
     doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     doc.text("HÓA ĐƠN TIỀN PHÒNG", 20, 35);
 
     // Invoice number - right aligned
@@ -69,12 +84,12 @@ export function generateInvoicePDF(data: InvoiceData): Uint8Array {
 
     // Billing period
     doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     const monthNames = [
         "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
         "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
     ];
-    doc.text(`${monthNames[data.billing.month - 1]}/${data.billing.year}`, pageWidth / 2, 55, { align: "center" });
+    doc.text(`${monthNames[data.billing.month - 1]} / ${data.billing.year}`, pageWidth / 2, 55, { align: "center" });
 
     // Two column layout for landlord and tenant
     const col1X = 20;
@@ -83,9 +98,9 @@ export function generateInvoicePDF(data: InvoiceData): Uint8Array {
 
     // Landlord info
     doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.text("CHỦ TRỌ", col1X, yPos);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     yPos += 6;
     doc.text(data.landlord.name, col1X, yPos);
     yPos += 5;
@@ -101,9 +116,9 @@ export function generateInvoicePDF(data: InvoiceData): Uint8Array {
     yPos = 70;
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.text("KHÁCH THUÊ", col2X, yPos);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     yPos += 6;
     doc.text(data.tenant.name, col2X, yPos);
     yPos += 5;
@@ -148,6 +163,7 @@ export function generateInvoicePDF(data: InvoiceData): Uint8Array {
         head: [["Khoản mục", "Số lượng", "Thành tiền"]],
         body: tableData,
         theme: "striped",
+        styles: { font: "Roboto" },
         headStyles: {
             fillColor: [37, 99, 235],
             textColor: [255, 255, 255],
@@ -163,36 +179,56 @@ export function generateInvoicePDF(data: InvoiceData): Uint8Array {
 
     // Total
     // @ts-expect-error - jspdf-autotable adds this property
-    const finalY = doc.lastAutoTable.finalY + 10;
+    let finalY = doc.lastAutoTable.finalY + 10;
 
     doc.setFillColor(240, 240, 240);
     doc.rect(pageWidth - 100, finalY, 80, 20, "F");
     doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.text("TỔNG CỘNG", pageWidth - 95, finalY + 8);
     doc.setTextColor(37, 99, 235);
     doc.setFontSize(14);
     doc.text(formatCurrency(data.billing.total), pageWidth - 25, finalY + 15, { align: "right" });
 
-    // Payment info
+    finalY += 30;
+
+    // Payment Section
     doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.setFont("Roboto", "bold");
+    doc.text("THÔNG TIN THANH TOÁN", 20, finalY);
+
+    finalY += 8;
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    const paymentY = finalY + 40;
-    doc.text("Thanh toán qua:", 20, paymentY);
-    doc.setFont("helvetica", "bold");
-    doc.text("• VNPay/MoMo: Quét mã QR hoặc thanh toán online", 20, paymentY + 8);
-    doc.text("• Chuyển khoản: Theo thông tin của chủ trọ", 20, paymentY + 16);
-    doc.text("• Tiền mặt: Nộp trực tiếp cho chủ trọ", 20, paymentY + 24);
+    doc.setFont("Roboto", "normal");
+
+    if (data.qrCodeDataURL) {
+        // QR Code on the left
+        doc.addImage(data.qrCodeDataURL, "PNG", 20, finalY, 40, 40);
+
+        // Bank details on the right of QR code
+        const bankInfoX = 65;
+        doc.setFont("Roboto", "bold");
+        doc.text("Quét mã QR để thanh toán nhanh", bankInfoX, finalY + 10);
+        doc.setFont("Roboto", "normal");
+        doc.text(`Ngân hàng: ${data.bank?.name}`, bankInfoX, finalY + 18);
+        doc.text(`Số tài khoản: ${data.bank?.accountNumber}`, bankInfoX, finalY + 24);
+        if (data.bank?.accountName) {
+            doc.text(`Chủ tài khoản: ${data.bank?.accountName.toUpperCase()}`, bankInfoX, finalY + 30);
+        }
+    } else {
+        doc.text("• Chuyển khoản: Theo thông tin của chủ trọ", 20, finalY);
+        doc.text("• Tiền mặt: Nộp trực tiếp cho chủ trọ", 20, finalY + 8);
+    }
 
     // Footer
     const footerY = doc.internal.pageSize.getHeight() - 20;
     doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     doc.setTextColor(150, 150, 150);
     doc.text("Hóa đơn được tạo bởi ThuNhà - thunha.vn", pageWidth / 2, footerY, { align: "center" });
 
-    return doc.output("arraybuffer") as unknown as Uint8Array;
+    return new Uint8Array(doc.output("arraybuffer"));
 }
 
 export function generateInvoiceDataURL(_data: InvoiceData): string {
@@ -218,12 +254,15 @@ export interface VATInvoiceData extends InvoiceData {
     };
 }
 
-/**
- * Generate VAT Invoice (Hóa đơn GTGT - Red Invoice) for Vietnam businesses
- * This follows the format required by Vietnam tax authority
- */
 export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
     const doc = new jsPDF();
+    // Add Roboto font for Vietnamese support
+    doc.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "bold");
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "italic");
+    doc.setFont("Roboto", "normal");
+
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Red header for VAT invoice
@@ -233,7 +272,7 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
     // Title
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.text("HÓA ĐƠN GIÁ TRỊ GIA TĂNG", pageWidth / 2, 15, { align: "center" });
     doc.setFontSize(10);
     doc.text("(VAT INVOICE)", pageWidth / 2, 22, { align: "center" });
@@ -248,10 +287,10 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
     doc.setTextColor(0, 0, 0);
     let y = 60;
     doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.text("ĐƠN VỊ BÁN HÀNG (SELLER):", 15, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     doc.setFontSize(9);
     doc.text(`Tên: ${data.landlord.name}`, 15, y);
     y += 5;
@@ -261,11 +300,11 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
 
     // Buyer info
     y = 85;
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.setFontSize(10);
     doc.text("ĐƠN VỊ MUA HÀNG (BUYER):", 15, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     doc.setFontSize(9);
     doc.text(`Tên công ty: ${data.vat.companyName}`, 15, y);
     y += 5;
@@ -303,6 +342,7 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
             fontStyle: "bold",
         },
         styles: {
+            font: "Roboto",
             fontSize: 9,
         },
         columnStyles: {
@@ -318,7 +358,7 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
 
     // Totals section
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
 
     // Subtotal
     doc.text("Cộng tiền hàng (trước thuế):", pageWidth - 100, finalY);
@@ -331,7 +371,7 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
     finalY += 7;
 
     // Total with VAT
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.setFillColor(254, 226, 226); // Red-100
     doc.rect(pageWidth - 105, finalY - 5, 90, 12, "F");
     doc.text("TỔNG CỘNG:", pageWidth - 100, finalY + 2);
@@ -343,12 +383,12 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
     finalY += 20;
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9);
-    doc.setFont("helvetica", "italic");
+    doc.setFont("Roboto", "italic");
     doc.text(`(Viết bằng chữ: ${numberToVietnameseWords(data.vat.totalWithVAT)})`, 15, finalY);
 
     // Signatures
     finalY += 20;
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Roboto", "bold");
     doc.setFontSize(9);
     const col1 = 40;
     const col2 = pageWidth - 60;
@@ -356,7 +396,7 @@ export function generateVATInvoicePDF(data: VATInvoiceData): Uint8Array {
     doc.text("NGƯỜI MUA HÀNG", col1, finalY, { align: "center" });
     doc.text("NGƯỜI BÁN HÀNG", col2, finalY, { align: "center" });
     finalY += 5;
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Roboto", "normal");
     doc.text("(Ký, ghi rõ họ tên)", col1, finalY, { align: "center" });
     doc.text("(Ký, ghi rõ họ tên)", col2, finalY, { align: "center" });
 

@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,6 +5,267 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(cuid())
+  email             String?            @unique
+  phone             String?            @unique
+  password          String
+  name              String
+  avatar            String?
+  plan              UserPlan           @default(FREE)
+  planExpiresAt     DateTime?
+  maxRooms          Int                @default(3)
+  emailVerified     DateTime?
+  phoneVerified     DateTime?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  bankName          String?
+  bankAccountNumber String?
+  bankAccountName   String?
+  createdIp         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  contractTemplates ContractTemplate[]
+  properties        Property[]
+  tenants           Tenant[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([resetToken])
+}
+
+model Property {
+  id              String     @id @default(cuid())
+  userId          String
+  name            String
+  address         String
+  city            String?
+  notes           String?
+  electricityRate Float      @default(0)
+  waterRate       Float      @default(25000)
+  services        Json?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  incidents       Incident[]
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rooms           Room[]
+
+  @@index([userId])
+}
+
+model Room {
+  id            String         @id @default(cuid())
+  propertyId    String
+  roomNumber    String
+  floor         Int            @default(1)
+  area          Float?
+  baseRent      Float
+  deposit       Float?
+  status        RoomStatus     @default(VACANT)
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  assets        Asset[]
+  meterReadings MeterReading[]
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomTenants   RoomTenant[]
+
+  @@unique([propertyId, roomNumber])
+  @@index([propertyId])
+}
+
+model Tenant {
+  id          String       @id @default(cuid())
+  userId      String
+  name        String
+  phone       String
+  email       String?
+  idNumber    String?
+  idPhoto     String?
+  avatar      String?
+  dateOfBirth DateTime?
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  username    String?      @unique
+  password    String?
+  lastLogin   DateTime?
+  roomTenants RoomTenant[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([phone])
+  @@index([username])
+}
+
+model RoomTenant {
+  id          String     @id @default(cuid())
+  roomId      String
+  tenantId    String
+  startDate   DateTime
+  endDate     DateTime?
+  contractUrl String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bills       Bill[]
+  contracts   Contract[]
+  incidents   Incident[]
+  room        Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+model MeterReading {
+  id                 String   @id @default(cuid())
+  roomId             String
+  month              Int
+  year               Int
+  electricityPrev    Float    @default(0)
+  electricityCurrent Float    @default(0)
+  electricityUsage   Float    @default(0)
+  waterPrev          Float    @default(0)
+  waterCurrent       Float    @default(0)
+  waterUsage         Float    @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  bill               Bill?
+  room               Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, month, year])
+  @@index([roomId])
+}
+
+model Bill {
+  id                String        @id @default(cuid())
+  roomTenantId      String
+  meterReadingId    String?       @unique
+  month             Int
+  year              Int
+  baseRent          Float
+  electricityAmount Float         @default(0)
+  electricityUsage  Float         @default(0)
+  waterAmount       Float         @default(0)
+  waterUsage        Float         @default(0)
+  extraCharges      Json?
+  discount          Float         @default(0)
+  total             Float
+  dueDate           DateTime
+  status            BillStatus    @default(DRAFT)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  meterReading      MeterReading? @relation(fields: [meterReadingId], references: [id])
+  roomTenant        RoomTenant    @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
+  invoice           Invoice?
+  payments          Payment[]
+
+  @@unique([roomTenantId, month, year])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Invoice {
+  id        String    @id @default(cuid())
+  billId    String    @unique
+  token     String    @unique @default(cuid())
+  pdfUrl    String?
+  sentVia   String?
+  sentAt    DateTime?
+  viewedAt  DateTime?
+  createdAt DateTime  @default(now())
+  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  billId        String
+  amount        Float
+  method        PaymentMethod
+  transactionId String?
+  note          String?
+  paidAt        DateTime      @default(now())
+  bill          Bill          @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([billId])
+  @@index([transactionId])
+}
+
+model Incident {
+  id           String           @id @default(cuid())
+  propertyId   String
+  roomTenantId String?
+  title        String
+  description  String
+  images       String
+  status       IncidentStatus   @default(OPEN)
+  priority     IncidentPriority @default(MEDIUM)
+  cost         Float?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  property     Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomTenant   RoomTenant?      @relation(fields: [roomTenantId], references: [id])
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+model Asset {
+  id           String      @id @default(cuid())
+  roomId       String
+  name         String
+  code         String?
+  status       AssetStatus @default(GOOD)
+  value        Float?
+  notes        String?
+  images       String
+  purchaseDate DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  room         Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+}
+
+model ContractTemplate {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  content   String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  contracts Contract[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Contract {
+  id                String            @id @default(cuid())
+  roomTenantId      String
+  templateId        String?
+  content           String
+  status            ContractStatus    @default(DRAFT)
+  landlordSignature String?
+  tenantSignature   String?
+  signedAt          DateTime?
+  startDate         DateTime
+  endDate           DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  roomTenant        RoomTenant        @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
+  template          ContractTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([roomTenantId])
+  @@index([status])
 }
 
 enum UserPlan {
@@ -37,209 +296,6 @@ enum PaymentMethod {
   MOMO
 }
 
-model User {
-  id               String     @id @default(cuid())
-  email            String?    @unique
-  phone            String?    @unique
-  password         String
-  name             String
-  avatar           String?
-  plan             UserPlan   @default(FREE)
-  planExpiresAt    DateTime?  // When paid plan expires (null = never/FREE)
-  maxRooms         Int        @default(3)
-  emailVerified    DateTime?
-  phoneVerified    DateTime?
-  resetToken       String?    // For password reset
-  resetTokenExpiry DateTime?  // When reset token expires
-  // Bank account for QR payment
-  bankName         String?    // VietQR bank code (e.g., "VIETCOMBANK")
-  bankAccountNumber String?   // Account number
-  bankAccountName  String?    // Account holder name
-  createdIp        String?    // For trial abuse detection
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  
-  properties    Property[]
-  tenants       Tenant[]
-  contractTemplates ContractTemplate[]
-  
-  @@index([email])
-  @@index([phone])
-  @@index([resetToken])
-}
-
-model Property {
-  id              String   @id @default(cuid())
-  userId          String
-  name            String
-  address         String
-  city            String?
-  notes           String?
-  electricityRate Float    @default(0)
-  waterRate       Float    @default(25000)
-  services        Json?    // e.g., [{ name: "Internet", price: 150000 }]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rooms           Room[]
-  incidents       Incident[]
-  
-  @@index([userId])
-}
-
-model Room {
-  id            String       @id @default(cuid())
-  propertyId    String
-  roomNumber    String
-  floor         Int          @default(1)
-  area          Float?
-  baseRent      Float
-  deposit       Float?
-  status        RoomStatus   @default(VACANT)
-  notes         String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  
-  property      Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  roomTenants   RoomTenant[]
-  meterReadings MeterReading[]
-  assets        Asset[]
-  
-  @@unique([propertyId, roomNumber])
-  @@index([propertyId])
-}
-
-model Tenant {
-  id          String       @id @default(cuid())
-  userId      String
-  name        String
-  phone       String
-  email       String?
-  idNumber    String?
-  idPhoto     String?
-  avatar      String?
-  dateOfBirth DateTime?
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roomTenants RoomTenant[]
-  
-  // Auth fields
-  username    String?      @unique
-  password    String?
-  lastLogin   DateTime?
-
-  @@index([userId])
-  @@index([phone])
-  @@index([username])
-}
-
-model RoomTenant {
-  id          String    @id @default(cuid())
-  roomId      String
-  tenantId    String
-  startDate   DateTime
-  endDate     DateTime?
-  contractUrl String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bills       Bill[]
-  incidents   Incident[]
-  contracts   Contract[]
-  
-  @@index([roomId])
-  @@index([tenantId])
-  @@index([isActive])
-}
-
-model MeterReading {
-  id                 String   @id @default(cuid())
-  roomId             String
-  month              Int
-  year               Int
-  electricityPrev    Float    @default(0)
-  electricityCurrent Float    @default(0)
-  electricityUsage   Float    @default(0)
-  waterPrev          Float    @default(0)
-  waterCurrent       Float    @default(0)
-  waterUsage         Float    @default(0)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  
-  room               Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  bill               Bill?
-  
-  @@unique([roomId, month, year])
-  @@index([roomId])
-}
-
-model Bill {
-  id               String     @id @default(cuid())
-  roomTenantId     String
-  meterReadingId   String?    @unique
-  month            Int
-  year             Int
-  baseRent         Float
-  electricityAmount Float     @default(0)
-  electricityUsage Float      @default(0)
-  waterAmount      Float      @default(0)
-  waterUsage       Float      @default(0)
-  extraCharges     Json?
-  discount         Float      @default(0)
-  total            Float
-  dueDate          DateTime
-  status           BillStatus @default(DRAFT)
-  notes            String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  
-  roomTenant       RoomTenant    @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
-  meterReading     MeterReading? @relation(fields: [meterReadingId], references: [id])
-  invoice          Invoice?
-  payments         Payment[]
-  
-  @@unique([roomTenantId, month, year])
-  @@index([status])
-  @@index([dueDate])
-}
-
-model Invoice {
-  id        String    @id @default(cuid())
-  billId    String    @unique
-  token     String    @unique @default(cuid())
-  pdfUrl    String?
-  sentVia   String?
-  sentAt    DateTime?
-  viewedAt  DateTime?
-  createdAt DateTime  @default(now())
-  
-  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
-  
-  @@index([token])
-}
-
-model Payment {
-  id            String        @id @default(cuid())
-  billId        String
-  amount        Float
-  method        PaymentMethod
-  transactionId String?
-  note          String?
-  paidAt        DateTime      @default(now())
-  
-  bill          Bill          @relation(fields: [billId], references: [id], onDelete: Cascade)
-  
-  @@index([billId])
-  @@index([transactionId])
-}
-
 enum IncidentStatus {
   OPEN
   IN_PROGRESS
@@ -254,64 +310,11 @@ enum IncidentPriority {
   URGENT
 }
 
-model Incident {
-  id           String           @id @default(cuid())
-  propertyId   String
-  roomTenantId String?          // Optional: link to specific tenant who reported
-  title        String
-  description  String
-  images       String           // JSON string of image URLs
-  status       IncidentStatus   @default(OPEN)
-  priority     IncidentPriority @default(MEDIUM)
-  cost         Float?           // Repair cost
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-
-  property   Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  roomTenant RoomTenant? @relation(fields: [roomTenantId], references: [id])
-
-  @@index([propertyId])
-  @@index([status])
-}
-
 enum AssetStatus {
   GOOD
   REPAIR
   BROKEN
   LOST
-}
-
-model Asset {
-  id           String      @id @default(cuid())
-  roomId       String
-  name         String
-  code         String?
-  status       AssetStatus @default(GOOD)
-  value        Float?
-  notes        String?
-  images       String // JSON string
-  purchaseDate DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-
-  room         Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  @@index([roomId])
-}
-
-model ContractTemplate {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  content   String   // Text content with placeholders
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contracts Contract[]
-
-  @@index([userId])
 }
 
 enum ContractStatus {
@@ -320,25 +323,4 @@ enum ContractStatus {
   SIGNED
   EXPIRED
   TERMINATED
-}
-
-model Contract {
-  id                String         @id @default(cuid())
-  roomTenantId      String
-  templateId        String?
-  content           String         // Final content snapshot
-  status            ContractStatus @default(DRAFT)
-  landlordSignature String?        // URL or Base64
-  tenantSignature   String?        // URL or Base64
-  signedAt          DateTime?
-  startDate         DateTime
-  endDate           DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-
-  roomTenant        RoomTenant       @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
-  template          ContractTemplate? @relation(fields: [templateId], references: [id])
-
-  @@index([roomTenantId])
-  @@index([status])
 }

@@ -25,8 +25,8 @@ export default function NewPropertyPage() {
             address: "",
             city: "",
             notes: "",
-            electricityRate: 0,
-            waterRate: 25000,
+            electricityRate: 3500, // Common default
+            waterRate: 15000,     // Common default
         },
     });
 
@@ -130,7 +130,13 @@ export default function NewPropertyPage() {
                                         <FormItem>
                                             <FormLabel>Giá điện (đ/kWh)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="0" {...field} onChange={(e) => field.onChange(e.target.valueAsNumber || 0)} />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    {...field}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                                                />
                                             </FormControl>
                                             <FormDescription>
                                                 Để 0 để dùng giá bậc thang EVN
@@ -147,7 +153,13 @@ export default function NewPropertyPage() {
                                         <FormItem>
                                             <FormLabel>Giá nước (đ/m³)</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="25000" {...field} onChange={(e) => field.onChange(e.target.valueAsNumber || 0)} />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="25000"
+                                                    {...field}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

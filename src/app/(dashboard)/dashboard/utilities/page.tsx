@@ -53,6 +53,7 @@ export default function UtilityPage() {
     const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
     const [month, setMonth] = useState<string>(String(new Date().getMonth() + 1));
     const [year, setYear] = useState<string>(String(new Date().getFullYear()));
+    const [searchTerm, setSearchTerm] = useState("");
 
     const [roomReadings, setRoomReadings] = useState<RoomReadingData[]>([]);
 
@@ -117,6 +118,30 @@ export default function UtilityPage() {
         fetchData();
     }, [selectedPropertyId, month, year, form]);
 
+    const filteredReadings = roomReadings.filter(r =>
+        r.roomNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleKeyDown = (e: React.KeyboardEvent, index: number, field: 'electricity' | 'water') => {
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const nextIndex = index + 1;
+            if (nextIndex < roomReadings.length) { // Use roomReadings.length for total rows
+                const nextInput = document.querySelector(`input[name="readings.${nextIndex}.${field}Current"]`) as HTMLInputElement;
+                nextInput?.focus();
+                nextInput?.select();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prevIndex = index - 1;
+            if (prevIndex >= 0) {
+                const prevInput = document.querySelector(`input[name="readings.${prevIndex}.${field}Current"]`) as HTMLInputElement;
+                prevInput?.focus();
+                prevInput?.select();
+            }
+        }
+    };
+
     async function onSubmit(data: FormData) {
         setIsSaving(true);
         try {
@@ -131,7 +156,7 @@ export default function UtilityPage() {
                 toast.error(result.error);
             } else {
                 toast.success("Đã lưu chỉ số điện nước thành công");
-                // Refresh data to update "Previous" values if we moved to next month? 
+                // Refresh data to update "Previous" values if we moved to next month?
                 // Or just keep current state.
                 // Re-fetching might be good to confirm saved state.
                 const refreshResult = await getUtilityReadings(
@@ -164,7 +189,7 @@ export default function UtilityPage() {
             {/* Filters */}
             <Card>
                 <CardContent className="pt-6">
-                    <div className="grid gap-4 md:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-4 items-end">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Tòa nhà</label>
                             <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
@@ -210,6 +235,18 @@ export default function UtilityPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Tìm phòng</label>
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Số phòng..."
+                                    className="pl-9"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -227,12 +264,12 @@ export default function UtilityPage() {
                         <div className="flex justify-center py-8">
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
-                    ) : roomReadings.length === 0 ? (
+                    ) : filteredReadings.length === 0 ? (
                         <Alert>
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Không có dữ liệu</AlertTitle>
+                            <AlertTitle>Không tìm thấy dữ liệu</AlertTitle>
                             <AlertDescription>
-                                Không tìm thấy phòng nào đang thuê trong tòa nhà này.
+                                {searchTerm ? "Không có phòng nào khớp với từ khóa tìm kiếm." : "Không tìm thấy phòng nào đang thuê trong tòa nhà này."}
                             </AlertDescription>
                         </Alert>
                     ) : (
@@ -252,22 +289,31 @@ export default function UtilityPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {roomReadings.map((room, index) => {
+                                            // Find index in original form data if filtering
+                                            const originalIndex = roomReadings.findIndex(r => r.roomId === room.roomId);
+
+                                            // Simple filtering by hiding rows (preserves form indices)
+                                            if (!room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase())) return null;
+
                                             // Watch values to calculate usage live
-                                            const currentElec = form.watch(`readings.${index}.electricityCurrent`);
-                                            const currentWater = form.watch(`readings.${index}.waterCurrent`);
+                                            const currentElec = form.watch(`readings.${originalIndex}.electricityCurrent`);
+                                            const currentWater = form.watch(`readings.${originalIndex}.waterCurrent`);
 
                                             // Handle cases where watched value might be undefined initially or NaN
                                             const elecUsage = (currentElec ?? 0) - room.electricityOld;
                                             const waterUsage = (currentWater ?? 0) - room.waterOld;
 
+                                            const isElecInvalid = currentElec < room.electricityOld;
+                                            const isWaterInvalid = currentWater < room.waterOld;
+
                                             return (
-                                                <TableRow key={room.roomId}>
+                                                <TableRow key={room.roomId} className={isElecInvalid || isWaterInvalid ? "bg-red-50" : ""}>
                                                     <TableCell className="font-medium">
                                                         {room.roomNumber}
                                                         {/* Hidden field for Room ID */}
                                                         <input
                                                             type="hidden"
-                                                            {...form.register(`readings.${index}.roomId`)}
+                                                            {...form.register(`readings.${originalIndex}.roomId`)}
                                                             value={room.roomId}
                                                         />
                                                     </TableCell>
@@ -279,25 +325,24 @@ export default function UtilityPage() {
                                                     <TableCell className="bg-blue-50/50">
                                                         <FormField
                                                             control={form.control}
-                                                            name={`readings.${index}.electricityCurrent`}
+                                                            name={`readings.${originalIndex}.electricityCurrent`}
                                                             render={({ field }) => (
                                                                 <FormItem>
                                                                     <FormControl>
                                                                         <Input
                                                                             type="number"
-                                                                            min={0}
                                                                             {...field}
                                                                             onChange={e => field.onChange(parseFloat(e.target.value))}
-                                                                            className="text-center h-9"
+                                                                            onKeyDown={(e) => handleKeyDown(e, originalIndex, 'electricity')}
+                                                                            className={`text-center h-9 ${isElecInvalid ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                                                                         />
                                                                     </FormControl>
-                                                                    <FormMessage />
                                                                 </FormItem>
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="text-center font-bold text-blue-600 bg-blue-50/30">
-                                                        {elecUsage > 0 ? elecUsage : 0}
+                                                    <TableCell className={`text-center font-bold bg-blue-50/30 ${isElecInvalid ? "text-red-500" : "text-blue-600"}`}>
+                                                        {elecUsage}
                                                     </TableCell>
 
                                                     {/* Water */}
@@ -307,25 +352,24 @@ export default function UtilityPage() {
                                                     <TableCell className="bg-cyan-50/50">
                                                         <FormField
                                                             control={form.control}
-                                                            name={`readings.${index}.waterCurrent`}
+                                                            name={`readings.${originalIndex}.waterCurrent`}
                                                             render={({ field }) => (
                                                                 <FormItem>
                                                                     <FormControl>
                                                                         <Input
                                                                             type="number"
-                                                                            min={0}
                                                                             {...field}
                                                                             onChange={e => field.onChange(parseFloat(e.target.value))}
-                                                                            className="text-center h-9"
+                                                                            onKeyDown={(e) => handleKeyDown(e, originalIndex, 'water')}
+                                                                            className={`text-center h-9 ${isWaterInvalid ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                                                                         />
                                                                     </FormControl>
-                                                                    <FormMessage />
                                                                 </FormItem>
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="text-center font-bold text-cyan-600 bg-cyan-50/30">
-                                                        {waterUsage > 0 ? waterUsage : 0}
+                                                    <TableCell className={`text-center font-bold bg-cyan-50/30 ${isWaterInvalid ? "text-red-500" : "text-cyan-600"}`}>
+                                                        {waterUsage}
                                                     </TableCell>
                                                 </TableRow>
                                             );

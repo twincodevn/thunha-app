@@ -3,46 +3,25 @@ import QRCode from "qrcode";
 // VietQR Bank BIN codes (Bank Identification Number)
 // Full list: https://www.vietqr.io/portal-service/banks
 export const VIETQR_BANKS = [
-    { code: "VIETCOMBANK", name: "Vietcombank", bin: "970436" },
-    { code: "VIETINBANK", name: "VietinBank", bin: "970415" },
-    { code: "BIDV", name: "BIDV", bin: "970418" },
-    { code: "AGRIBANK", name: "Agribank", bin: "970405" },
-    { code: "TECHCOMBANK", name: "Techcombank", bin: "970407" },
-    { code: "MBBANK", name: "MB Bank", bin: "970422" },
-    { code: "ACB", name: "ACB", bin: "970416" },
-    { code: "VPBANK", name: "VPBank", bin: "970432" },
-    { code: "TPBANK", name: "TPBank", bin: "970423" },
-    { code: "SACOMBANK", name: "Sacombank", bin: "970403" },
-    { code: "HDBANK", name: "HDBank", bin: "970437" },
-    { code: "OCB", name: "OCB", bin: "970448" },
-    { code: "SHB", name: "SHB", bin: "970443" },
-    { code: "MSBANK", name: "Maritime Bank", bin: "970426" },
-    { code: "EXIMBANK", name: "Eximbank", bin: "970431" },
-    { code: "SCB", name: "SCB", bin: "970429" },
-    { code: "VIETBANK", name: "VietBank", bin: "970433" },
-    { code: "NAMABANK", name: "Nam A Bank", bin: "970428" },
-    { code: "BAOVIETBANK", name: "Bao Viet Bank", bin: "970438" },
-    { code: "SEABANK", name: "SeABank", bin: "970440" },
-    { code: "ABBANK", name: "ABBank", bin: "970425" },
-    { code: "PVCOMBANK", name: "PVcomBank", bin: "970412" },
-    { code: "VIETABANK", name: "VietABank", bin: "970427" },
-    { code: "LPBANK", name: "LPBank (LienVietPostBank)", bin: "970449" },
-    { code: "CBB", name: "CBBank", bin: "970444" },
-    { code: "GPB", name: "GPBank", bin: "970408" },
-    { code: "NCB", name: "NCB", bin: "970419" },
-    { code: "KIENLONGBANK", name: "Kienlongbank", bin: "970452" },
-    { code: "VIB", name: "VIB", bin: "970441" },
-    { code: "OJB", name: "OceanBank", bin: "970414" },
-    { code: "BACA", name: "Bac A Bank", bin: "970409" },
-    { code: "DONGABANK", name: "DongA Bank", bin: "970406" },
-    { code: "WOORI", name: "Woori Bank VN", bin: "970457" },
-    { code: "SHBVN", name: "Shinhan Bank VN", bin: "970424" },
-    { code: "CIMB", name: "CIMB VN", bin: "422589" },
-    { code: "PUBLICBANK", name: "Public Bank VN", bin: "970439" },
-    { code: "UBANK", name: "UBank by VPBank", bin: "546034" },
+    { code: "VIETCOMBANK", name: "Vietcombank", bin: "970436", shortName: "VCB" },
+    { code: "VIETINBANK", name: "VietinBank", bin: "970415", shortName: "CTG" },
+    { code: "BIDV", name: "BIDV", bin: "970418", shortName: "BIDV" },
+    { code: "AGRIBANK", name: "Agribank", bin: "970405", shortName: "VBA" },
+    { code: "TECHCOMBANK", name: "Techcombank", bin: "970407", shortName: "TCB" },
+    { code: "MBBANK", name: "MB Bank", bin: "970422", shortName: "MB" },
+    { code: "ACB", name: "ACB", bin: "970416", shortName: "ACB" },
+    { code: "VPBANK", name: "VPBank", bin: "970432", shortName: "VPB" },
+    { code: "TPBANK", name: "TPBank", bin: "970423", shortName: "TPB" },
+    { code: "SACOMBANK", name: "Sacombank", bin: "970403", shortName: "STB" },
+    { code: "HDBANK", name: "HDBank", bin: "970437", shortName: "HDB" },
+    { code: "OCB", name: "OCB", bin: "970448", shortName: "OCB" },
+    { code: "SHB", name: "SHB", bin: "970443", shortName: "SHB" },
+    { code: "MSBANK", name: "Maritime Bank", bin: "970426", shortName: "MSB" },
+    { code: "VIB", name: "VIB", bin: "970441", shortName: "VIB" },
+    // Simplified for the most common ones
 ] as const;
 
-export type VietQRBank = (typeof VIETQR_BANKS)[number];
+export type VietQRBank = { code: string; name: string; bin: string; shortName?: string };
 
 interface VietQRParams {
     bankBin: string;          // Bank BIN code
@@ -127,10 +106,18 @@ export function getVietQRImageURL(params: VietQRParams): string {
 }
 
 /**
- * Get bank by code
+ * Get bank by code, name or bin
  */
-export function getBankByCode(code: string): VietQRBank | undefined {
-    return VIETQR_BANKS.find((bank) => bank.code === code);
+export function getBankByCode(query: string): VietQRBank | undefined {
+    if (!query) return undefined;
+    const search = query.toLowerCase().trim();
+    return VIETQR_BANKS.find(
+        (bank) =>
+            bank.code.toLowerCase() === search ||
+            bank.name.toLowerCase() === search ||
+            bank.bin === search ||
+            bank.shortName?.toLowerCase() === search
+    );
 }
 
 /**

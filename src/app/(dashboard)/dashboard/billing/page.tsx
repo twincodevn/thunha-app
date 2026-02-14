@@ -30,6 +30,7 @@ export default function BillingPage() {
     const [month, setMonth] = useState<string>(String(new Date().getMonth() + 1));
     const [year, setYear] = useState<string>(String(new Date().getFullYear()));
     const [status, setStatus] = useState<string>("ALL");
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         async function fetchBills() {
@@ -45,6 +46,12 @@ export default function BillingPage() {
         }
         fetchBills();
     }, [month, year, status]);
+
+    const filteredBills = bills.filter(bill =>
+        bill.roomTenant.room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bill.roomTenant.tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bill.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -67,8 +74,8 @@ export default function BillingPage() {
 
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-2">
                             <Select value={month} onValueChange={setMonth}>
                                 <SelectTrigger className="w-[120px]">
                                     <SelectValue placeholder="Tháng" />
@@ -89,8 +96,6 @@ export default function BillingPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
-                        <div className="flex items-center gap-2">
                             <Select value={status} onValueChange={setStatus}>
                                 <SelectTrigger className="w-[150px]">
                                     <SelectValue placeholder="Trạng thái" />
@@ -103,6 +108,15 @@ export default function BillingPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="relative w-full lg:w-[300px]">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Tìm phòng, tên khách..."
+                                className="pl-9"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -110,9 +124,9 @@ export default function BillingPage() {
                         <div className="flex justify-center py-8">
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
-                    ) : bills.length === 0 ? (
+                    ) : filteredBills.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
-                            Chưa có hóa đơn nào cho tháng này.
+                            {searchTerm ? "Không có hóa đơn nào phù hợp với tìm kiếm." : "Chưa có hóa đơn nào cho tháng này."}
                         </div>
                     ) : (
                         <div className="rounded-md border">
@@ -129,7 +143,7 @@ export default function BillingPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {bills.map((bill) => (
+                                    {filteredBills.map((bill) => (
                                         <TableRow key={bill.id}>
                                             <TableCell className="font-medium">#{bill.id.slice(-6).toUpperCase()}</TableCell>
                                             <TableCell>
