@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/billing";
 function ListingHeader() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
                         <Home className="h-4 w-4" />
@@ -87,7 +87,7 @@ export default async function ListingDetailPage({
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24 md:pb-12">
             <ListingHeader />
 
-            <main className="container py-8">
+            <main className="container mx-auto py-8 px-4">
                 {/* Breadcrumb */}
                 <div className="mb-6 flex items-center text-sm text-muted-foreground">
                     <Link href="/listings" className="hover:text-primary transition-colors">Tìm phòng</Link>
