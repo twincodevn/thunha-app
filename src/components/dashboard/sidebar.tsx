@@ -33,6 +33,7 @@ const navigation = [
 ];
 
 const bottomNavigation = [
+    { name: "Nhân viên", href: "/dashboard/settings/team", icon: Users },
     { name: "Cài đặt", href: "/dashboard/settings", icon: Settings },
     { name: "Gói dịch vụ", href: "/dashboard/subscription", icon: Zap },
 ];
