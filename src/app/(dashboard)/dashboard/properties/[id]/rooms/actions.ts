@@ -38,7 +38,6 @@ export async function getPriceSuggestion(roomId: string) {
         const { text } = await generateText({
             model: google("gemini-1.5-flash"),
             prompt: prompt,
-            maxTokens: 300,
             temperature: 0.3,
         });
 

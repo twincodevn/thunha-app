@@ -64,7 +64,6 @@ export async function getRevenueForecast() {
         const { text } = await generateText({
             model: google("gemini-1.5-flash"),
             prompt: prompt,
-            maxTokens: 200,
             temperature: 0.2,
         });
 

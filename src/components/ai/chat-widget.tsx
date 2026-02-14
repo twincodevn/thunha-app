@@ -1,6 +1,6 @@
 "use client";
 
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ export function ChatWidget({ context, title = "Hỗ trợ viên ảo" }: ChatWid
     const [isOpen, setIsOpen] = useState(false);
     const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
         body: { context },
-    });
+    } as any) as any;
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -58,7 +58,7 @@ export function ChatWidget({ context, title = "Hỗ trợ viên ảo" }: ChatWid
                                 <p>Xin chào! Tôi có thể giúp gì cho bạn về phòng trọ này?</p>
                             </div>
                         )}
-                        {messages.map((m) => (
+                        {messages.map((m: any) => (
                             <div
                                 key={m.id}
                                 className={cn(
