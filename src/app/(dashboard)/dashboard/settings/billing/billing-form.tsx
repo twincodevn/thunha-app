@@ -47,7 +47,7 @@ const BANKS = [
     { code: "ACB", name: "ACB" },
     { code: "VPB", name: "VPBank" },
     { code: "BIDV", name: "BIDV" },
-    { code: "ICB", name: "VietinBank" },
+    { code: "CTG", name: "VietinBank" },
     { code: "TPB", name: "TPBank" },
     { code: "VIB", name: "VIB" },
     { code: "STB", name: "Sacombank" },

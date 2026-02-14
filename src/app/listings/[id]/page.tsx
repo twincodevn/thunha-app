@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Home, ArrowLeft, Phone, Zap, Ruler, Store, Info, CheckCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/billing";
+import { ChatWidget } from "@/components/ai/chat-widget";
 
 // Header Component (Different from Dashboard Header)
 function ListingHeader() {
@@ -256,6 +257,26 @@ export default async function ListingDetailPage({
                     </Link>
                 </Button>
             </div>
+
+            <ChatWidget
+                title="Tư vấn thuê phòng"
+                context={`
+                    Thông tin phòng trọ:
+                    - Tên: ${room.property.name} - Phòng ${room.roomNumber}
+                    - Địa chỉ: ${room.property.address}, ${room.property.city}
+                    - Giá thuê: ${formatCurrency(room.baseRent)}/tháng
+                    - Diện tích: ${room.area ? room.area + " m2" : "Chưa cập nhật"}
+                    - Tầng: ${room.floor}
+                    - Giá điện: ${room.property.electricityRate ? formatCurrency(room.property.electricityRate) + "/kWh" : "Giá nhà nước"}
+                    - Giá nước: ${room.property.waterRate ? formatCurrency(room.property.waterRate) + "/người" : "Thỏa thuận"}
+                    - Mô tả: ${room.notes || "Không có mô tả"}
+                    - Tiện ích: ${room.assets?.map((a: any) => a.name).join(", ") || "Wifi, Chỗ để xe, Camera"}
+                    - Chủ nhà: ${room.property.user?.name || "Chủ nhà"}
+                    - SĐT Chủ nhà: ${room.property.user?.phone || "Liên hệ trực tiếp"}
+                    
+                    Hãy trả lời các câu hỏi của người thuê dựa trên thông tin trên. Nếu không biết, hãy khuyên họ liên hệ chủ nhà qua SĐT hoặc Zalo.
+                `}
+            />
         </div>
     );
 }

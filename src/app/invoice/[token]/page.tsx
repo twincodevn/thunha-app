@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDate, formatMonthYear, calculateElectricityBreakdown, formatNumber } from "@/lib/billing";
 import { BILL_STATUS_LABELS } from "@/lib/constants";
+import { ChatWidget } from "@/components/ai/chat-widget";
 
 // Helper to get bank BIN from code
 function getBankBin(bankCode: string | null): string {
@@ -365,6 +366,29 @@ export default async function PublicInvoicePage({
                     </div>
                 </div>
             </main>
+
+            <ChatWidget
+                title="Hỗ trợ thanh toán"
+                context={`
+                    Thông tin hóa đơn:
+                    - Mã hóa đơn: ${invoice.token}
+                    - Phòng: ${bill.roomTenant.room.property.name} - ${bill.roomTenant.room.roomNumber}
+                    - Địa chỉ: ${bill.roomTenant.room.property.address}
+                    - Khách thuê: ${bill.roomTenant.tenant.name}
+                    - Kỳ thanh toán: Tháng ${bill.month}/${bill.year}
+                    - Tiền thuê: ${formatCurrency(bill.baseRent)}
+                    - Tiền điện: ${formatCurrency(bill.electricityAmount)} (${bill.electricityUsage} kWh)
+                    - Tiền nước: ${formatCurrency(bill.waterAmount)} (${bill.waterUsage} m3)
+                    - Tổng tiền: ${formatCurrency(bill.total)}
+                    - Đã thanh toán: ${formatCurrency(paidAmount)}
+                    - Còn lại: ${formatCurrency(remainingAmount)}
+                    - Hạn thanh toán: ${formatDate(bill.dueDate)}
+                    - Chủ tài khoản: ${bill.roomTenant.room.property.user.bankAccountName || "N/A"}
+                    - Số tài khoản: ${bill.roomTenant.room.property.user.bankAccountNumber || "N/A"} (${bill.roomTenant.room.property.user.bankName || "N/A"})
+                    
+                    Hãy hỗ trợ khách thuê giải đáp thắc mắc về hóa đơn này. Giải thích rõ ràng các khoản mục nếu được hỏi.
+                `}
+            />
         </div>
     );
 }

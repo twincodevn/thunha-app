@@ -15,6 +15,7 @@ import { ROOM_STATUS_LABELS, BILL_STATUS_LABELS } from "@/lib/constants";
 
 import { FinancialOverview } from "@/components/dashboard/financial-overview";
 import { OccupancyRateCard } from "@/components/dashboard/occupancy-card";
+import { RevenueForecastCard } from "@/components/dashboard/revenue-forecast-card";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";

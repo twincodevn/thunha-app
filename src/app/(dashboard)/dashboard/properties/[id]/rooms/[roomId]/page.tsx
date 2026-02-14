@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/billing";
 import { DeleteRoomButton } from "@/components/rooms/delete-room-button";
 import { AssetManager } from "@/components/assets/asset-manager";
+import { PriceSuggestionAlert } from "@/components/dashboard/price-suggestion-alert";
 
 async function getRoom(propertyId: string, roomId: string, userId: string) {
     return prisma.room.findFirst({
@@ -73,6 +74,13 @@ export default async function RoomDetailPage({
                 </div>
                 <Badge className={statusColors[room.status]}>{statusLabels[room.status]}</Badge>
             </div>
+
+            {room.status === "VACANT" && (
+                <PriceSuggestionAlert
+                    roomId={room.id}
+                    currentPrice={room.baseRent}
+                />
+            )}
 
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>
