@@ -14,7 +14,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, User, FileText, AlertTriangle, PenSquare } from "lucide-react";
+import { MoreHorizontal, User, FileText, AlertTriangle, PenSquare, Receipt } from "lucide-react";
 
 interface Room {
     id: string;

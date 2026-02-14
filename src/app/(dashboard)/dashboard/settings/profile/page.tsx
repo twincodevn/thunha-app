@@ -17,6 +17,8 @@ export default async function ProfileSettingsPage() {
             name: true,
             phone: true,
             avatar: true,
+            email: true,
+            plan: true,
         },
     });
 
@@ -36,7 +38,9 @@ export default async function ProfileSettingsPage() {
             <ProfileForm initialData={{
                 name: user.name || "",
                 phone: user.phone || "",
-                image: user.avatar || "", // Map avatar from DB to image for form
+                image: user.avatar || "",
+                email: user.email || "",
+                plan: user.plan || "FREE",
             }} />
         </div>
     );
