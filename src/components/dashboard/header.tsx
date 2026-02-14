@@ -8,7 +8,7 @@ import { Fragment } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandMenu } from "@/components/dashboard/command-menu";
 import {
-    PlusCircle, FileText, AlertTriangle, UserPlus
+    PlusCircle, FileText, AlertTriangle, UserPlus, Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -101,8 +101,9 @@ export function Header() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                            <Link href="/dashboard/billing/new">
-                                <FileText className="mr-2 h-4 w-4" /> Tạo hóa đơn
+                            <Link href="/dashboard/billing/generate" className="flex items-center cursor-pointer">
+                                <Plus className="mr-2 h-4 w-4" />
+                                <span>Tạo hóa đơn</span>
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>

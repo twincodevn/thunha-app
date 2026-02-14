@@ -266,7 +266,7 @@ export default async function DashboardPage() {
                         </Link>
                     </Button>
                     <Button asChild>
-                        <Link href="/dashboard/billing/new">
+                        <Link href="/dashboard/billing/generate">
                             <Plus className="mr-2 h-4 w-4" />
                             Tạo hóa đơn
                         </Link>

@@ -105,9 +105,9 @@ export function CommandMenu() {
                             <span>Thêm khách thuê</span>
                             <CommandShortcut>⌘T</CommandShortcut>
                         </CommandItem>
-                        <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/billing/new"))}>
+                        <CommandItem onSelect={() => runCommand(() => router.push("/dashboard/billing/generate"))}>
                             <Plus className="mr-2 h-4 w-4" />
-                            <span>Tạo hóa đơn</span>
+                            <span>Tạo hóa đơn mới</span>
                             <CommandShortcut>⌘B</CommandShortcut>
                         </CommandItem>
                     </CommandGroup>

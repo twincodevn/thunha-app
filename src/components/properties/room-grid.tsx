@@ -99,6 +99,12 @@ export function RoomGrid({ propertyId, rooms }: RoomGridProps) {
                                                     <AlertTriangle className="mr-2 h-4 w-4" /> Báo sự cố
                                                 </Link>
                                             </DropdownMenuItem>
+                                            <Button variant="ghost" size="sm" className="w-full justify-start text-indigo-600 dark:text-indigo-400" asChild>
+                                                <Link href={`/dashboard/billing/generate?roomId=${room.id}`}>
+                                                    <Receipt className="mr-2 h-4 w-4" />
+                                                    Lập hóa đơn
+                                                </Link>
+                                            </Button>
                                         </>
                                     )}
                                     {room.status === "VACANT" && (
