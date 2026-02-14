@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { tenantSchema } from "@/lib/validators";
 
 export async function updateTenant(formData: FormData) {
     const session = await auth();
@@ -12,22 +13,29 @@ export async function updateTenant(formData: FormData) {
     }
 
     const id = formData.get("id") as string;
-    const name = formData.get("name") as string;
-    const phone = formData.get("phone") as string;
-    const email = formData.get("email") as string;
-    const idNumber = formData.get("idNumber") as string;
-    const dateOfBirthStr = formData.get("dateOfBirth") as string;
-    const notes = formData.get("notes") as string;
+    const data = {
+        name: formData.get("name"),
+        phone: formData.get("phone"),
+        email: formData.get("email") || undefined,
+        idNumber: formData.get("idNumber") || undefined,
+        dateOfBirth: formData.get("dateOfBirth"),
+        notes: formData.get("notes") || undefined,
+    };
 
-    if (!name || !phone) {
-        return { error: "Vui lòng nhập họ tên và số điện thoại" };
+    const validated = tenantSchema.safeParse(data);
+
+    if (!validated.success) {
+        const error = validated.error.issues[0].message;
+        return { error };
     }
+
+    const { name: validName, phone: validPhone, email: validEmail, idNumber: validId, dateOfBirth: validDob, notes: validNotes } = validated.data;
 
     try {
         // Check for duplicate phone number
         const existingTenant = await prisma.tenant.findFirst({
             where: {
-                phone,
+                phone: validPhone,
                 userId: session.user.id,
                 id: { not: id }, // Exclude current tenant
             },
@@ -39,12 +47,12 @@ export async function updateTenant(formData: FormData) {
         await prisma.tenant.update({
             where: { id, userId: session.user.id },
             data: {
-                name,
-                phone,
-                email: email || null,
-                idNumber: idNumber || null,
-                dateOfBirth: dateOfBirthStr ? new Date(dateOfBirthStr) : null,
-                notes: notes || null,
+                name: validName,
+                phone: validPhone,
+                email: validEmail || null,
+                idNumber: validId || null,
+                dateOfBirth: validDob ? new Date(validDob) : null,
+                notes: validNotes || null,
             },
         });
 

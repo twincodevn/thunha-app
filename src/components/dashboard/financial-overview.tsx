@@ -132,7 +132,7 @@ export function FinancialOverview() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px] w-full min-w-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={data.monthlyData}>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -180,7 +180,7 @@ export function FinancialOverview() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="h-[300px] w-full">
+                        <div className="h-[300px] w-full min-w-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={data.monthlyData}>
                                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

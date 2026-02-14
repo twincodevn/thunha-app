@@ -260,7 +260,7 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
 
                     <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
                         <DialogContent>
-                            <form onSubmit={handleEditAsset}>
+                            <form key={editingAsset?.id || "form"} onSubmit={handleEditAsset}>
                                 <DialogHeader>
                                     <DialogTitle>Chỉnh sửa tài sản</DialogTitle>
                                 </DialogHeader>

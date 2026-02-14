@@ -54,9 +54,19 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Sanitize input: convert empty strings to null/undefined where appropriate
+        const data = validated.data;
+        const cleanData = {
+            ...data,
+            city: data.city || null,
+            notes: data.notes || null,
+            electricityRate: data.electricityRate ?? 0,
+            waterRate: data.waterRate ?? 0,
+        };
+
         const property = await prisma.property.create({
             data: {
-                ...validated.data,
+                ...cleanData,
                 userId: session.user.id,
             },
         });

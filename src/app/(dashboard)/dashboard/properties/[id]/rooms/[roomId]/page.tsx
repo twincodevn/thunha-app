@@ -154,14 +154,14 @@ export default async function RoomDetailPage({
                 <CardHeader>
                     <CardTitle>Thao tác</CardTitle>
                 </CardHeader>
-                <CardContent className="flex gap-3">
-                    <Button variant="outline" asChild>
+                <CardContent className="flex flex-col sm:flex-row gap-3">
+                    <Button variant="outline" className="w-full sm:w-auto" asChild>
                         <Link href={`/dashboard/properties/${id}/rooms/${roomId}/edit`}>
                             <Edit className="mr-2 h-4 w-4" />
                             Chỉnh sửa
                         </Link>
                     </Button>
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" className="w-full sm:w-auto" asChild>
                         <Link href={`/dashboard/billing?roomId=${roomId}`}>
                             <Receipt className="mr-2 h-4 w-4" />
                             Xem hóa đơn
