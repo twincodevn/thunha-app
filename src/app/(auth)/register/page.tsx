@@ -49,7 +49,7 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 p-4">
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
@@ -62,7 +62,7 @@ export default function RegisterPage() {
                     <p className="text-muted-foreground mt-1">Quản lý nhà trọ thông minh</p>
                 </div>
 
-                <Card className="border-0 shadow-xl shadow-gray-200/50">
+                <Card className="border-0 shadow-xl shadow-gray-200/50 dark:shadow-none dark:bg-card">
                     <CardHeader className="space-y-1 pb-4">
                         <CardTitle className="text-2xl font-bold text-center">Tạo tài khoản</CardTitle>
                         <CardDescription className="text-center">
