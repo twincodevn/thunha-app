@@ -22,6 +22,13 @@ export default function HomePage() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
+            <Link href="/listings" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              Tìm phòng
+            </Link>
             <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Tính năng
             </Link>
@@ -35,9 +42,14 @@ export default function HomePage() {
               <Link href="/register">Dùng thử miễn phí</Link>
             </Button>
           </nav>
-          <Button asChild className="md:hidden" size="sm">
-            <Link href="/register">Đăng ký</Link>
-          </Button>
+          <div className="flex md:hidden items-center gap-2">
+            <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+              <Link href="/listings">Tìm phòng</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/register">Đăng ký</Link>
+            </Button>
+          </div>
         </div>
       </header>
 

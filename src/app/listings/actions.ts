@@ -47,6 +47,8 @@ export async function getPublicListings(
                         name: true,
                         address: true,
                         city: true,
+                        electricityRate: true,
+                        waterRate: true,
                         user: {
                             select: {
                                 name: true,
