@@ -12,11 +12,13 @@ export const ELECTRICITY_TIERS = [
 export const DEFAULT_WATER_RATE = 25000;
 
 // Plan limits
-export const PLAN_LIMITS = {
-    FREE: 3,
-    BASIC: 10,
-    PRO: 30,
-    BUSINESS: Infinity,
+import { PLANS, UserPlan } from "./plans";
+
+export const PLAN_LIMITS: Record<UserPlan, number> = {
+    FREE: PLANS.FREE.maxRooms,
+    BASIC: PLANS.BASIC.maxRooms,
+    PRO: PLANS.PRO.maxRooms,
+    BUSINESS: PLANS.BUSINESS.maxRooms,
 } as const;
 
 // Pricing in VND

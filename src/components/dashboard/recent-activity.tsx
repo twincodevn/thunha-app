@@ -41,34 +41,47 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     };
 
     return (
-        <Card className="col-span-3">
+        <Card className="col-span-3 h-full flex flex-col">
             <CardHeader>
                 <CardTitle>Hoạt động gần đây</CardTitle>
                 <CardDescription>Các sự kiện mới nhất trong hệ thống</CardDescription>
             </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-[300px] pr-4">
-                    <div className="space-y-6">
+            <CardContent className="flex-1 overflow-auto">
+                <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-0">
                         {activities.length === 0 ? (
-                            <p className="text-sm text-center text-muted-foreground py-4">Chưa có hoạt động nào</p>
+                            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                                <FileText className="h-8 w-8 mb-2 opacity-20" />
+                                <p className="text-sm">Chưa có hoạt động nào</p>
+                            </div>
                         ) : (
-                            activities.map((activity) => (
-                                <div key={activity.id} className="flex items-start gap-4">
-                                    <div className={`mt-0.5 rounded-full p-2 ${getColor(activity.type)}`}>
+                            activities.map((activity, index) => (
+                                <div key={activity.id} className="relative pl-6 pb-6 last:pb-0">
+                                    {/* Vertical Line */}
+                                    {index !== activities.length - 1 && (
+                                        <div className="absolute left-[11px] top-8 bottom-0 w-px bg-border" />
+                                    )}
+
+                                    {/* Icon */}
+                                    <div className={`absolute left-0 top-1 h-6 w-6 rounded-full flex items-center justify-center border-2 border-background ${getColor(activity.type)}`}>
                                         {getIcon(activity.type)}
                                     </div>
-                                    <div className="space-y-1 flex-1">
-                                        <p className="text-sm font-medium leading-none">{activity.title}</p>
-                                        <p className="text-xs text-muted-foreground">{activity.description}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-xs text-muted-foreground block">
-                                            {formatDistanceToNow(activity.timestamp, { addSuffix: true, locale: vi })}
-                                        </span>
+
+                                    {/* Content */}
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-sm font-medium leading-none">{activity.title}</p>
+                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                {formatDistanceToNow(activity.timestamp, { addSuffix: true, locale: vi })}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground line-clamp-1">{activity.description}</p>
                                         {activity.status && (
-                                            <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0 h-4">
-                                                {activity.status}
-                                            </Badge>
+                                            <div className="mt-1">
+                                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-normal">
+                                                    {activity.status}
+                                                </Badge>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

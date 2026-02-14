@@ -1,88 +1,95 @@
-import { PLAN_FEATURES, PLAN_LIMITS } from "./constants";
-
 export type UserPlan = "FREE" | "BASIC" | "PRO" | "BUSINESS";
-export type PlanFeature = keyof typeof PLAN_FEATURES.FREE;
 
-/**
- * Check if a user's plan allows a specific feature
- */
-export function canAccessFeature(plan: UserPlan, feature: PlanFeature): boolean {
-    const planFeatures = PLAN_FEATURES[plan];
-    return planFeatures[feature] === true;
+export interface PlanConfig {
+    name: string;
+    price: number;
+    description: string;
+    maxRooms: number;
+    features: string[];
+    // Feature flags
+    canExportPdf: boolean;
+    canSendReminders: boolean;
+    canUseVnpay: boolean;
+    hasAdvancedReports: boolean;
+    hasPrioritySupport: boolean;
 }
 
-/**
- * Check if user's plan is still valid (not expired)
- */
-export function isPlanActive(planExpiresAt: Date | null, plan: UserPlan): boolean {
-    // FREE plan never expires
-    if (plan === "FREE") {
-        return true;
+export const PLANS: Record<UserPlan, PlanConfig> = {
+    FREE: {
+        name: "Miễn phí",
+        price: 0,
+        description: "Dành cho chủ trọ mới bắt đầu",
+        maxRooms: 3,
+        features: [
+            "Quản lý tòa nhà & phòng",
+            "Quản lý khách thuê",
+            "Tính tiền điện nước tự động",
+            "Tạo hóa đơn thủ công"
+        ],
+        canExportPdf: false,
+        canSendReminders: false,
+        canUseVnpay: false,
+        hasAdvancedReports: false,
+        hasPrioritySupport: false,
+    },
+    BASIC: {
+        name: "Basic",
+        price: 99000,
+        description: "Cho chủ trọ có 5-10 phòng",
+        maxRooms: 10,
+        features: [
+            "Tất cả tính năng Free",
+            "Nhắc nợ tự động (Email)",
+            "Xuất PDF hóa đơn",
+            "Chia sẻ Zalo/SMS"
+        ],
+        canExportPdf: true,
+        canSendReminders: true,
+        canUseVnpay: false,
+        hasAdvancedReports: false,
+        hasPrioritySupport: false,
+    },
+    PRO: {
+        name: "Pro",
+        price: 199000,
+        description: "Cho chủ trọ chuyên nghiệp",
+        maxRooms: 30,
+        features: [
+            "Tất cả tính năng Basic",
+            "Thu tiền qua VNPay",
+            "Báo cáo nâng cao",
+            "Hỗ trợ ưu tiên"
+        ],
+        canExportPdf: true,
+        canSendReminders: true,
+        canUseVnpay: true,
+        hasAdvancedReports: true,
+        hasPrioritySupport: true,
+    },
+    BUSINESS: {
+        name: "Business",
+        price: 299000,
+        description: "Cho doanh nghiệp & chuỗi nhà trọ",
+        maxRooms: 9999, // Effectively unlimited
+        features: [
+            "Tất cả tính năng Pro",
+            "Nhiều tài khoản quản lý",
+            "API tích hợp",
+            "Hỗ trợ 1-1"
+        ],
+        canExportPdf: true,
+        canSendReminders: true,
+        canUseVnpay: true,
+        hasAdvancedReports: true,
+        hasPrioritySupport: true,
     }
+};
 
-    // If no expiry date set, consider active (edge case)
-    if (!planExpiresAt) {
-        return true;
-    }
-
-    return new Date() < new Date(planExpiresAt);
+export function getPlanConfig(plan: UserPlan): PlanConfig {
+    return PLANS[plan] || PLANS.FREE;
 }
 
-/**
- * Get the effective plan (considering expiry)
- */
-export function getEffectivePlan(plan: UserPlan, planExpiresAt: Date | null): UserPlan {
-    if (isPlanActive(planExpiresAt, plan)) {
-        return plan;
-    }
-    return "FREE";
-}
-
-/**
- * Get room limit for a plan
- */
-export function getPlanRoomLimit(plan: UserPlan): number {
-    return PLAN_LIMITS[plan];
-}
-
-/**
- * Check if user can add more rooms
- */
-export function canAddRoom(plan: UserPlan, currentRoomCount: number): boolean {
-    const limit = getPlanRoomLimit(plan);
-    return currentRoomCount < limit;
-}
-
-/**
- * Get list of features for a plan
- */
-export function getPlanFeatures(plan: UserPlan) {
-    return PLAN_FEATURES[plan];
-}
-
-/**
- * Check if a plan is paid (not FREE)
- */
-export function isPaidPlan(plan: UserPlan): boolean {
-    return plan !== "FREE";
-}
-
-/**
- * Compare plans (returns -1, 0, or 1)
- */
-export function comparePlans(planA: UserPlan, planB: UserPlan): number {
-    const order: Record<UserPlan, number> = {
-        FREE: 0,
-        BASIC: 1,
-        PRO: 2,
-        BUSINESS: 3,
-    };
-    return order[planA] - order[planB];
-}
-
-/**
- * Check if planA is higher or equal to planB
- */
-export function isAtLeast(userPlan: UserPlan, requiredPlan: UserPlan): boolean {
-    return comparePlans(userPlan, requiredPlan) >= 0;
+export function checkRoomLimit(plan: UserPlan, currentRoomCount: number): boolean {
+    const config = getPlanConfig(plan);
+    return currentRoomCount < config.maxRooms;
 }

@@ -16,6 +16,8 @@ import { ROOM_STATUS_LABELS, BILL_STATUS_LABELS } from "@/lib/constants";
 import { FinancialOverview } from "@/components/dashboard/financial-overview";
 import { OccupancyRateCard } from "@/components/dashboard/occupancy-card";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 interface ActivityItem {
     id: string;
@@ -251,19 +253,13 @@ export default async function DashboardPage() {
     const data = await getDashboardData(session.user.id);
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        Xin chào, {session.user.name || "Bạn"}! 👋
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Tổng quan hoạt động cho thuê · Tháng {data.month}/{data.year}
-                    </p>
-                </div>
+        <DashboardShell>
+            <PageHeader
+                title={`Xin chào, ${session.user.name || "Bạn"}! 👋`}
+                description={`Tổng quan hoạt động cho thuê · Tháng ${data.month}/${data.year}`}
+            >
                 <div className="flex gap-2">
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" className="hidden sm:flex" asChild>
                         <Link href="/dashboard/properties/new">
                             <Building2 className="mr-2 h-4 w-4" />
                             Thêm tòa nhà
@@ -276,134 +272,34 @@ export default async function DashboardPage() {
                         </Link>
                     </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             {/* Overdue Alert Banner */}
             {data.overdueBills.length > 0 && (
                 <Card className="border-destructive/50 bg-destructive/5 dark:bg-destructive/10">
-                    <CardContent className="py-4">
-                        <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
-                            <div className="flex-1">
+                    <CardContent className="py-3 px-4 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                            <div>
                                 <h3 className="font-semibold text-destructive">
                                     {data.overdueBills.length} hóa đơn quá hạn cần xử lý
                                 </h3>
-                                <div className="mt-2 space-y-1">
-                                    {data.overdueBills.slice(0, 3).map((bill) => {
-                                        const daysOverdue = Math.floor(
-                                            (Date.now() - new Date(bill.dueDate).getTime()) / (1000 * 60 * 60 * 24)
-                                        );
-                                        return (
-                                            <p key={bill.id} className="text-sm text-muted-foreground">
-                                                <span className="font-medium text-foreground">
-                                                    {bill.roomTenant.tenant.name}
-                                                </span>
-                                                {" · "}
-                                                {bill.roomTenant.room.property.name} - Phòng {bill.roomTenant.room.roomNumber}
-                                                {" · "}
-                                                <span className="text-destructive font-medium">
-                                                    {formatCurrency(bill.total)} · quá hạn {daysOverdue} ngày
-                                                </span>
-                                            </p>
-                                        );
-                                    })}
-                                </div>
-                                <Button variant="destructive" size="sm" className="mt-3" asChild>
-                                    <Link href="/dashboard/billing?status=OVERDUE">
-                                        Xem tất cả hóa đơn quá hạn
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
+                                <p className="text-sm text-muted-foreground hidden sm:block">
+                                    Tổng tiền: <span className="font-medium text-foreground">{formatCurrency(data.overdueBills.reduce((sum, b) => sum + b.total, 0))}</span>
+                                </p>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Expiring Contracts Alert */}
-            {data.expiringContracts && data.expiringContracts.length > 0 && (
-                <Card className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-900/10">
-                    <CardContent className="py-4">
-                        <div className="flex items-start gap-3">
-                            <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                                <h3 className="font-semibold text-yellow-700 dark:text-yellow-500">
-                                    {data.expiringContracts.length} hợp đồng sắp hết hạn (30 ngày tới)
-                                </h3>
-                                <div className="mt-2 space-y-1">
-                                    {data.expiringContracts.slice(0, 3).map((rt) => {
-                                        if (!rt.endDate) return null;
-                                        const daysLeft = Math.ceil(
-                                            (new Date(rt.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                                        );
-                                        return (
-                                            <p key={rt.id} className="text-sm text-muted-foreground">
-                                                <span className="font-medium text-foreground">
-                                                    {rt.tenant.name}
-                                                </span>
-                                                {" · "}
-                                                {rt.room.property.name} - Phòng {rt.room.roomNumber}
-                                                {" · "}
-                                                <span className="text-yellow-600 dark:text-yellow-500 font-medium">
-                                                    còn {daysLeft} ngày ({new Date(rt.endDate).toLocaleDateString("vi-VN")})
-                                                </span>
-                                            </p>
-                                        );
-                                    })}
-                                </div>
-                                <Button variant="outline" size="sm" className="mt-3 border-yellow-200 hover:bg-yellow-100 hover:text-yellow-800 dark:border-yellow-800 dark:hover:bg-yellow-900" asChild>
-                                    <Link href="/dashboard/tenants">
-                                        Xem danh sách khách thuê
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Active Incidents Alert */}
-            {data.activeIncidents && data.activeIncidents.length > 0 && (
-                <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-900/10">
-                    <CardContent className="py-4">
-                        <div className="flex items-start gap-3">
-                            <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-500 mt-0.5 shrink-0" />
-                            <div className="flex-1">
-                                <h3 className="font-semibold text-orange-700 dark:text-orange-500">
-                                    {data.activeIncidents.length} sự cố đang chờ xử lý
-                                </h3>
-                                <div className="mt-2 space-y-1">
-                                    {data.activeIncidents.slice(0, 3).map((incident: any) => (
-                                        <p key={incident.id} className="text-sm text-muted-foreground">
-                                            <span className="font-medium text-foreground">
-                                                {incident.title}
-                                            </span>
-                                            {" · "}
-                                            {incident.property.name}
-                                            {incident.roomTenant && ` - Phòng ${incident.roomTenant.room.roomNumber}`}
-                                            {" · "}
-                                            <span className="text-orange-600 dark:text-orange-500 font-medium lowercase">
-                                                {incident.status === "OPEN" ? "Mới" : "Đang xử lý"}
-                                            </span>
-                                        </p>
-                                    ))}
-                                </div>
-                                <Button variant="outline" size="sm" className="mt-3 border-orange-200 hover:bg-orange-100 hover:text-orange-800 dark:border-orange-800 dark:hover:bg-orange-900" asChild>
-                                    <Link href="/dashboard/incidents">
-                                        Xem tất cả sự cố
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
+                        <Button variant="destructive" size="sm" asChild>
+                            <Link href="/dashboard/billing?status=OVERDUE">
+                                Xử lý ngay <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
                     </CardContent>
                 </Card>
             )}
 
             {/* Dashboard Main Content */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-
                 {/* Left Column (4/7) */}
                 <div className="col-span-4 space-y-6">
                     {/* Key Metrics Grid */}
@@ -411,48 +307,48 @@ export default async function DashboardPage() {
                         <OccupancyRateCard totalRooms={data.totalRooms} occupiedRooms={data.occupiedRooms} />
 
                         <div className="grid gap-4">
-                            <Card className="border-0 shadow-lg overflow-hidden relative">
-                                <div className="absolute top-0 right-0 p-3 opacity-10">
-                                    <TrendingUp className="h-16 w-16" />
+                            <Card className="border-0 shadow-sm overflow-hidden relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40">
+                                <div className="absolute top-0 right-0 p-3 opacity-5">
+                                    <TrendingUp className="h-24 w-24" />
                                 </div>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                                    <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
                                         Doanh thu dự kiến
                                     </CardTitle>
                                     <DollarSign className="h-4 w-4 text-blue-600" />
                                 </CardHeader>
-                                <CardContent className="pt-4">
-                                    <div className="text-3xl font-extrabold tracking-tight text-blue-900 dark:text-blue-100">
+                                <CardContent>
+                                    <div className="text-2xl font-bold tracking-tight text-blue-900 dark:text-blue-100">
                                         {formatCurrency(data.expectedIncome)}
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1 font-medium">
+                                    <p className="text-xs text-blue-600/80 dark:text-blue-300/80 mt-1 font-medium">
                                         Tiền thuê căn bản tháng này
                                     </p>
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-0 shadow-lg overflow-hidden relative">
-                                <div className="absolute top-0 right-0 p-3 opacity-10">
-                                    <CheckCircle2 className="h-16 w-16" />
+                            <Card className="border-0 shadow-sm overflow-hidden relative bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40">
+                                <div className="absolute top-0 right-0 p-3 opacity-5">
+                                    <CheckCircle2 className="h-24 w-24" />
                                 </div>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
-                                    <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                                         Thực thu tháng {data.month}
                                     </CardTitle>
                                     <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                 </CardHeader>
-                                <CardContent className="pt-4">
-                                    <div className="text-3xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-300">
+                                <CardContent>
+                                    <div className="text-2xl font-bold tracking-tight text-emerald-900 dark:text-emerald-100">
                                         {formatCurrency(data.collected)}
                                     </div>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="h-1 w-full bg-emerald-100 dark:bg-emerald-900 rounded-full overflow-hidden">
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <div className="h-1.5 w-full bg-emerald-200/50 dark:bg-emerald-900/50 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-emerald-500 transition-all duration-500"
                                                 style={{ width: `${Math.min(100, (data.collected / (data.expectedIncome || 1)) * 100)}%` }}
                                             />
                                         </div>
-                                        <span className="text-[10px] font-bold text-emerald-600">
+                                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 min-w-[30px]">
                                             {((data.collected / (data.expectedIncome || 1)) * 100).toFixed(0)}%
                                         </span>
                                     </div>
@@ -463,30 +359,6 @@ export default async function DashboardPage() {
 
                     {/* Financial Overview Chart */}
                     <FinancialOverview />
-
-                    {/* Quick Actions Grid (If properties exist) */}
-                    {data.properties > 0 && (
-                        <div className="grid gap-3 sm:grid-cols-3">
-                            <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
-                                <Link href="/dashboard/billing/new">
-                                    <Receipt className="h-6 w-6 text-blue-500" />
-                                    <span>Tạo hóa đơn</span>
-                                </Link>
-                            </Button>
-                            <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
-                                <Link href="/dashboard/properties">
-                                    <Zap className="h-6 w-6 text-yellow-500" />
-                                    <span>Ghi điện nước</span>
-                                </Link>
-                            </Button>
-                            <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
-                                <Link href="/dashboard/incidents">
-                                    <AlertTriangle className="h-6 w-6 text-orange-500" />
-                                    <span>Báo cáo sự cố</span>
-                                </Link>
-                            </Button>
-                        </div>
-                    )}
                 </div>
 
                 {/* Right Column (3/7) */}
@@ -494,57 +366,35 @@ export default async function DashboardPage() {
                     {/* Recent Activity Feed */}
                     <RecentActivity activities={data.recentActivities} />
 
-                    {/* Room Status Summary */}
-                    <Card className="border-0 shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-base">Tình trạng phòng</CardTitle>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href="/dashboard/properties">
-                                    Chi tiết <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                                        <span className="text-sm font-medium">Đang thuê</span>
-                                    </div>
-                                    <p className="text-2xl font-bold">{data.occupiedRooms}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-muted"></div>
-                                        <span className="text-sm font-medium">Còn trống</span>
-                                    </div>
-                                    <p className="text-2xl font-bold">{data.vacantRooms}</p>
-                                </div>
-                            </div>
-
-                            <Separator className="my-4" />
-
-                            <div className="space-y-3">
-                                {data.rooms.slice(0, 5).map((room: any) => (
-                                    <div key={room.id} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`h-2 w-2 rounded-full ${room.status === "OCCUPIED" ? "bg-green-500" :
-                                                room.status === "MAINTENANCE" ? "bg-orange-500" : "bg-muted"
-                                                }`} />
-                                            <span className="text-sm font-medium">
-                                                {room.property.name} - P.{room.roomNumber}
-                                            </span>
+                    {/* Quick Stats - Expiring Contracts */}
+                    {data.expiringContracts.length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-orange-500" />
+                                    Hợp đồng sắp hết hạn
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid gap-2">
+                                {data.expiringContracts.slice(0, 3).map((rt) => (
+                                    <div key={rt.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
+                                        <div className="grid gap-0.5">
+                                            <span className="font-medium">{rt.tenant.name}</span>
+                                            <span className="text-xs text-muted-foreground">{rt.room.property.name} - P.{rt.room.roomNumber}</span>
                                         </div>
-                                        <Badge variant="outline" className="text-[10px]">
-                                            {ROOM_STATUS_LABELS[room.status as keyof typeof ROOM_STATUS_LABELS]}
+                                        <Badge variant="outline" className="text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-900 dark:text-orange-400">
+                                            {formatDate(rt.endDate!)}
                                         </Badge>
                                     </div>
                                 ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs" asChild>
+                                    <Link href="/dashboard/tenants">Xem tất cả</Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
-        </div>
+        </DashboardShell>
     );
 }

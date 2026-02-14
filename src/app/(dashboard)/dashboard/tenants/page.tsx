@@ -1,13 +1,16 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Users, Phone, Mail, Home } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Users, Phone, Mail, Home, AlertCircle, Clock, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TenantFilters } from "@/components/tenants/tenant-filters";
 import { formatCurrency } from "@/lib/billing";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 async function getTenants(userId: string, propertyId?: string) {
     const where: any = { userId };
@@ -73,14 +76,11 @@ export default async function TenantsPage({
     ]);
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Khách thuê</h1>
-                    <p className="text-muted-foreground">
-                        Quản lý thông tin khách thuê của bạn
-                    </p>
-                </div>
+        <DashboardShell>
+            <PageHeader
+                title="Khách thuê"
+                description="Quản lý thông tin khách thuê của bạn"
+            >
                 <div className="flex gap-2">
                     <TenantFilters properties={properties} />
                     <Button asChild>
@@ -90,7 +90,7 @@ export default async function TenantsPage({
                         </Link>
                     </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             {tenants.length === 0 ? (
                 <EmptyState
@@ -101,9 +101,18 @@ export default async function TenantsPage({
                     actionHref={propertyId ? undefined : "/dashboard/tenants/new"}
                 />
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {tenants.map((tenant) => {
                         const currentRoom = tenant.roomTenants[0]?.room;
+                        const contract = tenant.roomTenants[0];
+
+                        // Contract status logic
+                        let contractStatus = "ACTIVE";
+                        if (contract?.endDate) {
+                            const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                            if (daysLeft < 0) contractStatus = "EXPIRED";
+                            else if (daysLeft <= 30) contractStatus = "EXPIRING_SOON";
+                        }
 
                         // Calculate total debt across all active room rentals
                         const totalDebt = tenant.roomTenants.reduce((sum, rt) => {
@@ -116,50 +125,104 @@ export default async function TenantsPage({
 
                         return (
                             <Link key={tenant.id} href={`/dashboard/tenants/${tenant.id}`}>
-                                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                                    <CardHeader className="pb-3">
+                                <Card className="flex flex-col h-full hover:shadow-md transition-shadow group relative overflow-hidden">
+                                    {/* Status Bar */}
+                                    {totalDebt > 0 && (
+                                        <div className="absolute top-0 left-0 right-0 h-1 bg-destructive" />
+                                    )}
+
+                                    <CardHeader className="pb-4">
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold shrink-0">
-                                                    {tenant.name.charAt(0).toUpperCase()}
-                                                </div>
+                                                <Avatar className="h-12 w-12 border-2 border-background">
+                                                    <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold dark:bg-blue-900/40 dark:text-blue-300">
+                                                        {tenant.name.charAt(0).toUpperCase()}
+                                                    </AvatarFallback>
+                                                </Avatar>
                                                 <div>
-                                                    <CardTitle className="text-lg">{tenant.name}</CardTitle>
-                                                    {currentRoom ? (
-                                                        <CardDescription className="flex items-center gap-1 mt-1">
-                                                            <Home className="h-3 w-3" />
-                                                            {currentRoom.property.name} - P.{currentRoom.roomNumber}
-                                                        </CardDescription>
-                                                    ) : (
-                                                        <Badge variant="secondary" className="mt-1">Chưa thuê phòng</Badge>
-                                                    )}
+                                                    <CardTitle className="text-base font-semibold group-hover:text-blue-600 transition-colors">
+                                                        {tenant.name}
+                                                    </CardTitle>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        {contractStatus === "EXPIRING_SOON" && (
+                                                            <Badge variant="outline" className="text-xs border-orange-200 text-orange-600 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 dark:text-orange-400 px-1.5 py-0">
+                                                                Sắp hết hạn
+                                                            </Badge>
+                                                        )}
+                                                        {contractStatus === "EXPIRED" && (
+                                                            <Badge variant="outline" className="text-xs border-red-200 text-red-600 bg-red-50 px-1.5 py-0">
+                                                                Hết hạn
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            {totalDebt > 0 && (
+                                            {totalDebt > 0 ? (
                                                 <Badge variant="destructive" className="ml-2 whitespace-nowrap">
                                                     Nợ: {formatCurrency(totalDebt)}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400">
+                                                    Đã thanh toán
                                                 </Badge>
                                             )}
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="pt-0 space-y-2">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Phone className="h-4 w-4" />
-                                            {tenant.phone}
+                                    <CardContent className="flex-1 pb-4 space-y-4">
+                                        {/* Contact Info */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-md">
+                                                <Phone className="h-4 w-4 shrink-0" />
+                                                {tenant.phone}
+                                            </div>
+                                            {tenant.email && (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground px-2">
+                                                    <Mail className="h-4 w-4 shrink-0" />
+                                                    <span className="truncate">{tenant.email}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        {tenant.email && (
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Mail className="h-4 w-4" />
-                                                {tenant.email}
+
+                                        {/* Room Info */}
+                                        {currentRoom ? (
+                                            <div className="pt-3 border-t">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Home className="h-4 w-4 text-blue-500" />
+                                                    <span className="text-sm font-medium">Thông tin phòng</span>
+                                                </div>
+                                                <div className="text-sm grid grid-cols-2 gap-2">
+                                                    <div className="bg-muted/30 p-2 rounded">
+                                                        <span className="text-xs text-muted-foreground block">Tòa nhà</span>
+                                                        <span className="font-medium truncate block">{currentRoom.property.name}</span>
+                                                    </div>
+                                                    <div className="bg-muted/30 p-2 rounded">
+                                                        <span className="text-xs text-muted-foreground block">Phòng</span>
+                                                        <span className="font-medium block">{currentRoom.roomNumber}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="pt-4 border-t text-center">
+                                                <Badge variant="secondary">Chưa thuê phòng</Badge>
                                             </div>
                                         )}
                                     </CardContent>
+                                    <CardFooter className="bg-muted/10 p-4 border-t">
+                                        <div className="w-full flex justify-between items-center text-xs text-muted-foreground">
+                                            <span>
+                                                Đã tham gia: {new Date(tenant.createdAt).toLocaleDateString('vi-VN')}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-blue-600 font-medium group-hover:underline">
+                                                Chi tiết <ArrowRight className="h-3 w-3" />
+                                            </span>
+                                        </div>
+                                    </CardFooter>
                                 </Card>
                             </Link>
                         );
                     })}
                 </div>
             )}
-        </div>
+        </DashboardShell>
     );
 }
