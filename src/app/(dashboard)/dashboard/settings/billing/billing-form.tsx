@@ -27,6 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { updateBankInfo } from "../actions";
 
@@ -93,66 +94,78 @@ export function BillingForm({ initialData }: BillingFormProps) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
-                    control={form.control}
-                    name="bankName"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Ngân hàng</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn ngân hàng" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {BANKS.map((bank) => (
-                                        <SelectItem key={bank.code} value={bank.code}>
-                                            {bank.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormDescription>
-                                Ngân hàng thụ hưởng.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="bankAccountNumber"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Số tài khoản</FormLabel>
-                            <FormControl>
-                                <Input placeholder="0123456789" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="bankAccountName"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Tên chủ tài khoản</FormLabel>
-                            <FormControl>
-                                <Input placeholder="NGUYEN VAN A" className="uppercase" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                                Nhập không dấu, in hoa.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Lưu thay đổi
-                </Button>
+                <Card className="overflow-hidden">
+                    <CardHeader>
+                        <CardTitle>Tài khoản nhận tiền</CardTitle>
+                        <CardDescription>
+                            Thông tin này sẽ được sử dụng để tạo mã QR thanh toán cho khách thuê.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="bankName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Ngân hàng</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn ngân hàng" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {BANKS.map((bank) => (
+                                                <SelectItem key={bank.code} value={bank.code}>
+                                                    {bank.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormDescription>
+                                        Ngân hàng thụ hưởng.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="bankAccountNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Số tài khoản</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="0123456789" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="bankAccountName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tên chủ tài khoản</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="NGUYEN VAN A" className="uppercase" {...field} />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Nhập không dấu, in hoa.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                    <Button type="submit" size="lg" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Lưu thay đổi
+                    </Button>
+                </div>
             </form>
         </Form>
     );

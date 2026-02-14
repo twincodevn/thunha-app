@@ -101,7 +101,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
-                    <Card className="md:col-span-2">
+                    <Card className="md:col-span-2 overflow-hidden">
                         <CardHeader>
                             <CardTitle>Ảnh đại diện</CardTitle>
                             <CardDescription>Nhấn vào ảnh để thay đổi avatar của bạn.</CardDescription>
@@ -122,7 +122,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                                                     {initialData.name?.charAt(0).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                                                 <Camera className="h-8 w-8 text-white" />
                                             </div>
                                         </div>
@@ -149,7 +149,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="overflow-hidden">
                         <CardHeader>
                             <CardTitle>Thông tin cá nhân</CardTitle>
                             <CardDescription>Cập nhật tên hiển thị và số điện thoại liên hệ.</CardDescription>
@@ -188,7 +188,7 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="overflow-hidden">
                         <CardHeader>
                             <CardTitle>Thông tin tài khoản</CardTitle>
                             <CardDescription>Thông tin đăng nhập và gói dịch vụ (Không thể chỉnh sửa).</CardDescription>
