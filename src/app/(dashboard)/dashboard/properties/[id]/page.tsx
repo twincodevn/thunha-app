@@ -49,35 +49,37 @@ export default async function PropertyDetailPage({
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" asChild>
+                    <Button variant="ghost" size="icon" asChild className="shrink-0">
                         <Link href="/dashboard/properties">
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
                     </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{property.name}</h1>
-                        <p className="text-muted-foreground flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {property.address}
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">{property.name}</h1>
+                        <p className="text-muted-foreground flex items-center gap-1 text-sm truncate">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{property.address}</span>
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" asChild>
+                <div className="flex flex-wrap gap-2 sm:self-auto self-end">
+                    <Button variant="secondary" size="sm" asChild className="flex-1 sm:flex-none">
                         <Link href={`/dashboard/properties/${id}/readings`}>
                             <Zap className="mr-2 h-4 w-4" />
-                            Ghi điện nước
+                            <span className="hidden sm:inline">Ghi điện nước</span>
+                            <span className="sm:hidden">Điện nước</span>
                         </Link>
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
                         <Link href={`/dashboard/properties/${id}/edit`}>
                             <Settings className="mr-2 h-4 w-4" />
-                            Cài đặt
+                            <span className="hidden sm:inline">Cài đặt</span>
+                            <span className="sm:hidden">Sửa</span>
                         </Link>
                     </Button>
-                    <Button size="sm" asChild>
+                    <Button size="sm" asChild className="flex-1 sm:flex-none">
                         <Link href={`/dashboard/properties/${id}/rooms/new`}>
                             <Plus className="mr-2 h-4 w-4" />
                             Thêm phòng
@@ -87,44 +89,44 @@ export default async function PropertyDetailPage({
             </div>
 
             {/* Stats */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Tổng phòng</CardTitle>
+                    <CardHeader className="p-3 sm:p-6 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Tổng phòng</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{property.rooms.length}</div>
+                    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                        <div className="text-xl sm:text-2xl font-bold">{property.rooms.length}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Đang thuê</CardTitle>
+                    <CardHeader className="p-3 sm:p-6 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Đang thuê</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{occupiedRooms}</div>
+                    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                        <div className="text-xl sm:text-2xl font-bold text-green-600">{occupiedRooms}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Còn trống</CardTitle>
+                    <CardHeader className="p-3 sm:p-6 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Còn trống</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">{vacantRooms}</div>
+                    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                        <div className="text-xl sm:text-2xl font-bold text-orange-600">{vacantRooms}</div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Giá điện/nước</CardTitle>
+                    <CardHeader className="p-3 sm:p-6 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Giá điện/nước</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-sm">
-                            <span className="flex items-center gap-1">
-                                <Zap className="h-3 w-3" />
-                                {property.electricityRate > 0 ? `${property.electricityRate.toLocaleString()}đ/kWh` : "Bậc thang EVN"}
+                    <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+                        <div className="text-xs sm:text-sm space-y-1">
+                            <span className="flex items-center gap-1 truncate">
+                                <Zap className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{property.electricityRate > 0 ? `${property.electricityRate.toLocaleString()}đ` : "Bậc thang"}</span>
                             </span>
-                            <span className="flex items-center gap-1">
-                                <Droplets className="h-3 w-3" />
-                                {property.waterRate.toLocaleString()}đ/m³
+                            <span className="flex items-center gap-1 truncate">
+                                <Droplets className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{property.waterRate.toLocaleString()}đ</span>
                             </span>
                         </div>
                     </CardContent>

@@ -27,17 +27,22 @@ export async function createAsset(formData: FormData) {
         const files = formData.getAll("images") as File[];
 
         if (files.length > 0) {
-            const uploadDir = join(process.cwd(), "public/uploads/assets");
-            await mkdir(uploadDir, { recursive: true });
+            try {
+                const uploadDir = join(process.cwd(), "public/uploads/assets");
+                await mkdir(uploadDir, { recursive: true });
 
-            for (const file of files) {
-                if (file.size > 0) {
-                    const buffer = Buffer.from(await file.arrayBuffer());
-                    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-                    const filepath = join(uploadDir, filename);
-                    await writeFile(filepath, buffer);
-                    images.push(`/uploads/assets/${filename}`);
+                for (const file of files) {
+                    if (file.size > 0) {
+                        const buffer = Buffer.from(await file.arrayBuffer());
+                        const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+                        const filepath = join(uploadDir, filename);
+                        await writeFile(filepath, buffer);
+                        images.push(`/uploads/assets/${filename}`);
+                    }
                 }
+            } catch (uploadError) {
+                console.error("Image upload failed (likely read-only fs):", uploadError);
+                // Continue without images
             }
         }
 

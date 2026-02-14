@@ -24,6 +24,18 @@ export async function updateTenant(formData: FormData) {
     }
 
     try {
+        // Check for duplicate phone number
+        const existingTenant = await prisma.tenant.findFirst({
+            where: {
+                phone,
+                userId: session.user.id,
+                id: { not: id }, // Exclude current tenant
+            },
+        });
+
+        if (existingTenant) {
+            return { error: "Số điện thoại này đã được sử dụng bởi khách thuê khác" };
+        }
         await prisma.tenant.update({
             where: { id, userId: session.user.id },
             data: {

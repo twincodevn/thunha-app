@@ -63,7 +63,7 @@ export function RoomGrid({ propertyId, rooms }: RoomGridProps) {
                                         Phòng {room.roomNumber}
                                     </Link>
                                 </CardTitle>
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-xs text-muted-foreground mt-1 truncate">
                                     {room.area ? `${room.area}m²` : "N/A"} · Tầng {room.floor || "Trệt"}
                                 </p>
                             </div>

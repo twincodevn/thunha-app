@@ -61,7 +61,34 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
     const [assets, setAssets] = useState<Asset[]>(initialAssets);
     const [isAdding, setIsAdding] = useState(false);
     const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
+    const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    const handleEditAsset = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const formData = new FormData(e.currentTarget);
+
+        if (!editingAsset) return;
+
+        const result = await updateAsset(editingAsset.id, {
+            name: formData.get("name"),
+            code: formData.get("code"),
+            value: parseFloat(formData.get("value") as string) || 0,
+            status: formData.get("status"),
+            notes: formData.get("notes"),
+        });
+
+        setIsLoading(false);
+
+        if (result.success) {
+            toast.success("Đã cập nhật tài sản");
+            setEditingAsset(null);
+            window.location.reload();
+        } else {
+            toast.error(result.error);
+        }
+    };
 
     const handleAddAsset = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -230,6 +257,55 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
                             </form>
                         </DialogContent>
                     </Dialog>
+
+                    <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
+                        <DialogContent>
+                            <form onSubmit={handleEditAsset}>
+                                <DialogHeader>
+                                    <DialogTitle>Chỉnh sửa tài sản</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-name">Tên tài sản</Label>
+                                        <Input id="edit-name" name="name" defaultValue={editingAsset?.name} required />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-code">Mã/Seri</Label>
+                                            <Input id="edit-code" name="code" defaultValue={editingAsset?.code || ""} />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="edit-value">Giá trị</Label>
+                                            <Input id="edit-value" name="value" type="number" defaultValue={editingAsset?.value || 0} />
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-status">Trạng thái</Label>
+                                        <Select name="status" defaultValue={editingAsset?.status}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="GOOD">Tốt</SelectItem>
+                                                <SelectItem value="REPAIR">Cần sửa chữa</SelectItem>
+                                                <SelectItem value="BROKEN">Hỏng</SelectItem>
+                                                <SelectItem value="LOST">Mất</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-notes">Ghi chú</Label>
+                                        <Textarea id="edit-notes" name="notes" defaultValue={editingAsset?.notes || ""} />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button type="submit" disabled={isLoading}>
+                                        {isLoading ? "Đang lưu..." : "Lưu thay đổi"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </CardHeader>
             <CardContent>
@@ -313,6 +389,6 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </Card >
     );
 }

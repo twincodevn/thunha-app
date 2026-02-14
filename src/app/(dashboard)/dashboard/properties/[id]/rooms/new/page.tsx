@@ -134,7 +134,15 @@ export default function NewRoomPage() {
                                         <FormItem>
                                             <FormLabel>Giá thuê/tháng (VNĐ) *</FormLabel>
                                             <FormControl>
-                                                <Input type="number" min={0} step={100000} placeholder="VD: 3000000" {...field} onChange={(e) => field.onChange(e.target.valueAsNumber || 0)} />
+                                                <Input
+                                                    type="number"
+                                                    inputMode="numeric"
+                                                    min={0}
+                                                    step={100000}
+                                                    placeholder="VD: 3000000"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -149,7 +157,15 @@ export default function NewRoomPage() {
                                     <FormItem>
                                         <FormLabel>Tiền cọc (VNĐ)</FormLabel>
                                         <FormControl>
-                                            <Input type="number" min={0} step={100000} placeholder="VD: 3000000" {...field} onChange={(e) => field.onChange(e.target.value ? e.target.valueAsNumber : undefined)} />
+                                            <Input
+                                                type="number"
+                                                inputMode="numeric"
+                                                min={0}
+                                                step={100000}
+                                                placeholder="VD: 3000000"
+                                                {...field}
+                                                onChange={(e) => field.onChange(e.target.value ? e.target.valueAsNumber : undefined)}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

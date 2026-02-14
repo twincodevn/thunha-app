@@ -79,18 +79,22 @@ export const roomSchema = z.object({
 // =============================================
 // TENANT SCHEMAS
 // =============================================
-// Vietnam phone regex: supports 0xxxxxxxxx, +84xxxxxxxxx, 84xxxxxxxxx
-const vietnamPhoneRegex = /^(\+84|84|0)(3|5|7|8|9)[0-9]{8}$/;
+// Vietnam phone regex: supports 03x, 05x, 07x, 08x, 09x (10 digits starting with 0)
+const vietnamPhoneRegex = /^(0)(3|5|7|8|9)[0-9]{8}$/;
 
 export const tenantSchema = z.object({
     name: z.string().min(1, "Vui lòng nhập tên khách thuê").max(MAX_NAME, "Tên quá dài"),
     phone: z.string()
-        .min(10, "Số điện thoại không hợp lệ")
-        .max(MAX_PHONE)
-        .regex(vietnamPhoneRegex, "Số điện thoại phải là số Việt Nam hợp lệ (VD: 0912345678)"),
-    email: z.string().email().max(MAX_EMAIL).optional().or(z.literal("")),
-    idNumber: z.string().max(MAX_ID_NUMBER).optional(),
-    dateOfBirth: z.string().optional(),
+        .regex(vietnamPhoneRegex, "Số điện thoại không hợp lệ (VD: 0912345678)"),
+    email: z.string().email("Email không hợp lệ").max(MAX_EMAIL).optional().or(z.literal("")),
+    idNumber: z.string()
+        .regex(/^[0-9]{9}$|^[0-9]{12}$/, "CCCD/CMND phải là 9 hoặc 12 chữ số")
+        .optional()
+        .or(z.literal("")),
+    dateOfBirth: z.string().optional().refine((date) => {
+        if (!date) return true;
+        return new Date(date) < new Date();
+    }, "Ngày sinh không hợp lệ"),
     notes: z.string().max(MAX_NOTES, "Ghi chú quá dài").optional(),
 });
 
