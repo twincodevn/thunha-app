@@ -22,12 +22,29 @@ export const metadata: Metadata = {
   keywords: ["quản lý nhà trọ", "phần mềm cho thuê phòng", "tính tiền điện nước", "thu tiền phòng trọ"],
   authors: [{ name: "ThuNhà" }],
   creator: "ThuNhà",
+  manifest: "/manifest.json",
+  themeColor: "#0d9488",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ThuNhà",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "ThuNhà",
     title: "ThuNhà - Quản lý nhà trọ thông minh",
     description: "Nền tảng quản lý nhà trọ thông minh cho chủ nhà Việt Nam",
+  },
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 
@@ -38,6 +55,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
