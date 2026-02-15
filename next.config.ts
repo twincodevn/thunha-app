@@ -1,4 +1,4 @@
-// @ts-check
+import type { NextConfig } from "next";
 import withPWAInit from "next-pwa";
 
 const withPWA = withPWAInit({
@@ -43,9 +43,27 @@ const withPWA = withPWAInit({
     ],
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-    turbopack: {},
+const nextConfig: NextConfig = {
+    images: {
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "picsum.photos",
+            },
+            {
+                protocol: "https",
+                hostname: "img.vietqr.io",
+            },
+            {
+                protocol: "https",
+                hostname: "lh3.googleusercontent.com", // Google Auth
+            },
+            {
+                protocol: "https",
+                hostname: "avatars.githubusercontent.com", // GitHub Auth
+            },
+        ],
+    },
     experimental: {
         serverActions: {
             bodySizeLimit: "5mb",

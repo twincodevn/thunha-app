@@ -3,116 +3,92 @@
 import { prisma } from "@/lib/prisma";
 import { RoomStatus } from "@prisma/client";
 
-export async function getPublicListings(
-    search?: string,
-    minPrice?: number,
-    maxPrice?: number,
-    city?: string
-) {
+export async function getListings(params?: {
+    city?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    page?: number;
+    amenities?: string[];
+}) {
+    const page = params?.page || 1;
+    const perPage = 20; // Increased for split view
+
     const where: any = {
         status: RoomStatus.VACANT,
-        property: {
-            // Ensure we only show properties from active users if needed, 
-            // but for now, just all vacant rooms
-        }
+        // Future: Add isPublic: true check
     };
 
-    if (search) {
-        where.OR = [
-            { roomNumber: { contains: search, mode: "insensitive" } },
-            { property: { name: { contains: search, mode: "insensitive" } } },
-            { property: { address: { contains: search, mode: "insensitive" } } },
-        ];
-    }
-
-    if (minPrice !== undefined || maxPrice !== undefined) {
-        where.baseRent = {};
-        if (minPrice !== undefined) where.baseRent.gte = minPrice;
-        if (maxPrice !== undefined) where.baseRent.lte = maxPrice;
-    }
-
-    if (city && city !== "ALL") {
+    if (params?.city) {
         where.property = {
             ...where.property,
-            city: { contains: city, mode: "insensitive" }
+            or: [
+                { address: { contains: params.city, mode: "insensitive" } },
+                { city: { contains: params.city, mode: "insensitive" } },
+                { name: { contains: params.city, mode: "insensitive" } },
+            ],
         };
     }
+    if (params?.minPrice) {
+        where.baseRent = { ...where.baseRent, gte: params.minPrice };
+    }
+    if (params?.maxPrice) {
+        where.baseRent = { ...where.baseRent, lte: params.maxPrice };
+    }
 
-    try {
-        const rooms = await prisma.room.findMany({
+    const [rooms, total] = await Promise.all([
+        prisma.room.findMany({
             where,
             include: {
                 property: {
                     select: {
+                        id: true,
                         name: true,
                         address: true,
                         city: true,
-                        electricityRate: true,
-                        waterRate: true,
-                        user: {
-                            select: {
-                                name: true,
-                                phone: true,
-                                avatar: true,
-                            }
-                        }
+                        user: { select: { name: true, phone: true, avatar: true } },
                     },
                 },
-                // We might want to include images if we had a dedicated RoomImage model,
-                // but currently images are on Asset or Incident. 
-                // We'll use a placeholder or derived image for now.
+                assets: true, // For amenities
             },
-            orderBy: {
-                createdAt: "desc",
+            orderBy: { createdAt: "desc" },
+            skip: (page - 1) * perPage,
+            take: perPage,
+        }),
+        prisma.room.count({ where }),
+    ]);
+
+    return {
+        listings: rooms.map((r) => ({
+            id: r.id,
+            title: `Phòng ${r.roomNumber} - ${r.property.name}`,
+            price: r.baseRent,
+            address: r.property.address,
+            city: r.property.city,
+            area: r.area,
+            type: "Phòng trọ", // Could be dynamic
+            rating: (4 + Math.random()).toFixed(2), // Mock rating for "World Class" feel
+            reviews: Math.floor(Math.random() * 50) + 5, // Mock reviews
+            host: {
+                name: r.property.user.name,
+                avatar: r.property.user.avatar,
+                verified: true, // Mock verified status
             },
-            take: 50, // Limit to 50 for now
-        });
-
-        return rooms;
-    } catch (error) {
-        console.error("Error fetching public listings:", error);
-        return [];
-    }
-}
-
-export async function getPublicListingDetail(id: string) {
-    try {
-        const room = await prisma.room.findUnique({
-            where: { id },
-            include: {
-                property: {
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                phone: true,
-                                avatar: true,
-                                email: true // Optional: for contact form
-                            }
-                        }
-                    }
-                },
-                assets: true // Show amenities
+            images: [
+                // Mock images since we don't have real ones yet. Using unsplash/picsum
+                `https://picsum.photos/seed/${r.id}1/800/600`,
+                `https://picsum.photos/seed/${r.id}2/800/600`,
+                `https://picsum.photos/seed/${r.id}3/800/600`,
+                `https://picsum.photos/seed/${r.id}4/800/600`,
+            ],
+            amenities: r.assets.map(a => a.name),
+            coordinates: {
+                // Mock coordinates around Ho Chi Minh City/Hanoi for map demo
+                lat: 10.762622 + (Math.random() - 0.5) * 0.1,
+                lng: 106.660172 + (Math.random() - 0.5) * 0.1
             }
-        });
-
-        if (!room || room.status !== RoomStatus.VACANT) {
-            return null;
-        }
-
-        return room;
-    } catch (error) {
-        console.error("Error fetching listing detail:", error);
-        return null;
-    }
-}
-
-export async function getCities() {
-    // Get unique cities from properties
-    const locations = await prisma.property.findMany({
-        select: { city: true },
-        where: { rooms: { some: { status: RoomStatus.VACANT } } },
-        distinct: ['city']
-    });
-    return locations.map(l => l.city).filter(Boolean) as string[];
+        })),
+        total,
+        totalPages: Math.ceil(total / perPage),
+        page,
+    };
 }
