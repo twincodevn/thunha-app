@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { RoomStatus } from "@prisma/client";
 
 /**
  * Marketplace - List vacant rooms publicly
@@ -17,10 +18,9 @@ export async function getPublicListings(params?: {
     const perPage = 12;
 
     const where: any = {
-        status: "AVAILABLE",
+        status: RoomStatus.VACANT,
         property: {
-            // Only show rooms from users who opted in to marketplace
-            // For now, show all available rooms
+            // Only show rooms from users who opted in to marketplace (future feature)
         },
     };
 
@@ -63,8 +63,8 @@ export async function getPublicListings(params?: {
             baseRent: r.baseRent,
             area: r.area,
             floor: r.floor,
-            description: r.description,
-            amenities: r.amenities,
+            description: r.notes || "",
+            amenities: [], // Schema does not have amenities yet
             deposit: r.deposit,
             propertyName: r.property.name,
             address: r.property.address,
@@ -93,11 +93,11 @@ export async function toggleMarketplaceListing(roomId: string) {
         return { error: "Unauthorized" };
     }
 
-    if (room.status !== "AVAILABLE") {
+    if (room.status !== RoomStatus.VACANT) {
         return { error: "Chỉ có thể đăng phòng trống" };
     }
 
-    // Toggle (for now just return success, listing is based on AVAILABLE status)
+    // Toggle logic would go here (e.g. isListed flag), currently just validating VACANT status
     revalidatePath("/marketplace");
     return { success: true, listed: true };
 }

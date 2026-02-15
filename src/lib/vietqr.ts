@@ -60,3 +60,31 @@ export function getBankList() {
         bin: data.bin,
     }));
 }
+
+// Legacy exports for backward compatibility
+export const VIETQR_BANKS = Object.entries(BANK_BINS).map(([name, data]) => ({
+    code: name, // Using name as code for mapping
+    ...data
+}));
+
+export function getBankByCode(code: string) {
+    if (!code) return null;
+    const bin = getBankBin(code);
+    if (!bin) return null;
+    // Reverse lookup to find the original entry
+    const entry = Object.entries(BANK_BINS).find(([, v]) => v.bin === bin);
+    return entry ? { ...entry[1], code: entry[0] } : null;
+}
+
+export function getVietQRImageURL(params: {
+    bankBin: string;
+    accountNumber: string;
+    accountName: string;
+    amount: number;
+    description?: string;
+}) {
+    return generateVietQRUrl({
+        ...params,
+        description: params.description || "",
+    });
+}
