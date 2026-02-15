@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MarketplaceHeader } from "@/components/listings/header";
 import { FilterBar } from "@/components/listings/filter-bar";
 import { ListingCard } from "@/components/listings/listing-card";
 import { MapView } from "@/components/listings/map-view";

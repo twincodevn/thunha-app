@@ -78,9 +78,16 @@ export function ListingCard({ data }: ListingCardProps) {
                     ))}
                 </div>
 
+                {/* Status Badge */}
+                {data.status === "COMING_SOON" && (
+                    <div className="absolute bottom-3 right-3 bg-yellow-400 text-black px-2 py-1 rounded text-xs font-bold shadow-sm z-10">
+                        Sắp trống
+                    </div>
+                )}
+
                 {/* Superhost Badge */}
                 {data.host.verified && (
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold shadow-sm">
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold shadow-sm z-10">
                         Chủ nhà uy tín
                     </div>
                 )}
