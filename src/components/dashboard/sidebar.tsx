@@ -36,6 +36,7 @@ const navigation = [
     { name: "Phân tích", href: "/dashboard/analytics", icon: BarChart3 },
     { name: "So sánh", href: "/dashboard/analytics/comparison", icon: GitCompareArrows },
     { name: "Báo cáo thuế", href: "/dashboard/analytics/tax-report", icon: FileText },
+    { name: "Dự báo AI", href: "/dashboard/analytics/forecast", icon: BarChart3 },
 ];
 
 const bottomNavigation = [
