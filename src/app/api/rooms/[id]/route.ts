@@ -105,10 +105,39 @@ export async function DELETE(
         // Check ownership
         const existing = await prisma.room.findFirst({
             where: { id, property: { userId: session.user.id } },
+            include: {
+                roomTenants: {
+                    where: { isActive: true },
+                    select: { id: true }
+                }
+            }
         });
 
         if (!existing) {
             return NextResponse.json({ error: "Room not found" }, { status: 404 });
+        }
+
+        // Prevent deletion if room has active tenants
+        if (existing.roomTenants.length > 0) {
+            return NextResponse.json(
+                { error: "Không thể xóa phòng đang có khách thuê. Vui lòng trả phòng trước." },
+                { status: 400 }
+            );
+        }
+
+        // Prevent deletion if room has unpaid bills
+        const unpaidBills = await prisma.bill.count({
+            where: {
+                roomTenant: { roomId: id },
+                status: { in: ["PENDING", "OVERDUE"] }
+            }
+        });
+
+        if (unpaidBills > 0) {
+            return NextResponse.json(
+                { error: `Không thể xóa phòng còn ${unpaidBills} hóa đơn chưa thanh toán.` },
+                { status: 400 }
+            );
         }
 
         await prisma.room.delete({ where: { id } });

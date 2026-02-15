@@ -7,6 +7,7 @@ import { MobileNav } from "./sidebar";
 import { Fragment } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandMenu } from "@/components/dashboard/command-menu";
+import { NotificationCenter } from "@/components/dashboard/notification-center";
 import {
     PlusCircle, FileText, AlertTriangle, UserPlus, Plus
 } from "lucide-react";
@@ -92,6 +93,7 @@ export function Header() {
 
             <div className="flex items-center gap-2">
                 <CommandMenu />
+                <NotificationCenter />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm" className="hidden sm:flex gap-2">

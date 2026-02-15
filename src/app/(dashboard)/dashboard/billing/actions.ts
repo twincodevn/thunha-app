@@ -213,7 +213,10 @@ export async function getBills(propertyId?: string, month?: number, year?: numbe
     };
 
     if (propertyId) {
-        where.roomTenant.room = { propertyId };
+        where.roomTenant.room = {
+            propertyId,
+            property: { userId: session.user.id }
+        };
     }
     if (month) where.month = month;
     if (year) where.year = year;
@@ -277,6 +280,16 @@ export async function updateBillStatus(id: string, status: string) {
     if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
+        // Verify ownership before updating
+        const bill = await prisma.bill.findFirst({
+            where: {
+                id,
+                roomTenant: { room: { property: { userId: session.user.id } } }
+            }
+        });
+
+        if (!bill) return { error: "Không tìm thấy hóa đơn" };
+
         await prisma.bill.update({
             where: { id },
             data: { status: status as any }
@@ -309,7 +322,8 @@ export async function confirmPayment(data: {
                             }
                         }
                     }
-                }
+                },
+                payments: true
             }
         });
 
@@ -318,6 +332,11 @@ export async function confirmPayment(data: {
         if (bill.roomTenant.room.property.userId !== session.user.id) {
             return { error: "Unauthorized" };
         }
+
+        // Calculate total paid including this new payment
+        const previouslyPaid = bill.payments.reduce((sum, p) => sum + p.amount, 0);
+        const totalPaid = previouslyPaid + data.amount;
+        const newStatus = totalPaid >= bill.total ? "PAID" : bill.status;
 
         await prisma.$transaction([
             // Create payment record
@@ -330,10 +349,10 @@ export async function confirmPayment(data: {
                     paidAt: new Date()
                 }
             }),
-            // Update bill status
+            // Only update to PAID if fully paid
             prisma.bill.update({
                 where: { id: data.billId },
-                data: { status: "PAID" }
+                data: { status: newStatus }
             })
         ]);
 
@@ -414,7 +433,11 @@ export async function generateSMSMessage(billId: string) {
                 roomTenant: {
                     include: {
                         room: {
-                            include: { property: true }
+                            include: {
+                                property: {
+                                    include: { user: true }
+                                }
+                            }
                         },
                         tenant: true
                     }
@@ -424,7 +447,9 @@ export async function generateSMSMessage(billId: string) {
 
         if (!bill) return { error: "Bill not found" };
 
-        const message = `Chao ${bill.roomTenant.tenant.name}, vui long thanh toan tien can ho ${bill.roomTenant.room.roomNumber} thang ${bill.month}. Tong: ${bill.total.toLocaleString('vi-VN')}d. Lien he: ${bill.roomTenant.room.property.userId}`;
+        const landlordPhone = bill.roomTenant.room.property.user.phone || bill.roomTenant.room.property.user.email || "chu tro";
+
+        const message = `Chao ${bill.roomTenant.tenant.name}, vui long thanh toan tien phong ${bill.roomTenant.room.roomNumber} thang ${bill.month}. Tong: ${bill.total.toLocaleString('vi-VN')}d. Lien he: ${landlordPhone}`;
 
         return {
             success: true,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Package, Check, X, Camera, ClipboardCheck } from "lucide-react";
+import { Plus, Trash2, Package, Check, X, Camera, ClipboardCheck, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,19 +64,43 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
     const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [editForm, setEditForm] = useState<{
+        name: string;
+        code: string;
+        value: string; // Use string for input, parse on submit
+        status: AssetStatus;
+        notes: string;
+    }>({
+        name: "",
+        code: "",
+        value: "0",
+        status: "GOOD",
+        notes: "",
+    });
+
+    const handleEditClick = (asset: Asset) => {
+        setEditingAsset(asset);
+        setEditForm({
+            name: asset.name,
+            code: asset.code || "",
+            value: asset.value?.toString() || "0",
+            status: asset.status,
+            notes: asset.notes || "",
+        });
+    };
+
     const handleEditAsset = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsLoading(true);
-        const formData = new FormData(e.currentTarget);
 
         if (!editingAsset) return;
 
         const result = await updateAsset(editingAsset.id, {
-            name: formData.get("name"),
-            code: formData.get("code"),
-            value: parseFloat(formData.get("value") as string) || 0,
-            status: formData.get("status"),
-            notes: formData.get("notes"),
+            name: editForm.name,
+            code: editForm.code,
+            value: parseFloat(editForm.value) || 0,
+            status: editForm.status,
+            notes: editForm.notes,
         });
 
         setIsLoading(false);
@@ -267,25 +291,44 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
                                 <div className="grid gap-4 py-4">
                                     <div className="grid gap-2">
                                         <Label htmlFor="edit-name">Tên tài sản</Label>
-                                        <Input id="edit-name" name="name" defaultValue={editingAsset?.name} required />
+                                        <Input
+                                            id="edit-name"
+                                            value={editForm.name}
+                                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                            required
+                                        />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
                                             <Label htmlFor="edit-code">Mã/Seri</Label>
-                                            <Input id="edit-code" name="code" defaultValue={editingAsset?.code || ""} />
+                                            <Input
+                                                id="edit-code"
+                                                value={editForm.code}
+                                                onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
+                                            />
                                         </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="edit-value">Giá trị</Label>
-                                            <Input id="edit-value" name="value" type="number" defaultValue={editingAsset?.value || 0} />
+                                            <Input
+                                                id="edit-value"
+                                                type="number"
+                                                value={editForm.value}
+                                                onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
+                                            />
                                         </div>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="edit-status">Trạng thái</Label>
-                                        <Select name="status" defaultValue={editingAsset?.status}>
+                                        <Select
+                                            value={editForm.status}
+                                            onValueChange={(val: AssetStatus) =>
+                                                setEditForm({ ...editForm, status: val })
+                                            }
+                                        >
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="z-[9999]">
                                                 <SelectItem value="GOOD">Tốt</SelectItem>
                                                 <SelectItem value="REPAIR">Cần sửa chữa</SelectItem>
                                                 <SelectItem value="BROKEN">Hỏng</SelectItem>
@@ -295,7 +338,11 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="edit-notes">Ghi chú</Label>
-                                        <Textarea id="edit-notes" name="notes" defaultValue={editingAsset?.notes || ""} />
+                                        <Textarea
+                                            id="edit-notes"
+                                            value={editForm.notes}
+                                            onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                                 <DialogFooter>
@@ -372,6 +419,14 @@ export function AssetManager({ roomId, initialAssets }: AssetManagerProps) {
                                                         <Camera className="h-4 w-4 text-blue-500" />
                                                     </Button>
                                                 )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-blue-500"
+                                                    onClick={() => handleEditClick(asset)}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"

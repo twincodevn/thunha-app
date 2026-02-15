@@ -106,13 +106,66 @@ export async function DELETE(
 
         const existing = await prisma.tenant.findFirst({
             where: { id, userId: session.user.id },
+            include: {
+                roomTenants: {
+                    where: { isActive: true },
+                    include: { room: true }
+                }
+            }
         });
 
         if (!existing) {
             return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
         }
 
-        await prisma.tenant.delete({ where: { id } });
+        // Prevent deletion if tenant has active room assignments
+        if (existing.roomTenants.length > 0) {
+            const roomNumbers = existing.roomTenants.map(rt => rt.room.roomNumber).join(", ");
+            return NextResponse.json(
+                { error: `Không thể xóa khách thuê đang ở phòng ${roomNumbers}. Vui lòng trả phòng trước.` },
+                { status: 400 }
+            );
+        }
+
+        // Check for unpaid bills from any past room assignment
+        const unpaidBills = await prisma.bill.count({
+            where: {
+                roomTenant: { tenantId: id },
+                status: { in: ["PENDING", "OVERDUE"] }
+            }
+        });
+
+        if (unpaidBills > 0) {
+            return NextResponse.json(
+                { error: `Không thể xóa khách thuê còn ${unpaidBills} hóa đơn chưa thanh toán.` },
+                { status: 400 }
+            );
+        }
+
+        // Find rooms that might become orphaned (OCCUPIED but no active tenant after delete)
+        const allRoomTenants = await prisma.roomTenant.findMany({
+            where: { tenantId: id },
+            select: { roomId: true }
+        });
+        const roomIds = [...new Set(allRoomTenants.map(rt => rt.roomId))];
+
+        await prisma.$transaction(async (tx) => {
+            // Delete the tenant (cascade deletes roomTenants)
+            await tx.tenant.delete({ where: { id } });
+
+            // Reset any orphaned rooms to VACANT
+            for (const roomId of roomIds) {
+                const hasActiveTenant = await tx.roomTenant.findFirst({
+                    where: { roomId, isActive: true }
+                });
+                if (!hasActiveTenant) {
+                    await tx.room.update({
+                        where: { id: roomId },
+                        data: { status: "VACANT" }
+                    });
+                }
+            }
+        });
 
         return NextResponse.json({ message: "Tenant deleted" });
     } catch (error) {

@@ -6,8 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { Loader2, Save, Search, AlertCircle } from "lucide-react";
+import { Loader2, Save, Search, AlertCircle, Zap, Droplets } from "lucide-react";
 import { toast } from "sonner";
+import { calculateElectricityCost, calculateWaterCost, formatCurrency } from "@/lib/billing";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,8 @@ export default function UtilityPage() {
     const [searchTerm, setSearchTerm] = useState("");
 
     const [roomReadings, setRoomReadings] = useState<RoomReadingData[]>([]);
+    const [electricityRate, setElectricityRate] = useState(0);
+    const [waterRate, setWaterRate] = useState(0);
 
     const form = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -98,6 +101,8 @@ export default function UtilityPage() {
                 );
 
                 setRoomReadings(result.roomReadings);
+                setElectricityRate(result.electricityRate || 0);
+                setWaterRate(result.waterRate || 0);
 
                 // Reset form with fetched values
                 form.reset({
@@ -227,7 +232,7 @@ export default function UtilityPage() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {["2024", "2025", "2026"].map((y) => (
+                                    {Array.from({ length: 3 }, (_, i) => String(new Date().getFullYear() - 1 + i)).map((y) => (
                                         <SelectItem key={y} value={y}>
                                             {y}
                                         </SelectItem>
@@ -282,9 +287,15 @@ export default function UtilityPage() {
                                             <TableHead className="text-center bg-blue-50/50">Điện (Cũ)</TableHead>
                                             <TableHead className="text-center bg-blue-50">Điện (Mới)</TableHead>
                                             <TableHead className="text-center bg-blue-50/50">Sử dụng</TableHead>
+                                            <TableHead className="text-center bg-blue-100/50 dark:bg-blue-900/20">
+                                                <span className="flex items-center justify-center gap-1"><Zap className="h-3 w-3" />Ước tính</span>
+                                            </TableHead>
                                             <TableHead className="text-center bg-cyan-50/50">Nước (Cũ)</TableHead>
                                             <TableHead className="text-center bg-cyan-50">Nước (Mới)</TableHead>
                                             <TableHead className="text-center bg-cyan-50/50">Sử dụng</TableHead>
+                                            <TableHead className="text-center bg-cyan-100/50 dark:bg-cyan-900/20">
+                                                <span className="flex items-center justify-center gap-1"><Droplets className="h-3 w-3" />Ước tính</span>
+                                            </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -344,6 +355,9 @@ export default function UtilityPage() {
                                                     <TableCell className={`text-center font-bold bg-blue-50/30 ${isElecInvalid ? "text-red-500" : "text-blue-600"}`}>
                                                         {elecUsage}
                                                     </TableCell>
+                                                    <TableCell className="text-center text-sm font-medium bg-blue-100/20 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300">
+                                                        {elecUsage > 0 ? formatCurrency(calculateElectricityCost(elecUsage, electricityRate > 0 ? electricityRate : undefined)) : "-"}
+                                                    </TableCell>
 
                                                     {/* Water */}
                                                     <TableCell className="text-center text-muted-foreground bg-cyan-50/30">
@@ -370,6 +384,9 @@ export default function UtilityPage() {
                                                     </TableCell>
                                                     <TableCell className={`text-center font-bold bg-cyan-50/30 ${isWaterInvalid ? "text-red-500" : "text-cyan-600"}`}>
                                                         {waterUsage}
+                                                    </TableCell>
+                                                    <TableCell className="text-center text-sm font-medium bg-cyan-100/20 dark:bg-cyan-900/10 text-cyan-700 dark:text-cyan-300">
+                                                        {waterUsage > 0 ? formatCurrency(calculateWaterCost(waterUsage, waterRate)) : "-"}
                                                     </TableCell>
                                                 </TableRow>
                                             );

@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { startOfMonth, endOfMonth, subMonths, format, startOfYear, endOfYear } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 
 export interface MonthlyFinancialData {
     month: string;
@@ -15,12 +15,11 @@ export interface FinancialSummary {
     totalRevenue: number;
     totalExpenses: number;
     noi: number;
-    revenueGrowth: number; // vs last month/period
-    expenseGrowth: number; // vs last month/period
+    revenueGrowth: number;
+    expenseGrowth: number;
     monthlyData: MonthlyFinancialData[];
 }
 
-// Helper to calculate percentage growth
 function calculateGrowth(current: number, previous: number): number {
     if (previous === 0) return current > 0 ? 100 : 0;
     return ((current - previous) / previous) * 100;
@@ -34,63 +33,71 @@ export async function getFinancialSummary(monthsToLookBack = 6): Promise<Financi
         const userId = session.user.id;
         const now = new Date();
 
-        // Calculate current month metrics
         const startCurrentMonth = startOfMonth(now);
         const endCurrentMonth = endOfMonth(now);
-
         const startLastMonth = startOfMonth(subMonths(now, 1));
         const endLastMonth = endOfMonth(subMonths(now, 1));
 
-        // Fetch payments (Revenue) for current and last month
-        const currentRevenue = await prisma.payment.aggregate({
-            _sum: { amount: true },
-            where: {
-                paidAt: { gte: startCurrentMonth, lte: endCurrentMonth },
-                bill: {
-                    roomTenant: {
-                        room: { property: { userId } }
-                    }
+        // Batch: fetch all data in the full range with just 2 queries
+        const rangeStart = startOfMonth(subMonths(now, monthsToLookBack - 1));
+
+        const [allPayments, allIncidents, currentRevenue, lastRevenue, currentExpenses, lastExpenses] = await Promise.all([
+            // All payments in range for monthly breakdown
+            prisma.payment.findMany({
+                where: {
+                    paidAt: { gte: rangeStart, lte: endCurrentMonth },
+                    bill: { roomTenant: { room: { property: { userId } } } }
+                },
+                select: { amount: true, paidAt: true }
+            }),
+            // All incidents in range for monthly breakdown
+            prisma.incident.findMany({
+                where: {
+                    createdAt: { gte: rangeStart, lte: endCurrentMonth },
+                    property: { userId }
+                },
+                select: { cost: true, createdAt: true }
+            }),
+            // Current month revenue
+            prisma.payment.aggregate({
+                _sum: { amount: true },
+                where: {
+                    paidAt: { gte: startCurrentMonth, lte: endCurrentMonth },
+                    bill: { roomTenant: { room: { property: { userId } } } }
                 }
-            }
-        });
-
-        const lastRevenue = await prisma.payment.aggregate({
-            _sum: { amount: true },
-            where: {
-                paidAt: { gte: startLastMonth, lte: endLastMonth },
-                bill: {
-                    roomTenant: {
-                        room: { property: { userId } }
-                    }
+            }),
+            // Last month revenue
+            prisma.payment.aggregate({
+                _sum: { amount: true },
+                where: {
+                    paidAt: { gte: startLastMonth, lte: endLastMonth },
+                    bill: { roomTenant: { room: { property: { userId } } } }
                 }
-            }
-        });
-
-        // Fetch incidents (Expenses) for current and last month
-        // Note: Expenses are primarily tracked via Incidents currently. 
-        // Future expansion might include a dedicated Expense model.
-        const currentExpenses = await prisma.incident.aggregate({
-            _sum: { cost: true },
-            where: {
-                createdAt: { gte: startCurrentMonth, lte: endCurrentMonth },
-                property: { userId }
-            }
-        });
-
-        const lastExpenses = await prisma.incident.aggregate({
-            _sum: { cost: true },
-            where: {
-                createdAt: { gte: startLastMonth, lte: endLastMonth },
-                property: { userId }
-            }
-        });
+            }),
+            // Current month expenses
+            prisma.incident.aggregate({
+                _sum: { cost: true },
+                where: {
+                    createdAt: { gte: startCurrentMonth, lte: endCurrentMonth },
+                    property: { userId }
+                }
+            }),
+            // Last month expenses
+            prisma.incident.aggregate({
+                _sum: { cost: true },
+                where: {
+                    createdAt: { gte: startLastMonth, lte: endLastMonth },
+                    property: { userId }
+                }
+            }),
+        ]);
 
         const currentRevAmount = currentRevenue._sum.amount || 0;
         const lastRevAmount = lastRevenue._sum.amount || 0;
         const currentExpAmount = currentExpenses._sum.cost || 0;
         const lastExpAmount = lastExpenses._sum.cost || 0;
 
-        // Monthly Trend Data
+        // Build monthly data from batch results (no additional queries!)
         const monthlyData: MonthlyFinancialData[] = [];
 
         for (let i = monthsToLookBack - 1; i >= 0; i--) {
@@ -99,28 +106,13 @@ export async function getFinancialSummary(monthsToLookBack = 6): Promise<Financi
             const end = endOfMonth(date);
             const monthLabel = format(date, "MM/yyyy");
 
-            const rev = await prisma.payment.aggregate({
-                _sum: { amount: true },
-                where: {
-                    paidAt: { gte: start, lte: end },
-                    bill: {
-                        roomTenant: {
-                            room: { property: { userId } }
-                        }
-                    }
-                }
-            });
+            const r = allPayments
+                .filter(p => p.paidAt >= start && p.paidAt <= end)
+                .reduce((sum, p) => sum + p.amount, 0);
 
-            const exp = await prisma.incident.aggregate({
-                _sum: { cost: true },
-                where: {
-                    createdAt: { gte: start, lte: end },
-                    property: { userId }
-                }
-            });
-
-            const r = rev._sum.amount || 0;
-            const e = exp._sum.cost || 0;
+            const e = allIncidents
+                .filter(inc => inc.createdAt >= start && inc.createdAt <= end)
+                .reduce((sum, inc) => sum + (inc.cost || 0), 0);
 
             monthlyData.push({
                 month: monthLabel,
@@ -144,3 +136,4 @@ export async function getFinancialSummary(monthsToLookBack = 6): Promise<Financi
         return { error: "Failed to fetch financial data" };
     }
 }
+

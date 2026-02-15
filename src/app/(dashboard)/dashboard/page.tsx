@@ -19,6 +19,8 @@ import { RevenueForecastCard } from "@/components/dashboard/revenue-forecast-car
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
+import { AIInsights } from "@/components/dashboard/ai-insights";
 
 interface ActivityItem {
     id: string;
@@ -219,6 +221,11 @@ async function getDashboardData(userId: string) {
     // Sort activities by timestamp desc
     activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+    // Count total bills for onboarding
+    const totalBillCount = await prisma.bill.count({
+        where: { roomTenant: { room: { property: { userId } } } }
+    });
+
     return {
         properties,
         totalRooms,
@@ -228,10 +235,7 @@ async function getDashboardData(userId: string) {
         activeIncidents,
         overdueBills,
         expiringContracts,
-        // ... other data
         recentActivities: activities.slice(0, 10),
-
-        // Keep existing returns for backward compatibility if needed, but we typically consume this object directly
         tenants,
         pendingBills,
         expectedIncome: rooms
@@ -239,11 +243,12 @@ async function getDashboardData(userId: string) {
             .reduce((sum: number, r: any) => sum + r.baseRent, 0),
         collected: totalCollected._sum.amount || 0,
         pendingAmount: totalPending._sum.total || 0,
-        recentBills, // Keeping for now, might replace usage in UI
-        recentPayments, // Keeping for now
+        recentBills,
+        recentPayments,
         rooms,
         month,
         year,
+        hasBills: totalBillCount > 0,
     };
 }
 
@@ -274,6 +279,14 @@ export default async function DashboardPage() {
                     </Button>
                 </div>
             </PageHeader>
+
+            {/* Onboarding Wizard */}
+            <OnboardingWizard
+                hasProperties={data.properties > 0}
+                hasRooms={data.totalRooms > 0}
+                hasTenants={data.tenants > 0}
+                hasBills={data.hasBills}
+            />
 
             {/* Overdue Alert Banner */}
             {data.overdueBills.length > 0 && (
@@ -364,6 +377,16 @@ export default async function DashboardPage() {
 
                 {/* Right Column (3/7) */}
                 <div className="col-span-3 space-y-6">
+                    {/* AI Insights */}
+                    <AIInsights
+                        occupiedRooms={data.occupiedRooms}
+                        totalRooms={data.totalRooms}
+                        collected={data.collected}
+                        expectedIncome={data.expectedIncome}
+                        pendingBills={data.pendingBills}
+                        overdueBills={data.overdueBills.length}
+                    />
+
                     {/* Recent Activity Feed */}
                     <RecentActivity activities={data.recentActivities} />
 

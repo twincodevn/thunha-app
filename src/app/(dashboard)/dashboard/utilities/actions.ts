@@ -84,7 +84,11 @@ export async function getUtilityReadings(propertyId: string, month: number, year
         };
     });
 
-    return { roomReadings };
+    return {
+        roomReadings,
+        electricityRate: property.electricityRate || 0,
+        waterRate: property.waterRate || 0,
+    };
 }
 
 export async function saveUtilityReadings(data: z.infer<typeof recordReadingsSchema>) {

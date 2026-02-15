@@ -2,8 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { google } from "@ai-sdk/google";
-import { generateText } from "ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function getRevenueForecast() {
     const session = await auth();
@@ -61,13 +60,13 @@ export async function getRevenueForecast() {
             }
         `;
 
-        const { text } = await generateText({
-            model: google("gemini-1.5-flash"),
-            prompt: prompt,
-            temperature: 0.2,
-        });
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const cleanText = text.replace(/```json|```/g, "").trim();
+        const result = await model.generateContent(prompt + "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown formatting.");
+        const text = result.response.text();
+
+        const cleanText = text.replace(/```json/g, "").replace(/```/g, "").trim();
         const forecast = JSON.parse(cleanText);
 
         return { success: true, data: forecast, history: revenueData };

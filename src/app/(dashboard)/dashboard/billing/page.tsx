@@ -116,19 +116,8 @@ export default function BillingPage() {
                                     <SelectValue placeholder="Năm" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {["2024", "2025", "2026"].map((y) => (
+                                    {Array.from({ length: 3 }, (_, i) => String(new Date().getFullYear() - 1 + i)).map((y) => (
                                         <SelectItem key={y} value={y}>{y}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger className="w-[150px]">
-                                    <SelectValue placeholder="Trạng thái" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="ALL">Tất cả</SelectItem>
-                                    {Object.entries(statusMap).map(([key, value]) => (
-                                        <SelectItem key={key} value={key}>{value.label}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -142,6 +131,45 @@ export default function BillingPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                    </div>
+                    {/* Status Tabs */}
+                    <div className="flex flex-wrap gap-1.5">
+                        {[
+                            { key: "ALL", label: "Tất cả" },
+                            { key: "PENDING", label: "Chờ thanh toán" },
+                            { key: "PAID", label: "Đã thanh toán" },
+                            { key: "OVERDUE", label: "Quá hạn" },
+                            { key: "CANCELLED", label: "Đã hủy" },
+                        ].map((tab) => {
+                            const count = tab.key === "ALL"
+                                ? bills.length
+                                : bills.filter((b) => b.status === tab.key).length;
+                            const isActive = status === tab.key;
+                            return (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setStatus(tab.key)}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${isActive
+                                        ? tab.key === "OVERDUE"
+                                            ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 shadow-sm"
+                                            : tab.key === "PAID"
+                                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 shadow-sm"
+                                                : tab.key === "PENDING"
+                                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 shadow-sm"
+                                                    : "bg-primary/10 text-primary shadow-sm"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        }`}
+                                >
+                                    {tab.label}
+                                    {count > 0 && (
+                                        <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold ${isActive ? "bg-white/60 dark:bg-white/20" : "bg-muted-foreground/10"
+                                            }`}>
+                                            {count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -254,6 +282,6 @@ export default function BillingPage() {
                     )}
                 </CardContent>
             </Card>
-        </DashboardShell>
+        </DashboardShell >
     );
 }
