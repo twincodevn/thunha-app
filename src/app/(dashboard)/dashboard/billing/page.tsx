@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Plus, Search, FileText, Loader2, MoreHorizontal, Download, Send, Eye, Lock } from "lucide-react";
+import { Plus, Search, FileText, Loader2, MoreHorizontal, Download, Send, Eye, Lock, MessageSquare } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { getBills } from "./actions";
+import { getBills, getBatchReminderData } from "./actions";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { formatCurrency } from "@/lib/billing";
@@ -82,6 +82,23 @@ export default function BillingPage() {
                 description="Theo dõi và quản lý hóa đơn tiền nhà hàng tháng"
             >
                 <div className="flex gap-2">
+                    {/* Batch reminder */}
+                    <Button
+                        variant="outline"
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-800"
+                        onClick={async () => {
+                            const data = await getBatchReminderData();
+                            if (data.error) { toast.error(data.error); return; }
+                            if (!data.bills || data.bills.length === 0) { toast.info("Không có hóa đơn cần nhắc nhở"); return; }
+                            const messages = data.bills.map(b => `${b.tenantName} (P.${b.roomNumber}): ${b.message}\nZalo: ${b.zaloLink}`).join("\n\n");
+                            await navigator.clipboard.writeText(messages);
+                            toast.success(`Đã copy ${data.bills.length} tin nhắn nhắc nhở!`);
+                        }}
+                    >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Nhắc nhở ({bills.filter(b => b.status === "PENDING" || b.status === "OVERDUE").length})
+                    </Button>
+
                     {/* Export Report Button (Premium) */}
                     <Button variant="outline" onClick={() => !planConfig.hasAdvancedReports && handlePremiumFeature("Báo cáo")}>
                         {!planConfig.hasAdvancedReports && <Lock className="mr-2 h-3 w-3 text-muted-foreground" />}

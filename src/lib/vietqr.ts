@@ -1,128 +1,62 @@
-import QRCode from "qrcode";
+/**
+ * VietQR - Generate QR codes for Vietnamese bank transfers
+ * Follows VietQR API standard: https://vietqr.io
+ */
 
-// VietQR Bank BIN codes (Bank Identification Number)
-// Full list: https://www.vietqr.io/portal-service/banks
-export const VIETQR_BANKS = [
-    { code: "VIETCOMBANK", name: "Vietcombank", bin: "970436", shortName: "VCB" },
-    { code: "VIETINBANK", name: "VietinBank", bin: "970415", shortName: "CTG" },
-    { code: "BIDV", name: "BIDV", bin: "970418", shortName: "BIDV" },
-    { code: "AGRIBANK", name: "Agribank", bin: "970405", shortName: "VBA" },
-    { code: "TECHCOMBANK", name: "Techcombank", bin: "970407", shortName: "TCB" },
-    { code: "MBBANK", name: "MB Bank", bin: "970422", shortName: "MB" },
-    { code: "ACB", name: "ACB", bin: "970416", shortName: "ACB" },
-    { code: "VPBANK", name: "VPBank", bin: "970432", shortName: "VPB" },
-    { code: "TPBANK", name: "TPBank", bin: "970423", shortName: "TPB" },
-    { code: "SACOMBANK", name: "Sacombank", bin: "970403", shortName: "STB" },
-    { code: "HDBANK", name: "HDBank", bin: "970437", shortName: "HDB" },
-    { code: "OCB", name: "OCB", bin: "970448", shortName: "OCB" },
-    { code: "SHB", name: "SHB", bin: "970443", shortName: "SHB" },
-    { code: "MSBANK", name: "Maritime Bank", bin: "970426", shortName: "MSB" },
-    { code: "VIB", name: "VIB", bin: "970441", shortName: "VIB" },
-    // Simplified for the most common ones
-] as const;
+export const BANK_BINS: Record<string, { bin: string; name: string; shortName: string }> = {
+    "Vietcombank": { bin: "970436", name: "Ngân hàng TMCP Ngoại Thương Việt Nam", shortName: "VCB" },
+    "BIDV": { bin: "970418", name: "Ngân hàng TMCP Đầu Tư và Phát Triển Việt Nam", shortName: "BIDV" },
+    "VietinBank": { bin: "970415", name: "Ngân hàng TMCP Công Thương Việt Nam", shortName: "CTG" },
+    "Agribank": { bin: "970405", name: "Ngân hàng Nông Nghiệp", shortName: "AGR" },
+    "Techcombank": { bin: "970407", name: "Ngân hàng TMCP Kỹ Thương Việt Nam", shortName: "TCB" },
+    "MBBank": { bin: "970422", name: "Ngân hàng TMCP Quân Đội", shortName: "MB" },
+    "ACB": { bin: "970416", name: "Ngân hàng TMCP Á Châu", shortName: "ACB" },
+    "TPBank": { bin: "970423", name: "Ngân hàng TMCP Tiên Phong", shortName: "TPB" },
+    "Sacombank": { bin: "970403", name: "Ngân hàng TMCP Sài Gòn Thương Tín", shortName: "STB" },
+    "VPBank": { bin: "970432", name: "Ngân hàng TMCP Việt Nam Thịnh Vượng", shortName: "VPB" },
+    "HDBank": { bin: "970437", name: "Ngân hàng TMCP Phát Triển TP.HCM", shortName: "HDB" },
+    "SHB": { bin: "970443", name: "Ngân hàng TMCP Sài Gòn - Hà Nội", shortName: "SHB" },
+    "MSB": { bin: "970426", name: "Ngân hàng TMCP Hàng Hải", shortName: "MSB" },
+    "LienVietPostBank": { bin: "970449", name: "Ngân hàng Bưu Điện Liên Việt", shortName: "LPB" },
+    "VIB": { bin: "970441", name: "Ngân hàng TMCP Quốc Tế", shortName: "VIB" },
+};
 
-export type VietQRBank = { code: string; name: string; bin: string; shortName?: string };
-
-interface VietQRParams {
-    bankBin: string;          // Bank BIN code
-    accountNumber: string;    // Account number
-    accountName?: string;     // Account holder name (optional, for display)
-    amount?: number;          // Amount in VND
-    description?: string;     // Transfer description
+export function getBankBin(bankName: string): string | null {
+    if (BANK_BINS[bankName]) return BANK_BINS[bankName].bin;
+    const normalized = bankName.toLowerCase().replace(/\s+/g, "");
+    for (const [key, value] of Object.entries(BANK_BINS)) {
+        if (normalized.includes(key.toLowerCase().replace(/\s+/g, "")) || normalized.includes(value.shortName.toLowerCase())) {
+            return value.bin;
+        }
+    }
+    return null;
 }
 
-/**
- * Generate VietQR data string following VietQR standard
- * Format: https://vietqr.io/portal-service/document
- */
-export function generateVietQRData(params: VietQRParams): string {
-    const { bankBin, accountNumber, amount, description } = params;
-
-    // VietQR uses EMVCo QR code format
-    // Simple format for bank account transfer
-    // Using VietQR URL format which is more compatible
-    const baseUrl = "https://img.vietqr.io/image";
-
-    // Format: https://img.vietqr.io/image/{BANK_ID}-{ACCOUNT_NO}-compact2.png?amount={AMOUNT}&addInfo={DESCRIPTION}
-    let qrData = `${baseUrl}/${bankBin}-${accountNumber}-compact2.png`;
-
-    const queryParams: string[] = [];
-    if (amount && amount > 0) {
-        queryParams.push(`amount=${amount}`);
-    }
-    if (description) {
-        queryParams.push(`addInfo=${encodeURIComponent(description)}`);
-    }
-
-    if (queryParams.length > 0) {
-        qrData += `?${queryParams.join("&")}`;
-    }
-
-    return qrData;
+export function generateVietQRUrl(params: {
+    bankBin: string;
+    accountNumber: string;
+    accountName: string;
+    amount: number;
+    description: string;
+}): string {
+    const { bankBin, accountNumber, amount, description, accountName } = params;
+    return `https://img.vietqr.io/image/${bankBin}-${accountNumber}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(description)}&accountName=${encodeURIComponent(accountName)}`;
 }
 
-/**
- * Generate QR code as base64 data URL for display
- */
-export async function generateQRCodeDataURL(data: string): Promise<string> {
-    try {
-        return await QRCode.toDataURL(data, {
-            width: 256,
-            margin: 2,
-            color: {
-                dark: "#000",
-                light: "#fff",
-            },
-        });
-    } catch (error) {
-        console.error("QR code generation error:", error);
-        throw new Error("Failed to generate QR code");
-    }
+export function generatePaymentDescription(params: {
+    billId: string;
+    roomNumber: string;
+    month: number;
+    year: number;
+}): string {
+    const shortId = params.billId.slice(-6).toUpperCase();
+    return `TN ${shortId} P${params.roomNumber} T${params.month}/${params.year}`;
 }
 
-/**
- * Generate VietQR image URL (uses VietQR.io service)
- * This returns an image URL that can be used directly
- */
-export function getVietQRImageURL(params: VietQRParams): string {
-    const { bankBin, accountNumber, accountName, amount, description } = params;
-
-    // VietQR.io provides a free QR generation API
-    // Format: https://img.vietqr.io/image/{BankBin}-{AccountNo}-{template}.png
-    const baseUrl = `https://img.vietqr.io/image/${bankBin}-${accountNumber}-compact2.png`;
-
-    const queryParams: string[] = [];
-    if (amount && amount > 0) {
-        queryParams.push(`amount=${Math.round(amount)}`);
-    }
-    if (description) {
-        queryParams.push(`addInfo=${encodeURIComponent(description)}`);
-    }
-    if (accountName) {
-        queryParams.push(`accountName=${encodeURIComponent(accountName)}`);
-    }
-
-    return queryParams.length > 0 ? `${baseUrl}?${queryParams.join("&")}` : baseUrl;
-}
-
-/**
- * Get bank by code, name or bin
- */
-export function getBankByCode(query: string): VietQRBank | undefined {
-    if (!query) return undefined;
-    const search = query.toLowerCase().trim();
-    return VIETQR_BANKS.find(
-        (bank) =>
-            bank.code.toLowerCase() === search ||
-            bank.name.toLowerCase() === search ||
-            bank.bin === search ||
-            bank.shortName?.toLowerCase() === search
-    );
-}
-
-/**
- * Get bank by BIN
- */
-export function getBankByBin(bin: string): VietQRBank | undefined {
-    return VIETQR_BANKS.find((bank) => bank.bin === bin);
+export function getBankList() {
+    return Object.entries(BANK_BINS).map(([name, data]) => ({
+        label: `${name} (${data.shortName})`,
+        value: name,
+        bin: data.bin,
+    }));
 }

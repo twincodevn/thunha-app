@@ -519,3 +519,53 @@ export async function sendBillEmail(billId: string) {
     }
 }
 
+
+export async function getBatchReminderData() {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized", bills: [] };
+
+    try {
+        const bills = await prisma.bill.findMany({
+            where: {
+                status: { in: ["PENDING", "OVERDUE"] },
+                roomTenant: { room: { property: { userId: session.user.id } } },
+            },
+            include: {
+                roomTenant: {
+                    include: {
+                        room: { include: { property: { include: { user: true } } } },
+                        tenant: { select: { name: true, phone: true } },
+                    },
+                },
+            },
+            orderBy: { dueDate: "asc" },
+        });
+
+        const landlordPhone = bills[0]?.roomTenant.room.property.user.phone || "";
+
+        return {
+            bills: bills.map((bill) => {
+                const message = `Chao ${bill.roomTenant.tenant.name}, vui long thanh toan tien phong ${bill.roomTenant.room.roomNumber} thang ${bill.month}. Tong: ${bill.total.toLocaleString("vi-VN")}d. Lien he: ${landlordPhone || "chu tro"}`;
+                const phone = bill.roomTenant.tenant.phone;
+                const zaloPhone = phone.startsWith("0") ? "84" + phone.slice(1) : phone;
+                return {
+                    id: bill.id,
+                    tenantName: bill.roomTenant.tenant.name,
+                    roomNumber: bill.roomTenant.room.roomNumber,
+                    propertyName: bill.roomTenant.room.property.name,
+                    phone,
+                    total: bill.total,
+                    status: bill.status,
+                    month: bill.month,
+                    dueDate: bill.dueDate.toISOString(),
+                    message,
+                    zaloLink: `https://zalo.me/${zaloPhone}`,
+                    smsLink: `sms:${phone}?body=${encodeURIComponent(message)}`,
+                };
+            }),
+        };
+    } catch (error) {
+        console.error("Batch reminder error:", error);
+        return { error: "Lỗi tải dữ liệu", bills: [] };
+    }
+}

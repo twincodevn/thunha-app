@@ -112,6 +112,7 @@ model RoomTenant {
   updatedAt   DateTime   @updatedAt
   bills       Bill[]
   contracts   Contract[]
+  deposits    Deposit[]
   incidents   Incident[]
   room        Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
   tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -323,4 +324,17 @@ enum ContractStatus {
   SIGNED
   EXPIRED
   TERMINATED
+}
+
+model Deposit {
+  id           String     @id @default(cuid())
+  roomTenantId String
+  amount       Float
+  type         String     // RECEIVED, RETURNED, DEDUCTED
+  reason       String?
+  date         DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  roomTenant   RoomTenant @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
+
+  @@index([roomTenantId])
 }

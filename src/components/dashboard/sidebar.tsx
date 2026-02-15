@@ -14,6 +14,9 @@ import {
     LogOut,
     Menu,
     Zap,
+    GitCompareArrows,
+    FileText,
+    PiggyBank,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -29,7 +32,10 @@ const navigation = [
     { name: "Khách thuê", href: "/dashboard/tenants", icon: Users },
     { name: "Điện nước", href: "/dashboard/utilities", icon: Zap },
     { name: "Hóa đơn", href: "/dashboard/billing", icon: Receipt },
+    { name: "Tiền cọc", href: "/dashboard/billing/deposits", icon: PiggyBank },
     { name: "Phân tích", href: "/dashboard/analytics", icon: BarChart3 },
+    { name: "So sánh", href: "/dashboard/analytics/comparison", icon: GitCompareArrows },
+    { name: "Báo cáo thuế", href: "/dashboard/analytics/tax-report", icon: FileText },
 ];
 
 const bottomNavigation = [
