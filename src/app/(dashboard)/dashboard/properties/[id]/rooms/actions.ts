@@ -3,7 +3,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { google } from "@ai-sdk/google";
-import { generateText } from "ai";
+import { generateObject } from "ai";
+import { z } from "zod";
 
 export async function getPriceSuggestion(roomId: string) {
     const session = await auth();
@@ -27,24 +28,21 @@ export async function getPriceSuggestion(roomId: string) {
             - Current Price: ${room.baseRent} VND
             - Amenities/Assets: ${room.assets.map((a) => a.name).join(", ") || "Basic"}
             
-            Return ONLY a valid JSON object:
-            {
-                "suggestedPriceMin": number,
-                "suggestedPriceMax": number,
-                "marketAnalysis": "short explanation (max 30 words) in Vietnamese"
-            }
+            Provide the suggestion in Vietnamese.
         `;
 
-        const { text } = await generateText({
+        const { object } = await generateObject({
             model: google("gemini-1.5-flash"),
+            schema: z.object({
+                suggestedPriceMin: z.number(),
+                suggestedPriceMax: z.number(),
+                marketAnalysis: z.string().describe("Short explanation (max 30 words) in Vietnamese"),
+            }),
             prompt: prompt,
             temperature: 0.3,
         });
 
-        const cleanText = text.replace(/```json|```/g, "").trim();
-        const suggestion = JSON.parse(cleanText);
-
-        return { success: true, data: suggestion };
+        return { success: true, data: object };
     } catch (error) {
         console.error("AI Price Suggestion Error:", error);
         return { error: "Failed to generate suggestion" };

@@ -16,7 +16,7 @@ interface ChatWidgetProps {
 
 export function ChatWidget({ context, title = "Hỗ trợ viên ảo" }: ChatWidgetProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    const { messages, input = "", handleInputChange, handleSubmit, isLoading } = useChat({
         body: { context },
     } as any) as any;
     const scrollRef = useRef<HTMLDivElement>(null);
