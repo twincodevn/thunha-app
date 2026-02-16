@@ -19,21 +19,20 @@ import {
     PiggyBank,
     ChevronLeft,
     ChevronRight,
-    LifeBuoy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { User } from "@prisma/client";
 
 const navigation = [
     { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
@@ -54,14 +53,13 @@ const bottomNavigation = [
     { name: "Gói dịch vụ", href: "/dashboard/subscription", icon: Zap },
 ];
 
-export function Sidebar() {
-    const pathname = usePathname();
-    const { data: session } = useSession();
+interface SidebarProps {
+    user?: User | null;
+}
+
+export function Sidebar({ user }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-    // Auto-collapse on small screens usually handled by CSS/Media Query logic, 
-    // but here we manage state for desktop collapse toggle.
 
     return (
         <>
@@ -94,7 +92,6 @@ export function Sidebar() {
                     isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
                 )}
             >
-                {/* Brand / Toggle */}
                 <div className={cn("flex h-16 items-center border-b px-4", isCollapsed ? "justify-center" : "justify-between")}>
                     {!isCollapsed && (
                         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-blue-600">
@@ -120,120 +117,115 @@ export function Sidebar() {
                     </Button>
                 </div>
 
-                {/* Navigation Items */}
-                <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-hide">
-                    <nav className="space-y-1">
-                        <TooltipProvider delayDuration={0}>
-                            {navigation.map((item) => {
-                                const isActive = pathname === item.href;
-                                const LinkComponent = (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        onClick={() => setIsMobileOpen(false)}
-                                        className={cn(
-                                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group relative overflow-hidden",
-                                            isActive
-                                                ? "bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-900/40 dark:text-blue-300"
-                                                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                                            isCollapsed && "justify-center px-2"
-                                        )}
-                                    >
-                                        {isActive && (
-                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-blue-600 rounded-r-full" />
-                                        )}
-                                        <item.icon className={cn("shrink-0 transition-transform group-hover:scale-110", isCollapsed ? "h-5 w-5" : "h-5 w-5")} />
-                                        {!isCollapsed && <span>{item.name}</span>}
-                                    </Link>
-                                );
-
-                                if (isCollapsed) {
-                                    return (
-                                        <Tooltip key={item.name}>
-                                            <TooltipTrigger asChild>{LinkComponent}</TooltipTrigger>
-                                            <TooltipContent side="right">{item.name}</TooltipContent>
-                                        </Tooltip>
-                                    );
-                                }
-
-                                return LinkComponent;
-                            })}
-                        </TooltipProvider>
-                    </nav>
-
-                    {/* Separator */}
-                    <div className="my-2">
-                        <Separator />
-                        {!isCollapsed && <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cài đặt</p>}
-                    </div>
-
-                    {/* Bottom Navigation */}
-                    <nav className="space-y-1">
-                        <TooltipProvider delayDuration={0}>
-                            {bottomNavigation.map((item) => {
-                                const isActive = pathname === item.href;
-                                const LinkComponent = (
-                                    <Link
-                                        key={item.name}
-                                        href={item.href}
-                                        onClick={() => setIsMobileOpen(false)}
-                                        className={cn(
-                                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group relative overflow-hidden",
-                                            isActive
-                                                ? "bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-900/40 dark:text-blue-300"
-                                                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                                            isCollapsed && "justify-center px-2"
-                                        )}
-                                    >
-                                        <item.icon className={cn("shrink-0 transition-transform group-hover:scale-110", isCollapsed ? "h-5 w-5" : "h-5 w-5")} />
-                                        {!isCollapsed && <span>{item.name}</span>}
-                                    </Link>
-                                );
-
-                                if (isCollapsed) {
-                                    return (
-                                        <Tooltip key={item.name}>
-                                            <TooltipTrigger asChild>{LinkComponent}</TooltipTrigger>
-                                            <TooltipContent side="right">{item.name}</TooltipContent>
-                                        </Tooltip>
-                                    );
-                                }
-
-                                return LinkComponent;
-                            })}
-                        </TooltipProvider>
-                    </nav>
-                </div>
-
-                {/* User Profile */}
-                <div className="border-t bg-background/50 p-3 backdrop-blur-xl">
-                    <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "justify-between")}>
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            <Avatar className="h-9 w-9 border cursor-pointer transition-transform hover:scale-105">
-                                <AvatarImage src={session?.user?.image || ""} />
-                                <AvatarFallback>{session?.user?.name?.[0] || "U"}</AvatarFallback>
-                            </Avatar>
-                            {!isCollapsed && (
-                                <div className="flex flex-col truncate">
-                                    <span className="text-sm font-medium truncate">{session?.user?.name}</span>
-                                    <span className="text-xs text-muted-foreground truncate">{session?.user?.email}</span>
-                                </div>
-                            )}
-                        </div>
-                        {!isCollapsed && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => signOut()}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <LogOut className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <SidebarContent
+                        user={user}
+                        isCollapsed={isCollapsed}
+                        onClose={() => setIsMobileOpen(false)}
+                    />
                 </div>
             </aside>
         </>
+    );
+}
+
+interface SidebarContentProps {
+    user?: User | null;
+    isCollapsed?: boolean;
+    onClose?: () => void;
+}
+
+function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentProps) {
+    const pathname = usePathname();
+    const { data: session } = useSession();
+
+    // Prioritize passed user data (fresh from DB) over session data (stale)
+    const displayUser = user || session?.user;
+
+    // Helper to render links
+    const renderLinks = (items: typeof navigation) => (
+        <nav className="space-y-1 px-2">
+            <TooltipProvider delayDuration={0}>
+                {items.map((item) => {
+                    const isActive = pathname === item.href;
+                    const LinkComponent = (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={onClose}
+                            className={cn(
+                                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group relative overflow-hidden",
+                                isActive
+                                    ? "bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-900/40 dark:text-blue-300"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                                isCollapsed && "justify-center px-2"
+                            )}
+                        >
+                            {isActive && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-blue-600 rounded-r-full" />
+                            )}
+                            <item.icon className={cn("shrink-0 transition-transform group-hover:scale-110", isCollapsed ? "h-5 w-5" : "h-5 w-5")} />
+                            {!isCollapsed && <span>{item.name}</span>}
+                        </Link>
+                    );
+
+                    if (isCollapsed) {
+                        return (
+                            <Tooltip key={item.name}>
+                                <TooltipTrigger asChild>{LinkComponent}</TooltipTrigger>
+                                <TooltipContent side="right">{item.name}</TooltipContent>
+                            </Tooltip>
+                        );
+                    }
+
+                    return LinkComponent;
+                })}
+            </TooltipProvider>
+        </nav>
+    );
+
+    return (
+        <div className="flex flex-col h-full">
+            {/* Main Nav */}
+            <div className="flex-1 py-4 space-y-6">
+                {renderLinks(navigation)}
+
+                <div className="my-2">
+                    <Separator />
+                    {!isCollapsed && <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cài đặt</p>}
+                </div>
+
+                {renderLinks(bottomNavigation)}
+            </div>
+
+            {/* User Profile */}
+            <div className="border-t bg-background/50 p-3 backdrop-blur-xl">
+                <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "justify-between")}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <Avatar className="h-9 w-9 border cursor-pointer transition-transform hover:scale-105">
+                            <AvatarImage src={displayUser?.image || displayUser?.avatar || ""} />
+                            <AvatarFallback>{displayUser?.name?.[0] || "U"}</AvatarFallback>
+                        </Avatar>
+                        {!isCollapsed && (
+                            <div className="flex flex-col truncate">
+                                <span className="text-sm font-medium truncate">{displayUser?.name}</span>
+                                <span className="text-xs text-muted-foreground truncate">{displayUser?.email}</span>
+                            </div>
+                        )}
+                    </div>
+                    {!isCollapsed && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => signOut()}
+                            className="text-muted-foreground hover:text-foreground"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -254,5 +246,3 @@ export function MobileNav() {
         </Sheet>
     );
 }
-
-// Header component moved to ./header.tsx

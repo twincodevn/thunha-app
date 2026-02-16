@@ -3,81 +3,107 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { Button } from "@/components/ui/button";
+import { Property } from "@prisma/client";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/billing";
-
-// Fix for default marker icons in Next.js
-const icon = L.icon({
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-});
+import { Building2, MapPin } from "lucide-react";
+import { renderToString } from "react-dom/server";
 
 interface PropertiesMapProps {
-    properties: any[];
+    properties: Property[];
 }
 
-export default function PropertiesMap({ properties }: PropertiesMapProps) {
-    // Default center (Ho Chi Minh City) or center of first property
-    const firstProp = properties.find(p => p.lat && p.lng);
-    const center: [number, number] = firstProp && firstProp.lat && firstProp.lng
-        ? [firstProp.lat, firstProp.lng]
-        : [10.762622, 106.660172];
+// Create a custom modern marker icon using DivIcon
+const createCustomIcon = () => {
+    const iconHtml = renderToString(
+        <div className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10">
+            <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
+            <div className="relative z-10 flex items-center justify-center w-full h-full bg-primary text-primary-foreground rounded-full shadow-lg border-2 border-white hover:scale-110 transition-transform">
+                <Building2 className="w-4 h-4 md:w-5 md:h-5" />
+            </div>
+            <div className="absolute -bottom-1 w-2 h-2 bg-primary rotate-45" />
+        </div>
+    );
 
-    const validProperties = properties.filter(p => p.lat && p.lng);
+    return L.divIcon({
+        className: "custom-marker-icon bg-transparent border-none",
+        html: iconHtml,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40], // Tip of the pin
+        popupAnchor: [0, -40],
+    });
+};
+
+export default function PropertiesMap({ properties }: PropertiesMapProps) {
+    const validProperties = properties.filter((p) => p.lat && p.lng);
+    const customIcon = createCustomIcon();
+
+    if (validProperties.length === 0) {
+        return (
+            <div className="flex h-[400px] w-full items-center justify-center rounded-lg border border-dashed bg-muted/40">
+                <div className="text-center">
+                    <MapPin className="mx-auto h-8 w-8 text-muted-foreground/60" />
+                    <h3 className="mt-2 text-lg font-semibold">Chưa có dữ liệu bản đồ</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Cập nhật tọa độ cho tòa nhà để hiển thị trên bản đồ.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    const centerLat = validProperties.reduce((sum, p) => sum + (p.lat || 0), 0) / validProperties.length;
+    const centerLng = validProperties.reduce((sum, p) => sum + (p.lng || 0), 0) / validProperties.length;
 
     return (
-        <div className="h-[600px] w-full rounded-lg overflow-hidden border shadow-sm relative z-0">
-            <MapContainer center={center} zoom={13} style={{ height: "100%", width: "100%" }}>
+        <div className="h-[600px] w-full rounded-xl overflow-hidden border shadow-lg relative z-0">
+            <MapContainer
+                center={[centerLat, centerLng]}
+                zoom={13}
+                style={{ height: "100%", width: "100%" }}
+                className="z-0"
+            >
+                {/* CartoDB Voyager - Một giao diện bản đồ hiện đại, sạch sẽ và đẹp mắt hơn */}
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 />
+
                 {validProperties.map((property) => (
                     <Marker
                         key={property.id}
-                        position={[property.lat, property.lng]}
-                        icon={icon}
+                        position={[property.lat!, property.lng!]}
+                        icon={customIcon}
                     >
-                        <Popup>
-                            <div className="text-center min-w-[200px] p-2">
-                                <h3 className="font-bold text-base mb-1">{property.name}</h3>
-                                <p className="text-xs text-muted-foreground mb-2">{property.address}</p>
-
-                                <div className="grid grid-cols-2 gap-2 text-xs mb-3 bg-muted/50 p-2 rounded">
-                                    <div>
-                                        <span className="block font-semibold">{property._count?.rooms || 0}</span>
-                                        <span className="text-muted-foreground">Phòng</span>
-                                    </div>
-                                    <div>
-                                        <span className="block font-semibold">
-                                            {property.rooms?.filter((r: any) => r.status === "VACANT").length || 0}
-                                        </span>
-                                        <span className="text-green-600">Trống</span>
-                                    </div>
+                        <Popup className="custom-popup">
+                            <div className="min-w-[200px] p-1">
+                                <div className="font-semibold text-lg mb-1">{property.name}</div>
+                                <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                    {property.address}
                                 </div>
-
-                                <Button size="sm" className="w-full h-8" asChild>
-                                    <Link href={`/dashboard/properties/${property.id}`}>
-                                        Quản lý
-                                    </Link>
-                                </Button>
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                    {property.electricityRate > 0 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            Điện: {property.electricityRate.toLocaleString()}đ
+                                        </Badge>
+                                    )}
+                                    {property.waterRate > 0 && (
+                                        <Badge variant="outline" className="text-xs">
+                                            Nước: {property.waterRate.toLocaleString()}đ
+                                        </Badge>
+                                    )}
+                                </div>
+                                <Link
+                                    href={`/dashboard/properties/${property.id}`}
+                                    className="block w-full text-center bg-primary text-primary-foreground py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                                >
+                                    Xem chi tiết
+                                </Link>
                             </div>
                         </Popup>
                     </Marker>
                 ))}
             </MapContainer>
-
-            {validProperties.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-[1000] pointer-events-none">
-                    <div className="bg-background p-4 rounded-lg shadow-lg border text-center">
-                        <p className="font-medium text-muted-foreground">Chưa có tọa độ bản đồ</p>
-                        <p className="text-xs text-muted-foreground mt-1">Cập nhật tọa độ trong phần chỉnh sửa tòa nhà</p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

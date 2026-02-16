@@ -11,18 +11,23 @@ export async function updateProfile(data: { name: string; phone?: string; image?
     if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
+        const phone = data.phone && data.phone.trim() !== "" ? data.phone : null;
+
         await prisma.user.update({
             where: { id: session.user.id },
             data: {
                 name: data.name,
-                phone: data.phone,
+                phone: phone,
                 avatar: data.image
             }
         });
 
         revalidatePath("/dashboard/settings/profile");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('phone')) {
+            return { error: "Số điện thoại này đã được sử dụng bởi tài khoản khác" };
+        }
         console.error("Failed to update profile", error);
         return { error: "Failed to update profile" };
     }

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardLayout({
     children,
@@ -10,9 +11,13 @@ export default async function DashboardLayout({
 }) {
     const session = await auth();
 
-    if (!session) {
+    if (!session?.user?.id) {
         redirect("/login");
     }
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id }
+    });
 
 
     return (
@@ -23,7 +28,7 @@ export default async function DashboardLayout({
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-400/30 blur-[100px]" />
             </div>
 
-            <Sidebar />
+            <Sidebar user={user} />
             <div className="lg:pl-[70px] transition-all duration-300 ease-in-out peer-[.w-64]:lg:pl-64">
                 {/* 
                   Note: The padding-left logic here is a bit tricky with React state in Sidebar.

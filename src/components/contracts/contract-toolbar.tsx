@@ -36,6 +36,7 @@ export function ContractToolbar({ contractId, fileName }: ContractToolbarProps) 
                 <html>
                     <head>
                         <title>${fileName}</title>
+                        <script src="https://cdn.tailwindcss.com"></script>
                         <style>
                             body { 
                                 font-family: "Times New Roman", Times, serif; 
@@ -43,16 +44,23 @@ export function ContractToolbar({ contractId, fileName }: ContractToolbarProps) 
                                 max-width: 800px; 
                                 margin: 0 auto; 
                             }
-                            /* Copy styles from the main app if needed, or use tailwind CDN for simplicity in print view */
-                            .prose { max-width: none; }
+                            .contract-signature-img {
+                                max-height: 80px;
+                                max-width: 150px;
+                                object-fit: contain;
+                            }
                         </style>
                     </head>
                     <body>
-                        ${element.innerHTML}
+                        <div class="p-8 bg-white">
+                            ${element.innerHTML}
+                        </div>
                         <script>
                             window.onload = function() {
-                                window.print();
-                                window.close();
+                                setTimeout(() => {
+                                    window.print();
+                                    window.close();
+                                }, 500); // Wait for images/tailwind to load
                             }
                         </script>
                     </body>

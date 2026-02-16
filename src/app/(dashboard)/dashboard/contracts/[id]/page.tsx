@@ -27,7 +27,7 @@ export default async function ContractDetailPage({
             roomTenant: {
                 include: {
                     tenant: true,
-                    room: { include: { property: true } },
+                    room: { include: { property: { include: { user: true } } } },
                 },
             },
         },
@@ -81,11 +81,52 @@ export default async function ContractDetailPage({
                             </Badge>
                         </CardHeader>
                         <CardContent className="p-8 bg-white min-h-[600px]">
-                            <div
-                                id="contract-content"
-                                className="prose prose-sm max-w-none whitespace-pre-wrap font-serif leading-relaxed text-justify"
-                                dangerouslySetInnerHTML={{ __html: contract.content }}
-                            />
+                            <div id="contract-content" className="font-serif">
+                                <div
+                                    className="prose prose-sm max-w-none whitespace-pre-wrap leading-relaxed text-justify"
+                                    dangerouslySetInnerHTML={{ __html: contract.content }}
+                                />
+
+                                <div className="grid grid-cols-2 mt-16 gap-8 pt-8">
+                                    <div className="text-center">
+                                        <p className="font-bold uppercase mb-4">ĐẠI DIỆN BÊN A (CHỦ NHÀ)</p>
+                                        {contract.landlordSignature ? (
+                                            <div className="flex justify-center">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={contract.landlordSignature}
+                                                    alt="Chữ ký chủ nhà"
+                                                    className="contract-signature-img h-20 object-contain"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-20 flex items-center justify-center text-muted-foreground italic">
+                                                (Ký, ghi rõ họ tên)
+                                            </div>
+                                        )}
+                                        <p className="font-bold mt-2">{contract.roomTenant.room.property.user?.name || "Chủ nhà"}</p>
+                                    </div>
+
+                                    <div className="text-center">
+                                        <p className="font-bold uppercase mb-4">ĐẠI DIỆN BÊN B (KHÁCH THUÊ)</p>
+                                        {contract.tenantSignature ? (
+                                            <div className="flex justify-center">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={contract.tenantSignature}
+                                                    alt="Chữ ký khách thuê"
+                                                    className="contract-signature-img h-20 object-contain"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-20 flex items-center justify-center text-muted-foreground italic">
+                                                (Ký, ghi rõ họ tên)
+                                            </div>
+                                        )}
+                                        <p className="font-bold mt-2">{contract.roomTenant.tenant.name}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
