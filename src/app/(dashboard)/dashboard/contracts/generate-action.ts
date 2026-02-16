@@ -26,9 +26,13 @@ export async function createContract(roomTenantId: string, templateId: string, s
     let content = template.content;
     const replacements: Record<string, string> = {
         "{{TENANT_NAME}}": roomTenant.tenant.name,
+        "{{TENANT_ID}}": roomTenant.tenant.idNumber || "....................",
+        "{{TENANT_ADDRESS}}": roomTenant.tenant.address || "....................",
         "{{ROOM_NUMBER}}": roomTenant.room.roomNumber,
         "{{RENT_PRICE}}": roomTenant.room.baseRent.toLocaleString('vi-VN') + " đ",
         "{{DEPOSIT}}": (roomTenant.room.deposit || 0).toLocaleString('vi-VN') + " đ",
+        "{{ELEC_PRICE}}": roomTenant.room.property.electricityRate.toLocaleString('vi-VN') + " đ",
+        "{{WATER_PRICE}}": roomTenant.room.property.waterRate.toLocaleString('vi-VN') + " đ",
         "{{START_DATE}}": startDate.toLocaleDateString('vi-VN'),
         "{{END_DATE}}": endDate ? endDate.toLocaleDateString('vi-VN') : "Không thời hạn",
         "{{PROPERTY_ADDRESS}}": roomTenant.room.property.address,

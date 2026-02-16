@@ -21,30 +21,49 @@ export function ContractToolbar({ contractId, fileName }: ContractToolbarProps) 
             const element = document.getElementById("contract-content");
             if (!element) {
                 toast.error("Không tìm thấy nội dung hợp đồng");
-                setIsExporting(false);
                 return;
             }
 
-            const doc = new jsPDF({
-                orientation: "p",
-                unit: "pt",
-                format: "a4",
-            });
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                toast.error("Vui lòng cho phép popup để tải PDF");
+                return;
+            }
 
-            await doc.html(element, {
-                callback: function (doc) {
-                    doc.save(`${fileName}.pdf`);
-                },
-                x: 40,
-                y: 40,
-                width: 500, // Slightly less for margins
-                windowWidth: 800,
-            });
+            // Write content to new window
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${fileName}</title>
+                        <style>
+                            body { 
+                                font-family: "Times New Roman", Times, serif; 
+                                padding: 40px; 
+                                max-width: 800px; 
+                                margin: 0 auto; 
+                            }
+                            /* Copy styles from the main app if needed, or use tailwind CDN for simplicity in print view */
+                            .prose { max-width: none; }
+                        </style>
+                    </head>
+                    <body>
+                        ${element.innerHTML}
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                window.close();
+                            }
+                        </script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
 
-            toast.success("Đang bắt đầu tải xuống...");
+            toast.success("Đang mở cửa sổ in...");
         } catch (error) {
-            console.error("PDF export error:", error);
-            toast.error("Lỗi khi tạo PDF");
+            console.error("Print error:", error);
+            toast.error("Lỗi khi tạo bản in");
         } finally {
             setIsExporting(false);
         }
@@ -54,7 +73,7 @@ export function ContractToolbar({ contractId, fileName }: ContractToolbarProps) 
         <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleDownloadPDF} disabled={isExporting}>
                 {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                Tải PDF
+                Tải PDF / In
             </Button>
         </div>
     );

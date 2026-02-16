@@ -48,6 +48,7 @@ model Property {
   services        Json?
   lat             Float?
   lng             Float?
+  images          String[]   @default([])
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   incidents       Incident[]
@@ -86,6 +87,7 @@ model Tenant {
   phone       String
   email       String?
   idNumber    String?
+  address     String?
   idPhoto     String?
   avatar      String?
   dateOfBirth DateTime?

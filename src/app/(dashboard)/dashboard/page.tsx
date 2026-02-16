@@ -21,6 +21,8 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { AIInsights } from "@/components/dashboard/ai-insights";
+import { WelcomeHero } from "@/components/dashboard/welcome-hero";
+import { ActionCenter } from "@/components/dashboard/action-center";
 
 interface ActivityItem {
     id: string;
@@ -259,166 +261,95 @@ export default async function DashboardPage() {
     const data = await getDashboardData(session.user.id);
 
     return (
-        <DashboardShell>
-            <PageHeader
-                title={`Xin chào, ${session.user.name || "Bạn"}! 👋`}
-                description={`Tổng quan hoạt động cho thuê · Tháng ${data.month}/${data.year}`}
-            >
-                <div className="flex gap-2">
-                    <Button variant="outline" className="hidden sm:flex" asChild>
-                        <Link href="/dashboard/properties/new">
-                            <Building2 className="mr-2 h-4 w-4" />
-                            Thêm tòa nhà
-                        </Link>
-                    </Button>
-                    <Button asChild>
-                        <Link href="/dashboard/billing/generate">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tạo hóa đơn
-                        </Link>
-                    </Button>
-                </div>
-            </PageHeader>
+        <DashboardShell className="space-y-8">
+            <WelcomeHero />
 
-            {/* Onboarding Wizard */}
-            <OnboardingWizard
-                hasProperties={data.properties > 0}
-                hasRooms={data.totalRooms > 0}
-                hasTenants={data.tenants > 0}
-                hasBills={data.hasBills}
-            />
-
-            {/* Overdue Alert Banner */}
-            {data.overdueBills.length > 0 && (
-                <Card className="border-destructive/50 bg-destructive/5 dark:bg-destructive/10">
-                    <CardContent className="py-3 px-4 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-                            <div>
-                                <h3 className="font-semibold text-destructive">
-                                    {data.overdueBills.length} hóa đơn quá hạn cần xử lý
-                                </h3>
-                                <p className="text-sm text-muted-foreground hidden sm:block">
-                                    Tổng tiền: <span className="font-medium text-foreground">{formatCurrency(data.overdueBills.reduce((sum, b) => sum + b.total, 0))}</span>
-                                </p>
-                            </div>
-                        </div>
-                        <Button variant="destructive" size="sm" asChild>
-                            <Link href="/dashboard/billing?status=OVERDUE">
-                                Xử lý ngay <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Dashboard Main Content */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                {/* Left Column (4/7) */}
-                <div className="col-span-4 space-y-6">
-                    {/* Key Metrics Grid */}
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <OccupancyRateCard totalRooms={data.totalRooms} occupiedRooms={data.occupiedRooms} />
-
-                        <div className="grid gap-4">
-                            <Card className="border-0 shadow-sm overflow-hidden relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40">
-                                <div className="absolute top-0 right-0 p-3 opacity-5">
-                                    <TrendingUp className="h-24 w-24" />
-                                </div>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                        Doanh thu dự kiến
-                                    </CardTitle>
-                                    <DollarSign className="h-4 w-4 text-blue-600" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold tracking-tight text-blue-900 dark:text-blue-100">
-                                        {formatCurrency(data.expectedIncome)}
-                                    </div>
-                                    <p className="text-xs text-blue-600/80 dark:text-blue-300/80 mt-1 font-medium">
-                                        Tiền thuê căn bản tháng này
-                                    </p>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-0 shadow-sm overflow-hidden relative bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40">
-                                <div className="absolute top-0 right-0 p-3 opacity-5">
-                                    <CheckCircle2 className="h-24 w-24" />
-                                </div>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                                        Thực thu tháng {data.month}
-                                    </CardTitle>
-                                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold tracking-tight text-emerald-900 dark:text-emerald-100">
-                                        {formatCurrency(data.collected)}
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <div className="h-1.5 w-full bg-emerald-200/50 dark:bg-emerald-900/50 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-emerald-500 transition-all duration-500"
-                                                style={{ width: `${Math.min(100, (data.collected / (data.expectedIncome || 1)) * 100)}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 min-w-[30px]">
-                                            {((data.collected / (data.expectedIncome || 1)) * 100).toFixed(0)}%
-                                        </span>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-
-                    {/* Financial Overview Chart */}
-                    <FinancialOverview />
-                </div>
-
-                {/* Right Column (3/7) */}
-                <div className="col-span-3 space-y-6">
-                    {/* AI Insights */}
-                    <AIInsights
-                        occupiedRooms={data.occupiedRooms}
-                        totalRooms={data.totalRooms}
-                        collected={data.collected}
-                        expectedIncome={data.expectedIncome}
-                        pendingBills={data.pendingBills}
-                        overdueBills={data.overdueBills.length}
-                    />
-
-                    {/* Recent Activity Feed */}
-                    <RecentActivity activities={data.recentActivities} />
-
-                    {/* Quick Stats - Expiring Contracts */}
-                    {data.expiringContracts.length > 0 && (
+            <div className="grid gap-8 md:grid-cols-7 lg:grid-cols-7">
+                {/* Main Content (Left) */}
+                <div className="space-y-8 md:col-span-4 lg:col-span-5">
+                    {/* Key Metrics */}
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-orange-500" />
-                                    Hợp đồng sắp hết hạn
-                                </CardTitle>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Doanh thu tháng</CardTitle>
+                                <DollarSign className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
-                            <CardContent className="grid gap-2">
-                                {data.expiringContracts.slice(0, 3).map((rt) => (
-                                    <div key={rt.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded-lg">
-                                        <div className="grid gap-0.5">
-                                            <span className="font-medium">{rt.tenant.name}</span>
-                                            <span className="text-xs text-muted-foreground">{rt.room.property.name} - P.{rt.room.roomNumber}</span>
-                                        </div>
-                                        <Badge variant="outline" className="text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/30 dark:border-orange-900 dark:text-orange-400">
-                                            {formatDate(rt.endDate!)}
-                                        </Badge>
-                                    </div>
-                                ))}
-                                <Button variant="ghost" size="sm" className="w-full mt-1 text-xs" asChild>
-                                    <Link href="/dashboard/tenants">Xem tất cả</Link>
-                                </Button>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{formatCurrency(data.collected)}</div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Thực thu tháng {data.month}
+                                </p>
                             </CardContent>
                         </Card>
-                    )}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Tiền chờ thu</CardTitle>
+                                <Receipt className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-orange-600 font-mono">{formatCurrency(data.pendingAmount)}</div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {data.pendingBills} hóa đơn chưa thanh toán
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Tỷ lệ lấp đầy</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {data.totalRooms > 0 ? Math.round((data.occupiedRooms / data.totalRooms) * 100) : 0}%
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {data.occupiedRooms}/{data.totalRooms} phòng đang thuê
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Charts */}
+                    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
+                        <div className="lg:col-span-4">
+                            <RevenueForecastCard bills={data.recentBills} />
+                        </div>
+                        <div className="lg:col-span-3">
+                            <AIInsights
+                                occupiedRooms={data.occupiedRooms}
+                                totalRooms={data.totalRooms}
+                                collected={data.collected}
+                                expectedIncome={data.expectedIncome}
+                                pendingBills={data.pendingBills}
+                                overdueBills={data.overdueBills.length}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Sidebar (Right) */}
+                <div className="space-y-6 md:col-span-3 lg:col-span-2">
+                    <ActionCenter
+                        overdueBills={data.overdueBills}
+                        expiringContracts={data.expiringContracts.length}
+                        activeIncidents={data.activeIncidents.length}
+                    />
+
+                    <RecentActivity activities={data.recentActivities} />
                 </div>
             </div>
+
+            {/* Onboarding Wizard (Only show if no properties) */}
+            {data.properties === 0 && (
+                <div className="mt-8">
+                    <OnboardingWizard
+                        hasProperties={data.properties > 0}
+                        hasRooms={data.totalRooms > 0}
+                        hasTenants={data.tenants > 0}
+                        hasBills={data.hasBills}
+                    />
+                </div>
+            )}
         </DashboardShell>
     );
 }

@@ -51,6 +51,28 @@ export async function POST(request: NextRequest) {
             );
         }
 
+
+        const existingTenant = await prisma.tenant.findFirst({
+            where: {
+                userId: session.user.id,
+                OR: [
+                    { phone: validated.data.phone },
+                    ...(validated.data.email ? [{ email: validated.data.email }] : []),
+                    ...(validated.data.idNumber ? [{ idNumber: validated.data.idNumber }] : []),
+                ],
+            },
+        });
+
+        if (existingTenant) {
+            return NextResponse.json(
+                {
+                    error: "Khách thuê đã tồn tại",
+                    details: `Khách thuê ${existingTenant.name} đã có trên hệ thống với SĐT/Email/CCCD này. Vui lòng chọn tab 'Chọn khách cũ'.`
+                },
+                { status: 409 }
+            );
+        }
+
         const tenant = await prisma.tenant.create({
             data: {
                 ...validated.data,

@@ -2,8 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Home } from "lucide-react";
-import { MobileNav } from "./sidebar";
+import { ChevronRight, Home, Search } from "lucide-react";
 import { Fragment } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CommandMenu } from "@/components/dashboard/command-menu";
@@ -49,16 +48,14 @@ export function Header() {
     const segments = pathname.split("/").filter((segment) => segment !== "");
 
     return (
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 lg:px-6">
-            <MobileNav />
-
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 bg-background/80 px-6 backdrop-blur-xl border-b transition-all">
             <div className="flex-1 flex items-center">
                 <nav className="hidden md:flex items-center text-sm font-medium text-muted-foreground">
                     <Link
                         href="/dashboard"
-                        className="flex items-center hover:text-foreground transition-colors"
+                        className="flex items-center hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
                     >
-                        <Home className="h-4 w-4 mr-2" />
+                        <Home className="h-4 w-4" />
                     </Link>
 
                     {segments.map((segment, index) => {
@@ -74,13 +71,13 @@ export function Header() {
                             <Fragment key={path}>
                                 <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground/50" />
                                 {isLast ? (
-                                    <span className="text-foreground font-semibold">
+                                    <span className="text-foreground font-semibold px-2 py-1 rounded-md bg-muted/50">
                                         {name}
                                     </span>
                                 ) : (
                                     <Link
                                         href={path}
-                                        className="hover:text-foreground transition-colors"
+                                        className="hover:text-foreground transition-colors hover:bg-muted px-2 py-1 rounded-md"
                                     >
                                         {name}
                                     </Link>
@@ -91,43 +88,45 @@ export function Header() {
                 </nav>
             </div>
 
-            <div className="flex items-center gap-2">
-                <CommandMenu />
+            <div className="flex items-center gap-3">
+                <div className="hidden md:flex relative group">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <div className="w-64">
+                        <CommandMenu />
+                    </div>
+                </div>
+
+                <div className="h-6 w-px bg-border mx-1" />
+
                 <NotificationCenter />
+                <ThemeToggle />
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
+                        <Button className="hidden sm:flex gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-0 shadow-md">
                             <PlusCircle className="h-4 w-4" />
-                            <span className="hidden lg:inline">Thao tác nhanh</span>
+                            Tạo mới
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href="/dashboard/billing/generate" className="flex items-center cursor-pointer">
-                                <Plus className="mr-2 h-4 w-4" />
-                                <span>Tạo hóa đơn</span>
-                            </Link>
+                        <DropdownMenuItem>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Thêm khách thuê
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/dashboard/incidents">
-                                <AlertTriangle className="mr-2 h-4 w-4" /> Báo sự cố
-                            </Link>
+                        <DropdownMenuItem>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Thêm phòng
                         </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/dashboard/tenants/new">
-                                <UserPlus className="mr-2 h-4 w-4" /> Thêm khách thuê
-                            </Link>
+                        <DropdownMenuItem>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Tạo hóa đơn
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            Báo cáo sự cố
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <div className="sm:hidden">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href="/dashboard/billing/new">
-                            <PlusCircle className="h-5 w-5" />
-                        </Link>
-                    </Button>
-                </div>
-                <ThemeToggle />
             </div>
         </header>
     );
