@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +53,37 @@ export default function NewPropertyPage() {
             toast.error("Đã xảy ra lỗi. Vui lòng thử lại.");
         } finally {
             setIsLoading(false);
+        }
+    }
+
+    async function handleGeocode() {
+        const address = form.getValues("address");
+        const city = form.getValues("city");
+
+        if (!address) {
+            toast.error("Vui lòng nhập địa chỉ trước");
+            return;
+        }
+
+        const query = `${address}, ${city || ""}`;
+        const toastId = toast.loading("Đang lấy tọa độ...");
+
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            const data = await res.json();
+
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+
+                form.setValue("lat", lat);
+                form.setValue("lng", lon);
+                toast.success("Đã cập nhật tọa độ thành công", { id: toastId });
+            } else {
+                toast.error("Không tìm thấy tọa độ cho địa chỉ này", { id: toastId });
+            }
+        } catch (error) {
+            toast.error("Lỗi khi lấy tọa độ", { id: toastId });
         }
     }
 
@@ -165,6 +196,65 @@ export default function NewPropertyPage() {
                                         </FormItem>
                                     )}
                                 />
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <FormLabel className="text-base">Tọa độ bản đồ</FormLabel>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleGeocode}
+                                        className="h-8"
+                                    >
+                                        <MapPin className="mr-2 h-3 w-3" />
+                                        Lấy tọa độ từ địa chỉ
+                                    </Button>
+                                </div>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="lat"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Vĩ độ (Latitude)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="10.762622"
+                                                        {...field}
+                                                        step="any"
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="lng"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Kinh độ (Longitude)</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="106.660172"
+                                                        {...field}
+                                                        step="any"
+                                                        onFocus={(e) => e.target.select()}
+                                                        onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
                             </div>
 
                             <FormField

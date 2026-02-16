@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Plus, Building2 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/dashboard/page-header";
-import { PropertyCard } from "@/components/dashboard/property-card";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Metadata } from "next";
+import { PropertiesView } from "@/components/dashboard/properties-view";
 
 export const metadata: Metadata = {
     title: "Tòa nhà",
@@ -63,11 +63,7 @@ export default async function PropertiesPage() {
                     actionHref="/dashboard/properties/new"
                 />
             ) : (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {properties.map((property) => (
-                        <PropertyCard key={property.id} property={property} />
-                    ))}
-                </div>
+                <PropertiesView properties={properties} />
             )}
         </DashboardShell>
     );

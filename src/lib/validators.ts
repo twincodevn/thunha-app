@@ -62,6 +62,8 @@ export const propertySchema = z.object({
     notes: z.string().max(MAX_NOTES, "Ghi chú quá dài").optional(),
     electricityRate: z.number().min(0, "Giá điện không hợp lệ").max(100000),
     waterRate: z.number().min(0, "Giá nước không hợp lệ").max(1000000),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
 });
 
 // =============================================
