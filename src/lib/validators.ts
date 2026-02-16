@@ -56,6 +56,7 @@ export const resetPasswordSchema = z.object({
 // PROPERTY SCHEMAS
 // =============================================
 export const propertySchema = z.object({
+    id: z.string().optional(),
     name: z.string().min(1, "Vui lòng nhập tên tòa nhà").max(MAX_NAME, "Tên quá dài"),
     address: z.string().min(1, "Vui lòng nhập địa chỉ").max(MAX_ADDRESS, "Địa chỉ quá dài"),
     city: z.string().max(100).optional(),

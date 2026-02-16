@@ -98,13 +98,20 @@ export function MeterBatchForm({ propertyId, rooms }: MeterBatchFormProps) {
         async function fetchReadings() {
             setIsFetching(true);
             try {
-                const data = await getMeterReadings(propertyId, selectedMonth, selectedYear);
+                const result = await getMeterReadings(propertyId, selectedMonth, selectedYear);
+
+                if (result.error || !result.rooms) {
+                    toast.error(result.error || "Không thể tải dữ liệu");
+                    return;
+                }
 
                 // Map existing data or defaults to form fields
                 const newReadings = rooms.map(room => {
-                    const existing = data.find((r: any) => r.roomId === room.id);
+                    const roomData = result.rooms.find((r: any) => r.id === room.id);
+                    const existing = roomData?.meterReadings?.[0];
+
                     // If no existing reading for this month, try to find prev month's closing
-                    // For now, we'll just rely on what the server returns (which should handle the "prev" logic)
+                    // For now, we'll just rely on what the server returns (which should handle the "prev" logic -- actually we need to implement that in actions if needed, but for now just show 0 or existing)
 
                     return {
                         roomId: room.id,
@@ -130,7 +137,16 @@ export function MeterBatchForm({ propertyId, rooms }: MeterBatchFormProps) {
     async function onSubmit(data: FormValues) {
         setIsLoading(true);
         try {
-            await upsertMeterReadings(propertyId, data.month, data.year, data.readings);
+            await upsertMeterReadings({
+                propertyId,
+                month: data.month,
+                year: data.year,
+                readings: data.readings.map(r => ({
+                    roomId: r.roomId,
+                    electricityNew: r.electricityCurrent,
+                    waterNew: r.waterCurrent
+                }))
+            });
             toast.success("Đã lưu chỉ số điện nước thành công");
             router.refresh();
         } catch (error) {

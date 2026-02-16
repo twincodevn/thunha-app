@@ -18,7 +18,9 @@ const statusMap: Record<string, { label: string; color: string; icon: any }> = {
     OVERDUE: { label: "Quá hạn", color: "bg-red-100 text-red-800 border-red-300", icon: AlertTriangle },
 };
 
-export default function TenantBillPage() {
+import { Suspense } from "react";
+
+function BillContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
     const [data, setData] = useState<any>(null);
@@ -284,6 +286,27 @@ export default function TenantBillPage() {
                     <p>Powered by ThuNhà — Quản lý nhà cho thuê thông minh</p>
                 </footer>
             </main>
+        </div>
+    );
+}
+
+export default function TenantBillPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50 flex items-center justify-center">
+                <Spinner />
+            </div>
+        }>
+            <BillContent />
+        </Suspense>
+    );
+}
+
+function Spinner() {
+    return (
+        <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-teal-600 mx-auto mb-3" />
+            <p className="text-gray-600">Đang tải...</p>
         </div>
     );
 }

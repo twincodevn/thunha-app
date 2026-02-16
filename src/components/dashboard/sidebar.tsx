@@ -200,7 +200,7 @@ function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentPr
                 <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "justify-between")}>
                     <div className="flex items-center gap-3 overflow-hidden">
                         <Avatar className="h-9 w-9 border cursor-pointer transition-transform hover:scale-105">
-                            <AvatarImage src={displayUser?.image || displayUser?.avatar || ""} />
+                            <AvatarImage src={(displayUser as any)?.avatar || (displayUser as any)?.image || ""} />
                             <AvatarFallback>{displayUser?.name?.[0] || "U"}</AvatarFallback>
                         </Avatar>
                         {!isCollapsed && (

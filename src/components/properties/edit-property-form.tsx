@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, MapPin } from "lucide-react";
@@ -23,7 +24,7 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm<PropertyInput & { id: string }>({
-        resolver: zodResolver(propertySchema),
+        resolver: zodResolver(propertySchema.extend({ id: z.string().min(1) })),
         defaultValues: {
             id: property.id,
             name: property.name,

@@ -281,7 +281,7 @@ export default async function DashboardPage() {
                     {/* Charts */}
                     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
                         <div className="lg:col-span-4">
-                            <RevenueForecastCard bills={data.recentBills} />
+                            <RevenueForecastCard />
                         </div>
                         <div className="lg:col-span-3">
                             <AIInsights
