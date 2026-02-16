@@ -30,6 +30,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { User } from "@prisma/client";
@@ -74,10 +75,8 @@ export function Sidebar({ user }: SidebarProps) {
             {/* Top Mobile Bar */}
             <div className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b bg-background/80 px-4 backdrop-blur-xl lg:hidden">
                 <div className="flex items-center gap-2 font-bold text-lg">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-                        <Building2 className="h-5 w-5" />
-                    </div>
-                    <span>ThuNhà</span>
+                    <BrandLogo variant="gradient" className="h-8 w-8" />
+                    <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">ThuNhà</span>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(true)}>
                     <Menu className="h-6 w-6" />
@@ -94,16 +93,14 @@ export function Sidebar({ user }: SidebarProps) {
             >
                 <div className={cn("flex h-16 items-center border-b px-4", isCollapsed ? "justify-center" : "justify-between")}>
                     {!isCollapsed && (
-                        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl text-blue-600">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-lg shadow-blue-500/20">
-                                <Building2 className="h-5 w-5" />
-                            </div>
-                            <span>ThuNhà</span>
+                        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl group">
+                            <BrandLogo variant="gradient" className="h-8 w-8 transition-transform group-hover:scale-110 duration-500" />
+                            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">ThuNhà</span>
                         </Link>
                     )}
                     {isCollapsed && (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-lg shadow-blue-500/20">
-                            <Building2 className="h-5 w-5" />
+                        <div className="flex h-8 w-8 items-center justify-center">
+                            <BrandLogo variant="gradient" className="h-8 w-8" />
                         </div>
                     )}
 

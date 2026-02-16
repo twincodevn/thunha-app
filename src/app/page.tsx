@@ -1,44 +1,42 @@
 import Link from "next/link";
-import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Hero } from "@/components/landing/hero";
-import { Features } from "@/components/landing/features";
+import { BentoFeatures } from "@/components/landing/bento-features";
 import { Testimonials } from "@/components/landing/testimonials";
 import { Pricing } from "@/components/landing/pricing";
 import { CTA } from "@/components/landing/cta";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       {/* Header */}
-      <header className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <header className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <Link href="/" className="flex items-center gap-2 group">
+            <BrandLogo variant="gradient" className="h-8 w-8 transition-transform group-hover:scale-110 duration-500" />
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-sans tracking-tight">
               ThuNhà
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/listings" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+            <Link href="/listings" className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors flex items-center gap-1">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </span>
               Tìm phòng
             </Link>
-            <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors">
               Tính năng
             </Link>
-            <Link href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors">
               Bảng giá
             </Link>
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors">
               Đăng nhập
             </Link>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20">
+            <Button asChild className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all hover:scale-105">
               <Link href="/register">Dùng thử miễn phí</Link>
             </Button>
           </nav>
@@ -46,7 +44,7 @@ export default function HomePage() {
             <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
               <Link href="/listings">Tìm phòng</Link>
             </Button>
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="rounded-full">
               <Link href="/register">Đăng ký</Link>
             </Button>
           </div>
@@ -55,7 +53,7 @@ export default function HomePage() {
 
       <main>
         <Hero />
-        <Features />
+        <BentoFeatures />
         <Testimonials />
         <Pricing />
         <CTA />
@@ -66,11 +64,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-                  <Building2 className="h-4 w-4" />
-                </div>
-                <span className="font-bold text-lg">ThuNhà</span>
+              <div className="flex items-center gap-2 group">
+                <BrandLogo variant="gradient" className="h-6 w-6" />
+                <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">ThuNhà</span>
               </div>
               <p className="text-sm text-muted-foreground max-w-xs">
                 Giải pháp quản lý nhà trọ, căn hộ dịch vụ thông minh và hiệu quả nhất.

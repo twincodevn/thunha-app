@@ -15,19 +15,19 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ThuNhà - Quản lý nhà trọ thông minh",
-    template: "%s | ThuNhà",
+    default: "ThuNhà - Nền Tảng Quản Lý Nhà Trọ Số 1 Việt Nam",
+    template: "%s | ThuNhà Pro",
   },
-  description: "Nền tảng quản lý nhà trọ thông minh cho chủ nhà Việt Nam. Tự động tính tiền điện nước, xuất hóa đơn, thu tiền online.",
-  keywords: ["quản lý nhà trọ", "phần mềm cho thuê phòng", "tính tiền điện nước", "thu tiền phòng trọ"],
-  authors: [{ name: "ThuNhà" }],
+  description: "Trải nghiệm quản lý nhà trọ đẳng cấp mới. Tự động hóa 100% quy trình, tối ưu lợi nhuận và nâng tầm phong cách chủ nhà.",
+  keywords: ["quản lý nhà trọ premium", "phần mềm quản lý căn hộ", "thu tiền nhà tự động", "chủ nhà 4.0"],
+  authors: [{ name: "ThuNhà Pro Team" }],
   creator: "ThuNhà",
   manifest: "/manifest.json",
-  themeColor: "#0d9488",
+  themeColor: "#0f172a", // Darker theme color
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "ThuNhà",
+    statusBarStyle: "black-translucent", // More premium feel
+    title: "ThuNhà Pro",
   },
   viewport: {
     width: "device-width",
@@ -38,9 +38,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    siteName: "ThuNhà",
-    title: "ThuNhà - Quản lý nhà trọ thông minh",
-    description: "Nền tảng quản lý nhà trọ thông minh cho chủ nhà Việt Nam",
+    siteName: "ThuNhà Pro",
+    title: "ThuNhà - Nền Tảng Quản Lý Nhà Trọ Số 1 Việt Nam",
+    description: "Giải pháp quản lý toàn diện cho chủ nhà hiện đại.",
   },
   icons: {
     icon: "/icons/icon-192x192.png",
