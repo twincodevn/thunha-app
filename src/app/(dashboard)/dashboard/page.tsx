@@ -23,6 +23,7 @@ import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { WelcomeHero } from "@/components/dashboard/welcome-hero";
 import { ActionCenter } from "@/components/dashboard/action-center";
+import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 
 interface ActivityItem {
     id: string;
@@ -268,46 +269,14 @@ export default async function DashboardPage() {
                 {/* Main Content (Left) */}
                 <div className="space-y-8 md:col-span-4 lg:col-span-5">
                     {/* Key Metrics */}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Doanh thu tháng</CardTitle>
-                                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{formatCurrency(data.collected)}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Thực thu tháng {data.month}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Tiền chờ thu</CardTitle>
-                                <Receipt className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-orange-600 font-mono">{formatCurrency(data.pendingAmount)}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {data.pendingBills} hóa đơn chưa thanh toán
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Tỷ lệ lấp đầy</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">
-                                    {data.totalRooms > 0 ? Math.round((data.occupiedRooms / data.totalRooms) * 100) : 0}%
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {data.occupiedRooms}/{data.totalRooms} phòng đang thuê
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <DashboardStats
+                        month={data.month}
+                        collected={data.collected}
+                        pendingAmount={data.pendingAmount}
+                        pendingBills={data.pendingBills}
+                        totalRooms={data.totalRooms}
+                        occupiedRooms={data.occupiedRooms}
+                    />
 
                     {/* Charts */}
                     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
