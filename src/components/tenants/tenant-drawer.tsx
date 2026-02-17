@@ -1,29 +1,13 @@
 "use client";
 
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, MapPin, CreditCard, FileText, User, ArrowRight, Home } from "lucide-react";
-import Link from "next/link";
-import { formatCurrency } from "@/lib/billing";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { TenantAccountDialog } from "@/components/tenants/tenant-account-dialog";
+import { useState } from "react";
 
-interface TenantDrawerProps {
-    tenant: any; // Using detailed type would be better, but 'any' facilitates rapid prototyping with complex Prisma includes
-    isOpen: boolean;
-    onClose: () => void;
-}
+// ... existing imports ...
 
 export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
+    const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+
     if (!tenant) return null;
 
     const currentRoom = tenant.roomTenants[0]?.room;
@@ -81,6 +65,56 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                 </SheetHeader>
 
                 <div className="mt-8 space-y-6">
+                    {/* Account Status */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900">
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                                <User className="h-4 w-4" /> Tài khoản Portal
+                            </h4>
+                            {tenant.username ? (
+                                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                                    Đã kích hoạt
+                                </Badge>
+                            ) : (
+                                <Badge variant="secondary" className="text-muted-foreground">
+                                    Chưa có
+                                </Badge>
+                            )}
+                        </div>
+
+                        {tenant.username ? (
+                            <div className="space-y-3">
+                                <div className="text-sm">
+                                    <span className="text-muted-foreground mr-2">Username:</span>
+                                    <span className="font-mono font-medium">{tenant.username}</span>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full bg-white hover:bg-white/80"
+                                    onClick={() => setIsAccountDialogOpen(true)}
+                                >
+                                    Đặt lại mật khẩu
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <p className="text-xs text-muted-foreground">
+                                    Cấp tài khoản để khách truy cập ứng dụng xem hóa đơn và báo cáo sự cố.
+                                </p>
+                                <Button
+                                    size="sm"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                    onClick={() => setIsAccountDialogOpen(true)}
+                                >
+                                    Cấp tài khoản ngay
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <Separator />
+
                     {/* Status Overview */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-muted/40 p-3 rounded-lg border">
@@ -104,7 +138,7 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                     {/* Contact Info */}
                     <div className="space-y-4">
                         <h4 className="text-sm font-semibold flex items-center gap-2">
-                            <User className="h-4 w-4" /> Thông tin cá nhân
+                            <Phone className="h-4 w-4" /> Liên hệ
                         </h4>
                         <div className="grid gap-3 text-sm">
                             <div className="flex items-center justify-between">
@@ -166,6 +200,14 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                         </div>
                     )}
                 </div>
+
+                <TenantAccountDialog
+                    tenantId={tenant.id}
+                    tenantName={tenant.name}
+                    currentUsername={tenant.username}
+                    open={isAccountDialogOpen}
+                    onOpenChange={setIsAccountDialogOpen}
+                />
             </SheetContent>
         </Sheet>
     );

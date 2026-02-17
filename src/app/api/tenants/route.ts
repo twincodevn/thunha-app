@@ -36,9 +36,16 @@ export async function GET() {
 // POST create new tenant
 export async function POST(request: NextRequest) {
     try {
+
         const session = await auth();
         if (!session?.user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Verify user exists in DB (handle stale sessions after DB reset)
+        const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+        if (!user) {
+            return NextResponse.json({ error: "Tài khoản không tồn tại. Vui lòng đăng nhập lại." }, { status: 401 });
         }
 
         const body = await request.json();

@@ -24,6 +24,8 @@ import { AIInsights } from "@/components/dashboard/ai-insights";
 import { WelcomeHero } from "@/components/dashboard/welcome-hero";
 import { ActionCenter } from "@/components/dashboard/action-center";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
+import { getSmartInsights } from "@/lib/analytics/insights";
+import { SmartInsights } from "@/components/dashboard/smart-insights";
 
 interface ActivityItem {
     id: string;
@@ -50,6 +52,7 @@ async function getDashboardData(userId: string) {
         expiringContracts,
         activeIncidents,
         recentTenants,
+        insights,
     ] = await Promise.all([
         prisma.property.count({ where: { userId } }),
         prisma.room.findMany({
@@ -173,6 +176,7 @@ async function getDashboardData(userId: string) {
             orderBy: { createdAt: "desc" },
             take: 3,
         }),
+        getSmartInsights(userId),
     ]);
 
     const totalRooms = rooms.length;
@@ -252,6 +256,7 @@ async function getDashboardData(userId: string) {
         month,
         year,
         hasBills: totalBillCount > 0,
+        insights,
     };
 }
 
@@ -264,6 +269,8 @@ export default async function DashboardPage() {
     return (
         <DashboardShell className="space-y-8">
             <WelcomeHero />
+
+            <SmartInsights insights={data.insights} />
 
             <div className="grid gap-8 md:grid-cols-7 lg:grid-cols-7">
                 {/* Main Content (Left) */}
@@ -284,13 +291,9 @@ export default async function DashboardPage() {
                             <RevenueForecastCard />
                         </div>
                         <div className="lg:col-span-3">
-                            <AIInsights
+                            <OccupancyRateCard
                                 occupiedRooms={data.occupiedRooms}
                                 totalRooms={data.totalRooms}
-                                collected={data.collected}
-                                expectedIncome={data.expectedIncome}
-                                pendingBills={data.pendingBills}
-                                overdueBills={data.overdueBills.length}
                             />
                         </div>
                     </div>
