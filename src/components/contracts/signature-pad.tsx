@@ -1,133 +1,82 @@
 
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
+import SignatureCanvas from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
-import { Eraser, Check, PenTool } from "lucide-react";
+import { Eraser, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SignaturePadProps {
-    onSave: (signatureData: string) => void;
+    onSave: (signatureData: string) => Promise<void>;
 }
 
 export function SignaturePad({ onSave }: SignaturePadProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [hasSignature, setHasSignature] = useState(false);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        // Set dimensions correctly for high DPI
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-
-        ctx.scale(dpr, dpr);
-        ctx.lineWidth = 2;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = "#000000";
-    }, []);
-
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        setIsDrawing(true);
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const { x, y } = getCoordinates(e, canvas);
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-
-        // Add subtle shadow for more "ink" feel
-        ctx.shadowBlur = 1;
-        ctx.shadowColor = "rgba(0,0,0,0.2)";
-    };
-
-    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const { x, y } = getCoordinates(e, canvas);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        setHasSignature(true);
-    };
-
-    const stopDrawing = () => {
-        setIsDrawing(false);
-    };
-
-    const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
-        const rect = canvas.getBoundingClientRect();
-        let clientX, clientY;
-
-        if ('touches' in e) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = (e as React.MouseEvent).clientX;
-            clientY = (e as React.MouseEvent).clientY;
-        }
-
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
-    };
+    const sigPad = useRef<SignatureCanvas>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isEmpty, setIsEmpty] = useState(true);
 
     const clear = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        setHasSignature(false);
+        sigPad.current?.clear();
+        setIsEmpty(true);
     };
 
-    const handleSave = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        onSave(canvas.toDataURL("image/png"));
+    const save = async () => {
+        if (isEmpty) {
+            toast.error("Vui lòng ký tên trước khi lưu");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // Get base64 data
+            const dataUrl = sigPad.current?.getTrimmedCanvas().toDataURL("image/png");
+            if (dataUrl) {
+                await onSave(dataUrl);
+                toast.success("Đã ký thành công!");
+            }
+        } catch (error) {
+            console.error("Signature save error:", error);
+            toast.error("Có lỗi xảy ra khi lưu chữ ký");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
         <div className="space-y-4">
-            <div className="group relative border-2 border-dashed rounded-xl bg-slate-50/50 hover:bg-slate-50 hover:border-blue-400 transition-all duration-300 touch-none h-48 w-full overflow-hidden shadow-inner">
-                {!hasSignature && !isDrawing && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none">
-                        <PenTool className="h-8 w-8 mb-2 opacity-20" />
-                        <p className="text-xs font-medium">Ký tên tại đây</p>
-                    </div>
-                )}
-                <canvas
-                    ref={canvasRef}
-                    className="w-full h-full cursor-crosshair block absolute inset-0 z-10"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={stopDrawing}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg bg-white overflow-hidden touch-none">
+                <SignatureCanvas
+                    ref={sigPad}
+                    penColor="black"
+                    canvasProps={{
+                        className: "w-full h-[200px] cursor-crosshair",
+                    }}
+                    onBegin={() => setIsEmpty(false)}
                 />
             </div>
-            <div className="flex items-center justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={clear}>
-                    <Eraser className="mr-2 h-4 w-4" /> Xóa
-                </Button>
-                <Button size="sm" onClick={handleSave} disabled={!hasSignature}>
-                    <Check className="mr-2 h-4 w-4" /> Lưu chữ ký
-                </Button>
+            <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
+                <p>Ký tên vào khung bên trên</p>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clear}
+                        disabled={isSaving || isEmpty}
+                    >
+                        <Eraser className="mr-2 h-4 w-4" />
+                        Xóa
+                    </Button>
+                    <Button
+                        size="sm"
+                        onClick={save}
+                        disabled={isSaving || isEmpty}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                        Xác nhận ký
+                    </Button>
+                </div>
             </div>
         </div>
     );

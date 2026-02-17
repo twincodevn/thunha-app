@@ -2,8 +2,28 @@
 
 import { TenantAccountDialog } from "@/components/tenants/tenant-account-dialog";
 import { useState } from "react";
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Phone, Mail, MapPin, CreditCard, FileText, User, ArrowRight, Home } from "lucide-react";
+import Link from "next/link";
+import { formatCurrency } from "@/lib/billing";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
-// ... existing imports ...
+interface TenantDrawerProps {
+    tenant: any; // Using detailed type would be better, but 'any' facilitates rapid prototyping with complex Prisma includes
+    isOpen: boolean;
+    onClose: () => void;
+}
 
 export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
     const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);

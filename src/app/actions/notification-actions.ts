@@ -9,7 +9,7 @@ export async function getNotifications() {
 
     const userId = session.user.id;
 
-    const [overdueBills, expiringContracts, recentIncidents] = await Promise.all([
+    const [overdueBills, expiringContracts, recentIncidents, notifications] = await Promise.all([
         // Overdue bills
         prisma.bill.findMany({
             where: {
@@ -56,9 +56,27 @@ export async function getNotifications() {
             orderBy: { createdAt: "desc" },
             take: 5,
         }),
+        // New Notifications (Events)
+        prisma.notification.findMany({
+            where: {
+                userId,
+                isRead: false,
+            },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+        }),
     ]);
 
     return {
+        notifications: notifications.map((n) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            link: n.link,
+            createdAt: n.createdAt.toISOString(),
+            isRead: n.isRead,
+        })),
         overdueBills: overdueBills.map((bill) => ({
             id: bill.id,
             tenantName: bill.roomTenant.tenant.name,
@@ -84,10 +102,11 @@ export async function getNotifications() {
             createdAt: inc.createdAt.toISOString(),
         })),
         counts: {
-            total: overdueBills.length + expiringContracts.length + recentIncidents.length,
+            total: overdueBills.length + expiringContracts.length + recentIncidents.length + notifications.length,
             overdue: overdueBills.length,
             expiring: expiringContracts.length,
             incidents: recentIncidents.length,
+            notifications: notifications.length,
         },
     };
 }

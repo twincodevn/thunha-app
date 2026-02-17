@@ -34,7 +34,7 @@ export default async function TenantDashboard() {
                         }
                     },
                     contracts: {
-                        where: { status: "SIGNED" },
+                        // where: { status: "SIGNED" }, // Allow seeing all contracts to sign
                         orderBy: { createdAt: "desc" },
                         take: 1
                     }
@@ -46,6 +46,7 @@ export default async function TenantDashboard() {
     const currentTenancy = tenant?.roomTenants[0];
     const room = currentTenancy?.room;
     const property = room?.property;
+    const latestContract = currentTenancy?.contracts[0];
 
     // Fetch pending bills
     const pendingBills = await prisma.bill.findMany({
@@ -181,12 +182,26 @@ export default async function TenantDashboard() {
                             </div>
                             <span className="text-[10px] font-medium text-slate-600">Báo hỏng</span>
                         </Link>
-                        <Link href="/portal/dashboard" className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed">
-                            <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-amber-500">
-                                <User className="h-6 w-6" />
+
+                        {/* Contract Button - Dynamic */}
+                        {latestContract ? (
+                            <Link href={`/portal/contracts/${latestContract.id}`} className="flex flex-col items-center gap-2 group">
+                                <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-amber-500 group-active:scale-95 transition-transform relative">
+                                    <FileText className="h-6 w-6" />
+                                    {latestContract.status !== 'SIGNED' && (
+                                        <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] font-medium text-slate-600">Hợp đồng</span>
+                            </Link>
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed">
+                                <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-amber-500">
+                                    <FileText className="h-6 w-6" />
+                                </div>
+                                <span className="text-[10px] font-medium text-slate-600">Hợp đồng</span>
                             </div>
-                            <span className="text-[10px] font-medium text-slate-600">Dịch vụ</span>
-                        </Link>
+                        )}
                         <form
                             action={async () => {
                                 "use server";

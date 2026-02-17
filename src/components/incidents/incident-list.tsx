@@ -203,6 +203,10 @@ export function IncidentList({ incidents }: Props) {
                                         {incident.roomTenant && (
                                             <>
                                                 <span>·</span>
+                                                <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                                                    {incident.roomTenant.tenant.name}
+                                                </span>
+                                                <span>·</span>
                                                 <span className="font-medium text-foreground">
                                                     P.{incident.roomTenant.room.roomNumber}
                                                 </span>

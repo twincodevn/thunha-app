@@ -23,14 +23,17 @@ export async function createIncident(formData: z.infer<typeof incidentSchema>) {
 
     const { title, description, images } = validatedFields.data;
 
-    // Find the active RoomTenant for this tenant
     const roomTenant = await prisma.roomTenant.findFirst({
         where: {
             tenantId: session.user.id,
             isActive: true,
         },
         include: {
-            room: true,
+            room: {
+                include: {
+                    property: true,
+                }
+            },
         }
     });
 
@@ -39,7 +42,7 @@ export async function createIncident(formData: z.infer<typeof incidentSchema>) {
     }
 
     try {
-        await prisma.incident.create({
+        const incident = await prisma.incident.create({
             data: {
                 propertyId: roomTenant.room.propertyId,
                 roomTenantId: roomTenant.id,
@@ -50,6 +53,18 @@ export async function createIncident(formData: z.infer<typeof incidentSchema>) {
                 priority: "MEDIUM",
             },
         });
+
+        // Create notification for Landlord
+        await prisma.notification.create({
+            data: {
+                userId: roomTenant.room.property.userId,
+                title: `Sự cố mới: Phòng ${roomTenant.room.roomNumber}`,
+                message: `${title} - ${description.substring(0, 50)}${description.length > 50 ? '...' : ''}`,
+                type: "INCIDENT",
+                link: `/dashboard/incidents?id=${incident.id}`,
+            },
+        });
+
     } catch (error) {
         console.error("Failed to create incident:", error);
         return { error: "Có lỗi xảy ra khi tạo báo cáo" };

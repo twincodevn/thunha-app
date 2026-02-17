@@ -71,6 +71,44 @@ export function NotificationCenter() {
                         </div>
                     ) : (
                         <div className="divide-y">
+                            {/* New Notifications */}
+                            {data.notifications && data.notifications.length > 0 && (
+                                <div className="p-2">
+                                    <h4 className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 px-2 py-1 flex items-center gap-1.5">
+                                        <Bell className="h-3 w-3" />
+                                        Mới nhất ({data.notifications.length})
+                                    </h4>
+                                    {data.notifications.map((notif: any) => (
+                                        <Link
+                                            key={notif.id}
+                                            href={notif.link || "/dashboard"}
+                                            onClick={async () => {
+                                                setIsOpen(false);
+                                                // Mark as read API
+                                                await fetch("/api/notifications", {
+                                                    method: "PATCH",
+                                                    body: JSON.stringify({ id: notif.id }),
+                                                });
+                                            }}
+                                            className="flex items-start gap-3 rounded-lg p-2 hover:bg-muted/60 transition-colors group relative"
+                                        >
+                                            <div className="mt-0.5 p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
+                                                <Bell className="h-3.5 w-3.5" />
+                                            </div>
+                                            <div className="flex-1 min-w-0 pr-2">
+                                                <p className="text-sm font-medium truncate">{notif.title}</p>
+                                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                                    {notif.message}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                                    Vừa xong
+                                                </p>
+                                            </div>
+                                            <span className="absolute top-3 right-2 h-2 w-2 rounded-full bg-blue-500"></span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                             {/* Overdue Bills */}
                             {data.overdueBills.length > 0 && (
                                 <div className="p-2">
