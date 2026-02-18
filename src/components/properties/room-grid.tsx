@@ -14,7 +14,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, User, FileText, AlertTriangle, PenSquare, Receipt } from "lucide-react";
+import { MoreHorizontal, User, FileText, AlertTriangle, PenSquare, Receipt, Globe } from "lucide-react";
 
 interface Room {
     id: string;
@@ -145,6 +145,17 @@ export function RoomGrid({ propertyId, rooms }: RoomGridProps) {
                                 <div className="flex items-center gap-2 p-2 rounded-md bg-background/50 text-sm text-muted-foreground">
                                     <User className="h-4 w-4 opacity-50" />
                                     <span className="italic">Chưa có khách</span>
+                                </div>
+                            )}
+
+                            {room.status === "VACANT" && (
+                                <div className="mt-2 pt-2 border-t flex justify-between items-center text-xs">
+                                    <span className="text-emerald-600 flex items-center gap-1">
+                                        <Globe className="h-3 w-3" /> Đang hiển thị
+                                    </span>
+                                    <Link href="/listings" className="text-blue-600 hover:underline">
+                                        Xem tin đăng
+                                    </Link>
                                 </div>
                             )}
                         </CardContent>

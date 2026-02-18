@@ -1,13 +1,11 @@
-
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
     LogOut, Home, User, FileText, Wrench, Bell,
-    CreditCard, ChevronRight, History, Zap, Droplets
+    CreditCard, ChevronRight, History, Zap, Droplets, ArrowUpRight
 } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +32,6 @@ export default async function TenantDashboard() {
                         }
                     },
                     contracts: {
-                        // where: { status: "SIGNED" }, // Allow seeing all contracts to sign
                         orderBy: { createdAt: "desc" },
                         take: 1
                     }
@@ -80,201 +77,176 @@ export default async function TenantDashboard() {
     }, 0);
 
     const nextDueDate = pendingBills.length > 0 ? pendingBills[0].dueDate : null;
+    const hasPending = totalBalance > 0;
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-24">
-            {/* Header */}
-            <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b z-20 px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
-                        <AvatarImage src={session.user.image || ""} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                            {session.user.name?.charAt(0)}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="text-xs text-slate-500 font-medium">Xin chào,</p>
-                        <h1 className="text-sm font-bold text-slate-900 leading-none">{session.user.name}</h1>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="rounded-full relative text-slate-500">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
-                    </Button>
-                </div>
-            </header>
+        <div className="min-h-screen bg-slate-50/50 pb-4">
+            <main className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6 max-w-7xl mx-auto">
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Hero / Balance Card */}
+                    <div className={cn(
+                        "relative overflow-hidden rounded-[2rem] p-7 shadow-xl transition-all duration-500",
+                        hasPending
+                            ? "bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 text-white shadow-indigo-500/30"
+                            : "bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-700 text-white shadow-emerald-500/30"
+                    )}>
+                        {/* Abstract Shapes */}
+                        <div className="absolute top-0 right-0 -mr-12 -mt-12 h-48 w-48 rounded-full bg-white/10 blur-3xl mix-blend-overlay"></div>
+                        <div className="absolute bottom-0 left-0 -ml-12 -mb-12 h-48 w-48 rounded-full bg-white/10 blur-3xl mix-blend-overlay"></div>
 
-            <main className="pt-20 px-4 space-y-6">
-                {/* Hero / Balance Card */}
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-xl shadow-indigo-500/20 p-6">
-                    <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
-                    <div className="absolute bottom-0 left-0 -ml-8 -mb-8 h-32 w-32 rounded-full bg-purple-500/20 blur-2xl"></div>
-
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <p className="text-blue-100 text-sm font-medium opacity-80 mb-1">Dư nợ hiện tại</p>
-                                <h2 className="text-4xl font-bold tracking-tight">
+                        <div className="relative z-10 flex flex-col items-center text-center">
+                            <p className="text-white/80 text-sm font-medium mb-1 tracking-wide">
+                                {hasPending ? "Dư nợ cần thanh toán" : "Tài khoản của bạn"}
+                            </p>
+                            <div className="flex items-baseline justify-center gap-1 mb-6">
+                                <h2 className="text-5xl font-bold tracking-tighter">
                                     {totalBalance.toLocaleString('vi-VN')}
-                                    <span className="text-xl opacity-60 ml-1">đ</span>
                                 </h2>
+                                <span className="text-2xl font-medium opacity-70">đ</span>
                             </div>
-                            <div className="bg-white/20 backdrop-blur-md p-2 rounded-xl">
-                                <CreditCard className="h-6 w-6 text-white" />
-                            </div>
-                        </div>
 
-                        {nextDueDate && (
-                            <div className="inline-flex items-center gap-2 bg-red-500/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-red-100 mb-6 border border-red-500/30">
-                                <History className="h-3 w-3" />
-                                Hạn thanh toán: {formatDate(nextDueDate)}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* Payment Action will likely link to specific bill or a generic payment page */}
-                            <Button className="w-full bg-white text-indigo-700 hover:bg-white/90 font-bold shadow-lg shadow-black/5 rounded-xl h-11" asChild>
-                                <Link href="/portal/bills">
-                                    Thanh toán ngay
-                                </Link>
-                            </Button>
-                            <Button variant="outline" className="w-full bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white rounded-xl h-11" asChild>
-                                <Link href="/portal/bills">
-                                    Xem chi tiết
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Property Info */}
-                {room && (
-                    <div className="flex items-center justify-between bg-white p-4 rounded-2xl border shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-                                <Home className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-500 font-medium">{property?.name}</p>
-                                <p className="text-sm font-bold text-slate-900">Phòng {room.roomNumber}</p>
-                            </div>
-                        </div>
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
-                            Đang thuê
-                        </Badge>
-                    </div>
-                )}
-
-                {/* Quick Actions Grid */}
-                <div>
-                    <h3 className="text-sm font-bold text-slate-900 mb-3 px-1">Tiện ích</h3>
-                    <div className="grid grid-cols-4 gap-3">
-                        <Link href="/portal/bills" className="flex flex-col items-center gap-2 group">
-                            <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-indigo-600 group-active:scale-95 transition-transform">
-                                <FileText className="h-6 w-6" />
-                            </div>
-                            <span className="text-[10px] font-medium text-slate-600">Hóa đơn</span>
-                        </Link>
-                        <Link href="/portal/incidents" className="flex flex-col items-center gap-2 group">
-                            <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-rose-500 group-active:scale-95 transition-transform">
-                                <Wrench className="h-6 w-6" />
-                            </div>
-                            <span className="text-[10px] font-medium text-slate-600">Báo hỏng</span>
-                        </Link>
-
-                        {/* Contract Button - Dynamic */}
-                        {latestContract ? (
-                            <Link href={`/portal/contracts/${latestContract.id}`} className="flex flex-col items-center gap-2 group">
-                                <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-amber-500 group-active:scale-95 transition-transform relative">
-                                    <FileText className="h-6 w-6" />
-                                    {latestContract.status !== 'SIGNED' && (
-                                        <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
-                                    )}
+                            {hasPending && nextDueDate ? (
+                                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-semibold text-white/95 mb-6 border border-white/20">
+                                    <History className="h-3.5 w-3.5" />
+                                    Hạn chót: {formatDate(nextDueDate)}
                                 </div>
-                                <span className="text-[10px] font-medium text-slate-600">Hợp đồng</span>
+                            ) : (
+                                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-semibold text-white/95 mb-6 border border-white/20">
+                                    <CreditCard className="h-3.5 w-3.5" />
+                                    Đã thanh toán hết
+                                </div>
+                            )}
+
+                            <div className="w-full grid grid-cols-2 gap-3">
+                                {/* Payment Action */}
+                                <Button className="w-full bg-white text-indigo-700 hover:bg-white/90 font-bold shadow-lg shadow-black/10 rounded-2xl h-12 text-base transition-transform active:scale-[0.98]" asChild>
+                                    <Link href="/portal/bills">
+                                        Thanh toán
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" className="w-full bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white rounded-2xl h-12 backdrop-blur-sm transition-transform active:scale-[0.98]" asChild>
+                                    <Link href="/portal/bills">
+                                        Chi tiết
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions Grid - iOS Style */}
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900 mb-4 px-1 flex items-center gap-2">
+                            <Wrench className="h-4 w-4 text-slate-400" />
+                            Tiện ích nhanh
+                        </h3>
+                        <div className="grid grid-cols-4 gap-4">
+                            <Link href="/portal/bills" className="flex flex-col items-center gap-2 group">
+                                <div className="h-[4.5rem] w-[4.5rem] bg-white rounded-[1.2rem] shadow-sm border border-slate-100 flex items-center justify-center text-blue-500 group-active:scale-95 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                                    <div className="h-8 w-8 bg-blue-50 rounded-xl flex items-center justify-center">
+                                        <FileText className="h-5 w-5" />
+                                    </div>
+                                </div>
+                                <span className="text-[11px] font-medium text-slate-600">Hóa đơn</span>
                             </Link>
-                        ) : (
-                            <div className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed">
-                                <div className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-amber-500">
-                                    <FileText className="h-6 w-6" />
+
+                            <Link href="/portal/incidents" className="flex flex-col items-center gap-2 group">
+                                <div className="h-[4.5rem] w-[4.5rem] bg-white rounded-[1.2rem] shadow-sm border border-slate-100 flex items-center justify-center text-rose-500 group-active:scale-95 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                                    <div className="h-8 w-8 bg-rose-50 rounded-xl flex items-center justify-center">
+                                        <Wrench className="h-5 w-5" />
+                                    </div>
                                 </div>
-                                <span className="text-[10px] font-medium text-slate-600">Hợp đồng</span>
-                            </div>
-                        )}
-                        <form
-                            action={async () => {
-                                "use server";
-                                await signOut({ redirectTo: "/portal/login" });
-                            }}
-                            className="flex flex-col items-center gap-2 group"
-                        >
-                            <button className="h-12 w-12 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-slate-500 group-active:scale-95 transition-transform">
-                                <LogOut className="h-6 w-6" />
-                            </button>
-                            <span className="text-[10px] font-medium text-slate-600">Đăng xuất</span>
-                        </form>
+                                <span className="text-[11px] font-medium text-slate-600">Báo hỏng</span>
+                            </Link>
+
+                            {/* Contract */}
+                            {latestContract ? (
+                                <Link href={`/portal/contracts/${latestContract.id}`} className="flex flex-col items-center gap-2 group">
+                                    <div className="h-[4.5rem] w-[4.5rem] bg-white rounded-[1.2rem] shadow-sm border border-slate-100 flex items-center justify-center text-amber-500 group-active:scale-95 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 relative">
+                                        <div className="h-8 w-8 bg-amber-50 rounded-xl flex items-center justify-center">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        {latestContract.status !== 'SIGNED' && (
+                                            <span className="absolute top-3 right-3 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                                        )}
+                                    </div>
+                                    <span className="text-[11px] font-medium text-slate-600">Hợp đồng</span>
+                                </Link>
+                            ) : (
+                                <div className="flex flex-col items-center gap-2 text-slate-300 cursor-not-allowed">
+                                    <div className="h-[4.5rem] w-[4.5rem] bg-slate-50 rounded-[1.2rem] border border-slate-100 flex items-center justify-center">
+                                        <FileText className="h-6 w-6" />
+                                    </div>
+                                    <span className="text-[11px] font-medium">Hợp đồng</span>
+                                </div>
+                            )}
+
+                            <form
+                                action={async () => {
+                                    "use server";
+                                    await signOut({ redirectTo: "/portal/login" });
+                                }}
+                                className="flex flex-col items-center gap-2 group"
+                            >
+                                <button className="h-[4.5rem] w-[4.5rem] bg-white rounded-[1.2rem] shadow-sm border border-slate-100 flex items-center justify-center text-slate-500 group-active:scale-95 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+                                    <div className="h-8 w-8 bg-slate-50 rounded-xl flex items-center justify-center group-hover:bg-slate-100 transition-colors">
+                                        <LogOut className="h-5 w-5" />
+                                    </div>
+                                </button>
+                                <span className="text-[11px] font-medium text-slate-600">Đăng xuất</span>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
-                {/* Recent Transactions */}
-                <div>
-                    <div className="flex items-center justify-between mb-3 px-1">
-                        <h3 className="text-sm font-bold text-slate-900">Hoạt động gần đây</h3>
-                        <Link href="/portal/bills" className="text-xs text-indigo-600 font-medium">Xem tất cả</Link>
-                    </div>
-                    <div className="bg-white rounded-2xl border shadow-sm divide-y">
-                        {recentBills.map(bill => (
-                            <div key={bill.id} className="p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center",
-                                        bill.status === "PAID" ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
-                                    )}>
-                                        {bill.status === "PAID" ? <CreditCard className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+                {/* Right Sidebar (Desktop) */}
+                <div className="lg:col-span-1">
+                    {/* Recent Transactions - Clean List */}
+                    <div className="bg-white rounded-[2rem] border shadow-sm p-1">
+                        <div className="flex items-center justify-between mb-2 px-4 pt-4">
+                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <History className="h-4 w-4 text-slate-400" />
+                                Gần đây
+                            </h3>
+                            <Link href="/portal/bills" className="text-xs text-indigo-600 font-semibold flex items-center hover:underline">
+                                Xem tất cả <ChevronRight className="h-3 w-3" />
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-50">
+                            {recentBills.map(bill => (
+                                <div key={bill.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group rounded-xl">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center transition-colors shadow-sm",
+                                            bill.status === "PAID" ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"
+                                        )}>
+                                            {bill.status === "PAID" ? <CreditCard className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                                T{bill.month}
+                                            </p>
+                                            <p className="text-[10px] text-slate-500">{formatDate(bill.createdAt)}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-slate-900">
-                                            Hóa đơn tháng {bill.month}/{bill.year}
+                                    <div className="text-right">
+                                        <p className={cn("text-sm font-bold", bill.status === "PAID" ? "text-slate-900" : "text-orange-600")}>
+                                            -{formatCurrency(bill.total)}
                                         </p>
-                                        <p className="text-xs text-slate-500">{formatDate(bill.createdAt)}</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className={cn("text-sm font-bold", bill.status === "PAID" ? "text-slate-900" : "text-orange-600")}>
-                                        -{formatCurrency(bill.total)}
-                                    </p>
-                                    <p className="text-[10px] font-medium text-slate-500 uppercase">{bill.status}</p>
+                            ))}
+                            {recentBills.length === 0 && (
+                                <div className="py-12 flex flex-col items-center text-center">
+                                    <div className="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-2">
+                                        <FileText className="h-6 w-6" />
+                                    </div>
+                                    <p className="text-sm text-slate-500 font-medium">Chưa có giao dịch nào</p>
                                 </div>
-                            </div>
-                        ))}
-                        {recentBills.length === 0 && (
-                            <div className="p-6 text-center text-slate-500 text-sm">
-                                Chưa có hoạt động nào
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </main>
-
-            {/* Bottom Nav */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t pb-safe pt-2 px-6 flex justify-between items-center z-20 pb-4">
-                <Link href="/portal/dashboard" className="flex flex-col items-center gap-1 text-indigo-600">
-                    <Home className="h-6 w-6 fill-current" />
-                    <span className="text-[10px] font-medium">Trang chủ</span>
-                </Link>
-                <Link href="/portal/bills" className="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition-colors">
-                    <FileText className="h-6 w-6" />
-                    <span className="text-[10px] font-medium">Hóa đơn</span>
-                </Link>
-                <Link href="/portal/incidents" className="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition-colors">
-                    <Wrench className="h-6 w-6" />
-                    <span className="text-[10px] font-medium">Sự cố</span>
-                </Link>
-                <Link href="/portal/profile" className="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition-colors">
-                    <User className="h-6 w-6" />
-                    <span className="text-[10px] font-medium">Tài khoản</span>
-                </Link>
-            </nav>
         </div>
     );
 }
+

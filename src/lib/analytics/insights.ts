@@ -139,7 +139,7 @@ export async function getSmartInsights(userId: string): Promise<Insight[]> {
             title: "Tỷ lệ trống phòng cao",
             description: `Tỷ lệ trống là ${rate}%. Cân nhắc đăng tin tìm khách hoặc chạy khuyến mãi giảm giá?`,
             actionLabel: "Đăng tin ngay",
-            actionUrl: "/listings",
+            actionUrl: "/dashboard/properties",
             priority: "MEDIUM",
             icon: "TrendingUp"
         });

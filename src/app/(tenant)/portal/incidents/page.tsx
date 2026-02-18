@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Wrench, Plus, Circle } from "lucide-react";
+import { ArrowLeft, Wrench, Plus, Clock, CheckCircle2, AlertTriangle, AlertCircle, ChevronRight, ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default async function TenantIncidentsPage() {
     const session = await auth();
@@ -18,7 +19,6 @@ export default async function TenantIncidentsPage() {
 
     const incidents = await prisma.incident.findMany({
         where: {
-            // Link to tenant via roomTenant if possible, otherwise we might need to query by roomTenantId
             roomTenant: {
                 tenantId: session.user.id,
             },
@@ -28,54 +28,71 @@ export default async function TenantIncidentsPage() {
         },
     });
 
-    const getStatusBadge = (status: string) => {
+    const getStatusConfig = (status: string) => {
         switch (status) {
             case "OPEN":
-                return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">Mới tiếp nhận</Badge>;
+                return {
+                    label: "Mới tiếp nhận",
+                    icon: AlertCircle,
+                    className: "bg-blue-50 text-blue-700 border-blue-100 ring-blue-500/10",
+                    borderClass: "border-blue-500"
+                };
             case "IN_PROGRESS":
-                return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-none">Đang xử lý</Badge>;
+                return {
+                    label: "Đang xử lý",
+                    icon: Wrench,
+                    className: "bg-amber-50 text-amber-700 border-amber-100 ring-amber-500/10",
+                    borderClass: "border-amber-500"
+                };
             case "RESOLVED":
-                return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">Đã hoàn thành</Badge>;
+                return {
+                    label: "Đã hoàn thành",
+                    icon: CheckCircle2,
+                    className: "bg-emerald-50 text-emerald-700 border-emerald-100 ring-emerald-500/10",
+                    borderClass: "border-emerald-500"
+                };
             case "CANCELLED":
-                return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 border-none">Đã hủy</Badge>;
+                return {
+                    label: "Đã hủy",
+                    icon: AlertTriangle,
+                    className: "bg-slate-50 text-slate-700 border-slate-100 ring-slate-500/10",
+                    borderClass: "border-slate-500"
+                };
             default:
-                return <Badge variant="outline">{status}</Badge>;
+                return {
+                    label: status,
+                    icon: AlertCircle,
+                    className: "bg-slate-50 text-slate-700",
+                    borderClass: "border-slate-300"
+                };
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 pb-20">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <Link href="/portal/dashboard" className="p-2 bg-white rounded-full shadow-sm">
-                        <ArrowLeft className="h-5 w-5 text-gray-600" />
-                    </Link>
-                    <h1 className="text-xl font-bold text-gray-900">Sự cố / Sửa chữa</h1>
-                </div>
-                <Link href="/portal/incidents/new">
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-1 rounded-full px-4">
-                        <Plus className="h-4 w-4" />
-                        <span className="hidden sm:inline">Báo mới</span>
-                    </Button>
-                </Link>
-            </div>
-
+        <div className="min-h-screen bg-slate-50/50 pb-24">
             {/* Incidents List */}
-            <div className="space-y-3">
+            <div className="p-4 space-y-4">
                 {incidents.length === 0 ? (
-                    <div className="text-center py-10 text-gray-500">
-                        <Wrench className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                        <p>Bạn chưa có yêu cầu sửa chữa nào</p>
-                        <Link href="/portal/incidents/new" className="mt-4 inline-block">
-                            <Button variant="outline" className="gap-2">
-                                <Plus className="h-4 w-4" />
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
+                            <Wrench className="h-10 w-10 text-slate-300" />
+                        </div>
+                        <h3 className="text-slate-900 font-semibold mb-1">Chưa có sự cố nào</h3>
+                        <p className="text-slate-500 text-sm max-w-[200px] mb-6">
+                            Nếu gặp vấn đề trong phòng, hãy báo ngay cho chúng tôi biết.
+                        </p>
+                        <Link href="/portal/incidents/new">
+                            <Button className="bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50 shadow-sm font-medium">
+                                <Plus className="h-4 w-4 mr-2" />
                                 Báo sự cố mới
                             </Button>
                         </Link>
                     </div>
                 ) : (
                     incidents.map((incident) => {
+                        const status = getStatusConfig(incident.status);
+                        const StatusIcon = status.icon;
+
                         let images: string[] = [];
                         try {
                             images = incident.images ? JSON.parse(incident.images) : [];
@@ -84,38 +101,76 @@ export default async function TenantIncidentsPage() {
                         }
 
                         return (
-                            <Card key={incident.id} className="hover:bg-gray-50 transition-colors">
-                                <CardContent className="p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-gray-900 line-clamp-1">{incident.title}</h3>
-                                        {getStatusBadge(incident.status)}
-                                    </div>
-                                    <p className="text-sm text-gray-500 line-clamp-2 mb-3">
-                                        {incident.description}
-                                    </p>
+                            <Card key={incident.id} className="group bg-white overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl relative">
+                                <Link href="#" className="absolute inset-0 z-10"></Link>
 
+                                {/* Status Strip */}
+                                <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", status.borderClass)}></div>
+
+                                <CardContent className="p-0">
+                                    <div className="p-5 pb-3 pl-6">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <Badge variant="outline" className={cn("pl-1.5 pr-2 py-0.5 gap-1 font-semibold border ring-1 text-[10px] uppercase tracking-wide", status.className)}>
+                                                <StatusIcon className="h-3 w-3" />
+                                                {status.label}
+                                            </Badge>
+                                            <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
+                                                {formatDate(incident.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        <h3 className="font-bold text-slate-900 text-base mb-1 line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                                            {incident.title}
+                                        </h3>
+                                        <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                                            {incident.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Images Preview */}
                                     {images.length > 0 && (
-                                        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+                                        <div className="px-5 pb-4 pl-6 flex gap-2 overflow-x-auto no-scrollbar mask-gradient-right">
                                             {images.map((img, idx) => (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img
-                                                    key={idx}
-                                                    src={img}
-                                                    alt="Evidence"
-                                                    className="h-16 w-16 object-cover rounded-md border bg-gray-100"
-                                                />
+                                                <div key={idx} className="relative h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img
+                                                        src={img}
+                                                        alt="Evidence"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </div>
                                             ))}
+                                            {images.length > 3 && (
+                                                <div className="h-16 w-16 flex-shrink-0 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-center text-xs font-medium text-slate-500">
+                                                    +{images.length - 3}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
-                                    <div className="flex items-center justify-between text-xs text-gray-400">
-                                        <span>{formatDate(incident.createdAt)}</span>
-                                        {incident.cost ? (
-                                            <span className="font-medium text-gray-600">
-                                                Chi phí: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(incident.cost)}
-                                            </span>
-                                        ) : null}
-                                    </div>
+                                    {/* Footer Info */}
+                                    {(incident.cost || images.length === 0) && (
+                                        <div className="mx-5 mb-4 pl-1 pt-3 border-t border-slate-50 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                {images.length === 0 && (
+                                                    <span className="text-xs text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                                                        <ImageIcon className="h-3 w-3" /> Không có ảnh
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {incident.cost ? (
+                                                <div className="text-right">
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase mr-2">Chi phí</span>
+                                                    <span className="font-bold text-indigo-600 text-sm">
+                                                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(incident.cost)}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-slate-400 italic">Chưa có chi phí</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         );

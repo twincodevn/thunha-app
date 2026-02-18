@@ -35,11 +35,16 @@ export function ListingCard({ data }: ListingCardProps) {
             {/* Image Carousel */}
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 mb-3">
                 <Image
-                    src={data.images[currentImage]}
+                    src={data.images && data.images.length > 0 ? data.images[currentImage] : "/images/placeholder-room.jpg"}
                     alt={data.title}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
+                {!data.images?.length && (
+                    <div className="absolute inset-0 bg-slate-200 flex items-center justify-center">
+                        <span className="text-slate-400 text-sm">Chưa có hình ảnh</span>
+                    </div>
+                )}
 
                 {/* Favorite Button */}
                 <button className="absolute top-3 right-3 p-2 rounded-full hover:bg-white/10 transition">
@@ -86,7 +91,7 @@ export function ListingCard({ data }: ListingCardProps) {
                 )}
 
                 {/* Superhost Badge */}
-                {data.host.verified && (
+                {data.host?.verified && (
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold shadow-sm z-10">
                         Chủ nhà uy tín
                     </div>

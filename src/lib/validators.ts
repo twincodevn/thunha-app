@@ -77,6 +77,7 @@ export const roomSchema = z.object({
     baseRent: z.number().min(0, "Vui lòng nhập giá thuê").max(1000000000),
     deposit: z.number().min(0).max(1000000000).optional(),
     notes: z.string().max(MAX_NOTES, "Ghi chú quá dài").optional(),
+    images: z.array(z.string()).optional(),
 });
 
 // =============================================

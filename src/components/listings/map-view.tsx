@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
-export function MapView() {
+export function MapView({ listings }: { listings?: any[] }) {
     const Map = useMemo(() => dynamic(
         () => import("@/components/listings/real-map"),
         {
@@ -18,7 +18,7 @@ export function MapView() {
 
     return (
         <div className="w-full h-full relative z-0">
-            <Map />
+            <Map listings={listings} />
         </div>
     );
 }

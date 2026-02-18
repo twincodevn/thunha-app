@@ -56,7 +56,7 @@ export function SmartInsights({ insights: initialInsights }: { insights: Insight
                     {/* Left: AI Indicator */}
                     <div className="w-12 bg-gradient-to-b from-indigo-500 to-purple-600 flex flex-col items-center justify-center text-white p-2">
                         <Sparkles className="h-5 w-5 animate-pulse" />
-                        <span className="text-[10px] font-bold mt-1 rotate-180 writing-vertical-rl">AI INSIGHT</span>
+                        <span className="text-[9px] font-bold mt-1 writing-vertical-rl tracking-wide text-white/90">AI INSIGHT</span>
                     </div>
 
                     {/* Content */}

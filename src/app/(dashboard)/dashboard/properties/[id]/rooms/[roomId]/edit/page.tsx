@@ -1,14 +1,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { revalidatePath } from "next/cache";
+import { EditRoomForm } from "@/components/properties/edit-room-form";
 
 async function getRoom(propertyId: string, roomId: string, userId: string) {
     return prisma.room.findFirst({
@@ -19,30 +16,6 @@ async function getRoom(propertyId: string, roomId: string, userId: string) {
         },
         include: { property: true },
     });
-}
-
-async function updateRoom(formData: FormData) {
-    "use server";
-
-    const session = await auth();
-    if (!session?.user) return;
-
-    const roomId = formData.get("roomId") as string;
-    const propertyId = formData.get("propertyId") as string;
-    const roomNumber = formData.get("roomNumber") as string;
-    const floor = parseInt(formData.get("floor") as string) || 1;
-    const area = parseFloat(formData.get("area") as string) || null;
-    const baseRent = parseFloat(formData.get("baseRent") as string) || 0;
-    const deposit = parseFloat(formData.get("deposit") as string) || null;
-    const notes = formData.get("notes") as string;
-
-    await prisma.room.update({
-        where: { id: roomId, property: { userId: session.user.id } },
-        data: { roomNumber, floor, area, baseRent, deposit, notes: notes || null },
-    });
-
-    revalidatePath(`/dashboard/properties/${propertyId}/rooms/${roomId}`);
-    redirect(`/dashboard/properties/${propertyId}/rooms/${roomId}`);
 }
 
 export default async function EditRoomPage({
@@ -77,89 +50,10 @@ export default async function EditRoomPage({
             <Card>
                 <CardHeader>
                     <CardTitle>Thông tin phòng</CardTitle>
-                    <CardDescription>Cập nhật thông tin phòng</CardDescription>
+                    <CardDescription>Cập nhật thông tin và hình ảnh phòng</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={updateRoom} className="space-y-4">
-                        <input type="hidden" name="roomId" value={room.id} />
-                        <input type="hidden" name="propertyId" value={room.propertyId} />
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="roomNumber">Số phòng *</Label>
-                                <Input
-                                    id="roomNumber"
-                                    name="roomNumber"
-                                    defaultValue={room.roomNumber}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="floor">Tầng *</Label>
-                                <Input
-                                    id="floor"
-                                    name="floor"
-                                    type="number"
-                                    min={1}
-                                    defaultValue={room.floor}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="area">Diện tích (m²)</Label>
-                                <Input
-                                    id="area"
-                                    name="area"
-                                    type="number"
-                                    min={0}
-                                    step={0.1}
-                                    defaultValue={room.area || ""}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="baseRent">Giá thuê (đ/tháng) *</Label>
-                                <Input
-                                    id="baseRent"
-                                    name="baseRent"
-                                    type="number"
-                                    min={0}
-                                    defaultValue={room.baseRent}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="deposit">Tiền cọc (đ)</Label>
-                            <Input
-                                id="deposit"
-                                name="deposit"
-                                type="number"
-                                min={0}
-                                defaultValue={room.deposit || ""}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="notes">Ghi chú</Label>
-                            <Textarea
-                                id="notes"
-                                name="notes"
-                                defaultValue={room.notes || ""}
-                                rows={3}
-                            />
-                        </div>
-
-                        <div className="flex gap-4">
-                            <Button type="submit">Lưu thay đổi</Button>
-                            <Button type="button" variant="outline" asChild>
-                                <Link href={`/dashboard/properties/${id}/rooms/${roomId}`}>Hủy</Link>
-                            </Button>
-                        </div>
-                    </form>
+                    <EditRoomForm propertyId={id} room={room} />
                 </CardContent>
             </Card>
         </div>

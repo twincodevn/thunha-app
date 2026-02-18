@@ -74,7 +74,7 @@ export default function ListingsPage() {
 
                     {/* Map View - Right Side (Sticky) */}
                     <div className="hidden xl:block xl:w-[45%] sticky top-[80px] h-[calc(100vh-80px)] border-l  border-gray-100">
-                        <MapView />
+                        <MapView listings={data?.listings} />
                     </div>
                 </div>
             </div>
@@ -100,7 +100,7 @@ export default function ListingsPage() {
                         <Button variant="ghost" onClick={() => setShowMapMobile(false)}>Đóng</Button>
                     </div>
                     <div className="flex-1">
-                        <MapView />
+                        <MapView listings={data?.listings} />
                     </div>
                 </div>
             )}

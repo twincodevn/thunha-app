@@ -19,7 +19,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Building2 } from "lucide-react";
+import { Loader2, Building2, KeyRound, User } from "lucide-react";
+import { PortalLogo } from "@/components/tenant/portal-logo";
 
 export default function TenantLoginPage() {
     const router = useRouter();
@@ -62,38 +63,52 @@ export default function TenantLoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-            <Card className="w-full max-w-md shadow-lg">
-                <CardHeader className="space-y-1 text-center">
+        <div className="flex min-h-screen items-center justify-center relative overflow-hidden bg-slate-900">
+            {/* Dynamic Background */}
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/90 via-slate-900/80 to-purple-900/90"></div>
+
+            {/* Decorative Blobs */}
+            <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-blue-500/30 blur-3xl animate-pulse"></div>
+            <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-purple-500/30 blur-3xl animate-pulse delay-1000"></div>
+
+            <Card className="w-full max-w-md shadow-2xl border-white/10 bg-white/10 backdrop-blur-xl relative z-10 mx-4">
+                <CardHeader className="space-y-3 text-center pb-8 pt-8">
                     <div className="flex justify-center mb-4">
-                        <div className="h-12 w-12 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                            <Building2 className="h-7 w-7" />
+                        <div className="p-4 bg-white/10 rounded-2xl ring-1 ring-white/20 shadow-xl backdrop-blur-md">
+                            <PortalLogo className="scale-125" showText={false} />
                         </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-blue-900">
-                        Cổng Cư Dân
-                    </CardTitle>
-                    <CardDescription>
-                        Đăng nhập để xem hóa đơn và dịch vụ
-                    </CardDescription>
+                    <div className="space-y-1">
+                        <CardTitle className="text-3xl font-bold text-white tracking-tight">
+                            ThuNhà Portal
+                        </CardTitle>
+                        <CardDescription className="text-slate-300 text-base">
+                            Cổng thông tin cư dân thông minh
+                        </CardDescription>
+                    </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-8 pb-8">
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                             <FormField
                                 control={form.control}
                                 name="username"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tên đăng nhập</FormLabel>
+                                    <FormItem className="space-y-1.5">
+                                        <FormLabel className="text-slate-200 font-medium">Tên đăng nhập</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                placeholder="Nhập tên đăng nhập được cấp"
-                                                disabled={isLoading}
-                                                {...field}
-                                            />
+                                            <div className="relative group">
+                                                <User className="absolute left-3 top-2.5 h-5 w-5 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
+                                                <Input
+                                                    placeholder="Nhập tên đăng nhập..."
+                                                    disabled={isLoading}
+                                                    className="pl-10 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-400/50 focus:ring-blue-400/20 h-11 transition-all"
+                                                    {...field}
+                                                />
+                                            </div>
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-red-300" />
                                     </FormItem>
                                 )}
                             />
@@ -101,41 +116,59 @@ export default function TenantLoginPage() {
                                 control={form.control}
                                 name="password"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Mật khẩu</FormLabel>
+                                    <FormItem className="space-y-1.5">
+                                        <div className="flex justify-between items-center">
+                                            <FormLabel className="text-slate-200 font-medium">Mật khẩu</FormLabel>
+                                            <button type="button" className="text-xs text-blue-300 hover:text-blue-200 transition-colors">
+                                                Quên mật khẩu?
+                                            </button>
+                                        </div>
                                         <FormControl>
-                                            <Input
-                                                type="password"
-                                                placeholder="••••••••"
-                                                disabled={isLoading}
-                                                {...field}
-                                            />
+                                            <div className="relative group">
+                                                <KeyRound className="absolute left-3 top-2.5 h-5 w-5 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
+                                                <Input
+                                                    type="password"
+                                                    placeholder="••••••••"
+                                                    disabled={isLoading}
+                                                    className="pl-10 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-500 focus:border-blue-400/50 focus:ring-blue-400/20 h-11 transition-all"
+                                                    {...field}
+                                                />
+                                            </div>
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-red-300" />
                                     </FormItem>
                                 )}
                             />
                             <Button
                                 type="submit"
-                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold h-12 rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
                                     <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Đang xử lý...
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Đang xác thực...
                                     </>
                                 ) : (
-                                    "Đăng nhập"
+                                    "Đăng nhập ngay"
                                 )}
                             </Button>
                         </form>
                     </Form>
-                    <div className="mt-4 text-center text-sm text-gray-500">
-                        Quên mật khẩu? Vui lòng liên hệ chủ nhà.
+
+                    <div className="mt-8 text-center">
+                        <p className="text-xs text-slate-400">
+                            Chưa có tài khoản? <span className="text-slate-300">Vui lòng liên hệ chủ nhà để được cấp quyền truy cập.</span>
+                        </p>
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="absolute bottom-6 text-center w-full z-10">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold opacity-60">
+                    Powered by ThuNha Platform
+                </p>
+            </div>
         </div>
     );
 }

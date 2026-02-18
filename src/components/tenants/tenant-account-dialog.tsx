@@ -101,42 +101,59 @@ export function TenantAccountDialog({
     if (generatedCredentials) {
         return (
             <Dialog open={open} onOpenChange={handleClose}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="text-center text-green-600 flex flex-col items-center gap-2">
-                            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                                <Check className="h-6 w-6" />
-                            </div>
-                            Thành công!
-                        </DialogTitle>
-                        <DialogDescription className="text-center">
-                            Đã tạo tài khoản cho khách thuê <b>{tenantName}</b>.
-                            <br />
-                            Hãy sao chép thông tin bên dưới và gửi cho khách.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-[425px] p-6 gap-6">
+                    <DialogHeader className="space-y-4">
+                        <div className="mx-auto h-16 w-16 bg-green-100/80 dark:bg-green-900/30 rounded-full flex items-center justify-center ring-8 ring-green-50 dark:ring-green-900/10">
+                            <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="space-y-1.5 text-center">
+                            <DialogTitle className="text-xl font-bold">Thành công!</DialogTitle>
+                            <DialogDescription className="text-base">
+                                Đã tạo tài khoản cho khách thuê <span className="font-semibold text-foreground">{tenantName}</span>
+                            </DialogDescription>
+                        </div>
                     </DialogHeader>
-                    <div className="bg-muted p-4 rounded-md space-y-3 mt-2">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Đường dẫn:</span>
-                            <span className="font-mono bg-white px-2 py-0.5 rounded border select-all">/portal/login</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Tài khoản:</span>
-                            <span className="font-mono font-bold bg-white px-2 py-0.5 rounded border select-all">{generatedCredentials.u}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Mật khẩu:</span>
-                            <span className="font-mono font-bold bg-white px-2 py-0.5 rounded border select-all">{generatedCredentials.p}</span>
+
+                    <div className="bg-slate-50 dark:bg-slate-900/50 border rounded-xl p-4 space-y-4">
+                        <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-semibold">Thông tin đăng nhập</p>
+
+                        <div className="space-y-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Đường dẫn Portal</Label>
+                                <div className="bg-white dark:bg-slate-950 border px-3 py-2 rounded-lg flex items-center justify-between group cursor-pointer hover:border-blue-400 transition-colors" onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/portal/login`);
+                                    toast.success("Đã sao chép đường dẫn");
+                                }}>
+                                    <code className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">/portal/login</code>
+                                    <Copy className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Tài khoản</Label>
+                                    <div className="bg-white dark:bg-slate-950 border px-3 py-2 rounded-lg flex items-center justify-between group">
+                                        <code className="text-sm font-bold text-blue-600 select-all">{generatedCredentials.u}</code>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Mật khẩu</Label>
+                                    <div className="bg-white dark:bg-slate-950 border px-3 py-2 rounded-lg flex items-center justify-between group">
+                                        <code className="text-sm font-bold text-slate-900 dark:text-slate-100 select-all">{generatedCredentials.p}</code>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter className="sm:justify-center gap-2">
-                        <Button variant="outline" onClick={handleClose} className="w-full">
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Button variant="outline" onClick={handleClose} className="flex-1 h-11">
                             Đóng
                         </Button>
-                        <Button onClick={copyToClipboard} className="w-full bg-blue-600 hover:bg-blue-700">
-                            <Copy className="mr-2 h-4 w-4" /> Sao chép gửi khách
+                        <Button onClick={copyToClipboard} className="flex-1 bg-blue-600 hover:bg-blue-700 h-11 text-base shadow-lg shadow-blue-500/20">
+                            <Copy className="mr-2 h-4 w-4" /> Gửi tài khoản
                         </Button>
-                    </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
         );
