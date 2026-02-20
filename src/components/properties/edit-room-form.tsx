@@ -24,7 +24,7 @@ interface EditRoomFormProps {
 // Extend schema for form usage if needed, though roomSchema should be enough
 const formSchema = roomSchema.extend({
     id: z.string(),
-    images: z.array(z.object({ value: z.string().url("Link ảnh không hợp lệ") })).optional(),
+    images: z.array(z.object({ value: z.string().min(1, "Link ảnh không được để trống") })).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -86,15 +86,21 @@ export function EditRoomForm({ propertyId, room }: EditRoomFormProps) {
             }
         } catch (error) {
             toast.error("Đã xảy ra lỗi khi cập nhật");
-            console.error(error);
+            console.error("Submission error:", error);
         } finally {
             setIsLoading(false);
         }
     }
 
+    // Add error logging
+    const onError = (errors: any) => {
+        console.error("Form validation errors:", errors);
+        toast.error("Vui lòng kiểm tra lại thông tin nhập");
+    };
+
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-2">
                     <FormField
                         control={form.control}
@@ -186,62 +192,103 @@ export function EditRoomForm({ propertyId, room }: EditRoomFormProps) {
                     )}
                 />
 
-                <div className="space-y-2">
+                <div className="space-y-4 rounded-lg border p-4 bg-muted/20">
                     <div className="flex items-center justify-between">
-                        <FormLabel>Hình ảnh (Link URL)</FormLabel>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => append({ value: "" })}
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Thêm ảnh
-                        </Button>
+                        <FormLabel className="text-base font-semibold">Hình ảnh</FormLabel>
+                        <div className="flex gap-2">
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                id="image-upload"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+
+                                    const toastId = toast.loading("Đang tải ảnh lên...");
+                                    const formData = new FormData();
+                                    formData.append("file", file);
+
+                                    try {
+                                        const res = await fetch("/api/upload", {
+                                            method: "POST",
+                                            body: formData,
+                                        });
+
+                                        if (!res.ok) throw new Error("Upload failed");
+
+                                        const data = await res.json();
+                                        append({ value: data.url });
+                                        toast.success("Đã thêm ảnh", { id: toastId });
+                                    } catch (error) {
+                                        toast.error("Lỗi khi tải ảnh", { id: toastId });
+                                        console.error(error);
+                                    }
+
+                                    // Reset input
+                                    e.target.value = "";
+                                }}
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => document.getElementById("image-upload")?.click()}
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tải ảnh lên
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => append({ value: "" })}
+                                title="Thêm link ảnh thủ công"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Dán Link
+                            </Button>
+                        </div>
                     </div>
 
                     {fields.length === 0 && (
-                        <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-md text-center">
-                            Chưa có hình ảnh. Thêm link ảnh để hiển thị trên Listing.
+                        <div className="text-sm text-muted-foreground p-8 border border-dashed rounded-md text-center flex flex-col items-center justify-center gap-2">
+                            <ImageIcon className="h-8 w-8 opacity-50" />
+                            <p>Chưa có hình ảnh. Tải ảnh lên để phòng trọ nổi bật hơn.</p>
                         </div>
                     )}
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {fields.map((field, index) => (
-                            <div key={field.id} className="flex items-start gap-2">
+                            <div key={field.id} className="group relative aspect-video rounded-lg border bg-background overflow-hidden">
                                 <FormField
                                     control={form.control}
                                     name={`images.${index}.value` as any}
                                     render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormControl>
-                                                <div className="flex gap-2">
-                                                    <Input {...field} placeholder="https://example.com/image.jpg" />
-                                                    {field.value && (
-                                                        <div className="h-10 w-10 relative shrink-0 overflow-hidden rounded-md border">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={field.value}
-                                                                alt="Preview"
-                                                                className="h-full w-full object-cover"
-                                                                onError={(e) => e.currentTarget.style.display = 'none'}
-                                                            />
-                                                        </div>
-                                                    )}
+                                        <>
+                                            {field.value ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={field.value}
+                                                    alt="Room"
+                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center bg-muted">
+                                                    <Input {...field} placeholder="Dán link ảnh..." className="mx-2 h-8 text-xs" />
                                                 </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                            )}
+                                        </>
                                     )}
                                 />
                                 <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="destructive"
                                     size="icon"
-                                    className="text-destructive hover:text-destructive/90"
+                                    className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => remove(index)}
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
                         ))}

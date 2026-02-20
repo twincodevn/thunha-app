@@ -63,13 +63,13 @@ export default async function PublicInvoicePage({
     const statusColors: Record<string, string> = {
         DRAFT: "bg-gray-100 text-gray-800",
         PENDING: "bg-orange-100 text-orange-800",
-        PAID: "bg-green-100 text-green-800",
-        OVERDUE: "bg-red-100 text-red-800",
-        CANCELLED: "bg-gray-100 text-gray-500",
+        "PAID": "bg-green-100 text-green-800",
+        "OVERDUE": "bg-red-100 text-red-800",
+        "CANCELLED": "bg-gray-100 text-gray-500",
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-50 pb-24">
             {/* Header Section */}
             <div className="bg-indigo-600 pb-32 pt-10">
                 <div className="container mx-auto px-4">
@@ -239,99 +239,17 @@ export default async function PublicInvoicePage({
 
                         {/* Footer Actions */}
                         <div className="bg-slate-50 border-t border-slate-100 p-6 flex flex-col md:flex-row gap-4 items-center">
-                            <Button variant="default" className="w-full md:w-auto px-10 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-md font-bold" asChild>
-                                <a href={`/api/invoices/${bill.id}/pdf?token=${invoice.token}`} download>
-                                    <Download className="mr-2 h-5 w-5" />
-                                    Tải hóa đơn (PDF)
-                                </a>
-                            </Button>
+                            <a
+                                href={`/api/invoices/${bill.id}/pdf?token=${invoice.token}`}
+                                download
+                                className="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full md:w-auto px-10 h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-primary-foreground shadow-md font-bold"
+                            >
+                                <Download className="mr-2 h-5 w-5" />
+                                Tải hóa đơn (PDF)
+                            </a>
                             <p className="text-xs text-slate-400 font-medium italic">Bằng việc thanh toán, bạn đồng ý với các điều khoản của hộ kinh doanh.</p>
                         </div>
                     </Card>
-
-                    {/* Payment Instructions Card */}
-                    {bill.status !== "PAID" && remainingAmount > 0 && (
-                        <Card className="border-none shadow-xl rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-700 delay-300">
-                            <CardHeader className="bg-indigo-50/50 pb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-indigo-200 shadow-lg">
-                                        <CreditCard className="h-5 w-5" />
-                                    </div>
-                                    <CardTitle className="text-lg font-bold text-slate-800 tracking-tight">Hướng dẫn thanh toán</CardTitle>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="pt-6">
-                                {bill.roomTenant.room.property.user.bankName &&
-                                    bill.roomTenant.room.property.user.bankAccountNumber ? (
-                                    <div className="grid md:grid-cols-2 gap-8 items-center">
-                                        <div className="space-y-6">
-                                            <div className="space-y-4">
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Thông tin chuyển khoản</p>
-                                                    <div className="space-y-3">
-                                                        <div className="flex justify-between items-center group">
-                                                            <span className="text-slate-500 font-medium">Ngân hàng:</span>
-                                                            <span className="text-slate-800 font-bold group-hover:text-indigo-600 transition-colors uppercase">{bill.roomTenant.room.property.user.bankName}</span>
-                                                        </div>
-                                                        <div className="flex justify-between items-center group">
-                                                            <span className="text-slate-500 font-medium">Số tài khoản:</span>
-                                                            <span className="text-indigo-600 font-black font-mono text-lg">{bill.roomTenant.room.property.user.bankAccountNumber}</span>
-                                                        </div>
-                                                        {bill.roomTenant.room.property.user.bankAccountName && (
-                                                            <div className="flex justify-between items-center group border-t border-slate-100 pt-3 mt-1">
-                                                                <span className="text-slate-500 font-medium">Chủ tài khoản:</span>
-                                                                <span className="text-slate-800 font-bold uppercase">{bill.roomTenant.room.property.user.bankAccountName}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                                                    <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                                                        <span className="text-amber-600 font-bold">!</span>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-amber-800 font-bold text-sm">Nội dung chuyển khoản</p>
-                                                        <p className="text-amber-700/80 text-sm font-medium">
-                                                            Tien phong T{bill.month}/{bill.year} - P.{bill.roomTenant.room.roomNumber}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col items-center justify-center bg-white rounded-3xl p-6 shadow-inner border-2 border-slate-50 relative group">
-                                            <div className="absolute inset-0 bg-indigo-500/5 scale-95 blur-2xl group-hover:scale-105 transition-transform duration-500"></div>
-                                            <div className="relative z-10 bg-white p-4 rounded-2xl shadow-xl border border-slate-50">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src={`https://img.vietqr.io/image/${getBankBin(bill.roomTenant.room.property.user.bankName)}-${bill.roomTenant.room.property.user.bankAccountNumber}-compact2.png?amount=${Math.round(remainingAmount)}&addInfo=${encodeURIComponent(`Tien phong T${bill.month}/${bill.year} - ${bill.roomTenant.room.roomNumber}`)}`}
-                                                    alt="VietQR Payment"
-                                                    width={220}
-                                                    height={220}
-                                                    className="rounded-lg"
-                                                />
-                                            </div>
-                                            <p className="mt-6 text-sm font-bold text-indigo-600 flex items-center gap-2">
-                                                <QrCode className="h-4 w-4" />
-                                                Quét mã QR để tự động điền
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-10 text-center space-y-4">
-                                        <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                                            <CreditCard className="h-8 w-8" />
-                                        </div>
-                                        <div className="max-w-xs mx-auto space-y-2">
-                                            <p className="text-slate-800 font-bold">Hình thức thanh toán khác</p>
-                                            <p className="text-slate-500 text-sm">Vui lòng liên hệ trực tiếp chủ trọ để nhận thông tin thanh toán tiền mặt hoặc chuyển khoản.</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
 
                     {/* Status Banners (Conditional) */}
                     {(bill.status === "PAID" || bill.status === "OVERDUE") && (
@@ -358,14 +276,109 @@ export default async function PublicInvoicePage({
                 </div>
 
                 {/* Footer Credits */}
-                <div className="mt-12 text-center space-y-4">
+                <div className="mt-12 text-center space-y-4 mb-32"> {/* Added mb-32 for sticky bar spacing */}
                     <Separator className="max-w-[100px] mx-auto bg-slate-200" />
                     <div className="space-y-1">
                         <p className="text-slate-400 text-sm font-medium">Ứng dụng quản lý ThuNhà v2.5</p>
                         <p className="text-slate-400 text-xs">Phát hành bởi Digital House Team</p>
                     </div>
                 </div>
+
+                {/* Sticky Payment Bar (Mobile Only UX) */}
+                {bill.status !== "PAID" && remainingAmount > 0 && (
+                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-200 p-4 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] transition-transform duration-500 animate-in slide-in-from-bottom">
+                        <div className="container max-w-3xl mx-auto flex items-center justify-between gap-4">
+                            <div className="flex flex-col">
+                                <span className="text-sm font-medium text-slate-500">Cần thanh toán</span>
+                                <span className="text-2xl font-black text-indigo-600 tracking-tight">{formatCurrency(remainingAmount)}</span>
+                            </div>
+                            <a
+                                href="#payment-section"
+                                className="inline-flex h-14 px-8 items-center justify-center rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-xl shadow-indigo-600/20 active:scale-95 transition-all w-full sm:w-auto"
+                            >
+                                Thanh toán ngay
+                            </a>
+                        </div>
+                    </div>
+                )}
             </main>
+
+            {/* Payment Section - Kept here but targeted by sticky bar anchor */}
+            {bill.status !== "PAID" && remainingAmount > 0 && (
+                <div id="payment-section" className="bg-white border-t border-slate-200 py-16 scroll-mt-0">
+                    <div className="container max-w-3xl mx-auto px-4">
+                        <div className="text-center mb-10">
+                            <div className="inline-flex h-16 w-16 rounded-3xl bg-indigo-50 items-center justify-center text-indigo-600 mb-6 shadow-sm border border-indigo-100">
+                                <CreditCard className="h-8 w-8" />
+                            </div>
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Thanh toán hóa đơn</h2>
+                            <p className="text-slate-500 mt-2 font-medium">Quét mã QR bằng ứng dụng ngân hàng để thanh toán tự động</p>
+                        </div>
+
+                        {bill.roomTenant.room.property.user.bankName && bill.roomTenant.room.property.user.bankAccountNumber ? (
+                            <div className="bg-slate-50 rounded-3xl p-6 sm:p-10 border border-slate-100 shadow-xl overflow-hidden relative">
+                                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                                <div className="grid md:grid-cols-2 gap-10 items-center">
+                                    <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-sm border border-slate-100 relative group order-2 md:order-1">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={`https://img.vietqr.io/image/${getBankBin(bill.roomTenant.room.property.user.bankName)}-${bill.roomTenant.room.property.user.bankAccountNumber}-compact2.png?amount=${Math.round(remainingAmount)}&addInfo=${encodeURIComponent(`Tien phong T${bill.month}/${bill.year} - ${bill.roomTenant.room.roomNumber}`)}`}
+                                            alt="VietQR Payment"
+                                            width={260}
+                                            height={260}
+                                            className="rounded-2xl transition-transform duration-300 group-hover:scale-105"
+                                        />
+                                        <div className="mt-6 inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full text-sm font-bold">
+                                            <QrCode className="h-4 w-4" />
+                                            Hỗ trợ VietQR
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6 order-1 md:order-2">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Ngân hàng thụ hưởng</p>
+                                                <p className="text-slate-900 font-bold text-xl uppercase">{bill.roomTenant.room.property.user.bankName}</p>
+                                            </div>
+                                            <Separator />
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Số tài khoản</p>
+                                                <div className="flex items-center gap-3">
+                                                    <p className="text-indigo-600 font-black font-mono text-3xl tracking-wider">{bill.roomTenant.room.property.user.bankAccountNumber}</p>
+                                                </div>
+                                            </div>
+                                            {bill.roomTenant.room.property.user.bankAccountName && (
+                                                <>
+                                                    <Separator />
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Chủ tài khoản</p>
+                                                        <p className="text-slate-900 font-bold text-lg uppercase">{bill.roomTenant.room.property.user.bankAccountName}</p>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-8 p-5 bg-amber-50/80 rounded-2xl border border-amber-200 border-dashed relative">
+                                            <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center border-4 border-white">
+                                                <span className="text-amber-600 font-black">!</span>
+                                            </div>
+                                            <p className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-2">Lời nhắn chuyển khoản bắt buộc</p>
+                                            <div className="bg-white p-3 rounded-xl border border-amber-100 font-mono text-sm text-center text-slate-800 font-bold shadow-sm">
+                                                Tien phong T{bill.month}/{bill.year} - P.{bill.roomTenant.room.roomNumber}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-50 rounded-3xl p-10 text-center border border-slate-100">
+                                <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-bold text-slate-800">Chưa cấu hình tài khoản</h3>
+                                <p className="text-slate-500 mt-2">Chủ nhà chưa cung cấp thông tin chuyển khoản trên hệ thống. Vui lòng liên hệ trực tiếp.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <ChatWidget
                 title="Hỗ trợ thanh toán"

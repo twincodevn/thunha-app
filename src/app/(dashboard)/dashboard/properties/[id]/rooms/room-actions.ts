@@ -8,7 +8,9 @@ import { roomSchema } from "@/lib/validators";
 
 export async function updateRoomAction(formData: FormData) {
     const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
+    if (!session?.user) {
+        return { error: "Unauthorized" };
+    }
 
     const roomId = formData.get("id") as string;
     const propertyId = formData.get("propertyId") as string;
@@ -19,13 +21,13 @@ export async function updateRoomAction(formData: FormData) {
         area: formData.get("area") ? Number(formData.get("area")) : undefined,
         baseRent: Number(formData.get("baseRent")),
         deposit: formData.get("deposit") ? Number(formData.get("deposit")) : undefined,
-        notes: formData.get("notes"),
+        notes: formData.get("notes")?.toString() || undefined,
         images: formData.getAll("images") as string[],
     };
 
     // Clean up empty image strings
     if (rawData.images) {
-        rawData.images = rawData.images.filter(img => img.trim() !== "");
+        rawData.images = rawData.images.filter((img: string) => img.trim() !== "");
     }
 
     try {
@@ -40,10 +42,12 @@ export async function updateRoomAction(formData: FormData) {
         });
 
         revalidatePath(`/dashboard/properties/${propertyId}/rooms/${roomId}`);
-        // redirect is called outside try-catch in server actions ideally, but here we return success to client
         return { success: true };
     } catch (error) {
         console.error("Update Room Error:", error);
+        if (error instanceof Error) {
+            return { error: `Lỗi: ${error.message}` };
+        }
         return { error: "Lỗi cập nhật phòng. Vui lòng kiểm tra lại thông tin." };
     }
 }
