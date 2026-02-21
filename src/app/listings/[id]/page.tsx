@@ -196,7 +196,7 @@ export default async function ListingDetailPage({
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className="h-14 w-14 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-500 overflow-hidden">
-                                            {room.property.user.avatar ? (
+                                            {room.property.user?.avatar ? (
                                                 <img src={room.property.user.avatar} alt="Owner" className="h-full w-full object-cover" />
                                             ) : (
                                                 room.property.user?.name?.charAt(0).toUpperCase() || "H"
@@ -204,7 +204,7 @@ export default async function ListingDetailPage({
                                         </div>
                                         <div>
                                             <div className="text-sm text-muted-foreground">Liên hệ chủ nhà</div>
-                                            <div className="font-bold text-lg">{room.property.user.name || "Chủ nhà"}</div>
+                                            <div className="font-bold text-lg">{room.property.user?.name || "Chủ nhà"}</div>
                                             <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
                                                 <CheckCircle className="h-3 w-3" />
                                                 Đã xác thực
@@ -213,14 +213,14 @@ export default async function ListingDetailPage({
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Button className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700" asChild>
-                                            <Link href={`tel:${room.property.user.phone}`} target="_blank">
+                                        <Button className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700" asChild disabled={!room.property.user?.phone}>
+                                            <Link href={`tel:${room.property.user?.phone || ""}`} target="_blank">
                                                 <Phone className="mr-2 h-5 w-5" />
                                                 Gọi điện ngay
                                             </Link>
                                         </Button>
-                                        <Button className="w-full h-12 text-lg font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200" variant="outline" asChild>
-                                            <Link href={`https://zalo.me/${room.property.user.phone}`} target="_blank">
+                                        <Button className="w-full h-12 text-lg font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200" variant="outline" asChild disabled={!room.property.user?.phone}>
+                                            <Link href={`https://zalo.me/${room.property.user?.phone || ""}`} target="_blank">
                                                 Chat Zalo
                                             </Link>
                                         </Button>
@@ -246,13 +246,13 @@ export default async function ListingDetailPage({
             {/* Mobile Sticky Footer */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t lg:hidden z-50 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <Button className="flex-1 h-12 text-lg font-bold bg-green-600 hover:bg-green-700" asChild>
-                    <Link href={`tel:${room.property.user.phone}`}>
+                    <Link href={`tel:${room.property.user?.phone || ""}`}>
                         <Phone className="mr-2 h-5 w-5" />
                         Gọi ngay
                     </Link>
                 </Button>
                 <Button className="flex-1 h-12 text-lg font-bold" variant="outline" asChild>
-                    <Link href={`https://zalo.me/${room.property.user.phone}`}>
+                    <Link href={`https://zalo.me/${room.property.user?.phone || ""}`}>
                         Chat Zalo
                     </Link>
                 </Button>

@@ -39,15 +39,15 @@ export async function getPublicListingDetail(id: string): Promise<PublicListing 
                         city: true,
                         lat: true,
                         lng: true,
+                        electricityRate: true,
+                        waterRate: true,
                         user: {
                             select: {
                                 name: true,
                                 phone: true,
                                 avatar: true
                             }
-                        },
-                        electricityRate: true,
-                        waterRate: true
+                        }
                     }
                 },
                 assets: true

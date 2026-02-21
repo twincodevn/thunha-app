@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Plus, Search, FileText, Loader2, MoreHorizontal, Download, Send, Eye, Lock, MessageSquare } from "lucide-react";
+import { Plus, Search, FileText, Loader2, MoreHorizontal, Download, Send, Eye, Lock, MessageSquare, LayoutGrid, List } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { getBills, getBatchReminderData } from "./actions";
@@ -21,6 +22,7 @@ import { formatCurrency } from "@/lib/billing";
 import { PLANS, UserPlan } from "@/lib/plans";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { BillingKanban } from "@/components/billing/billing-kanban";
 
 // Enum mapping for display
 const statusMap: Record<string, { label: string; color: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -41,6 +43,7 @@ export default function BillingPage() {
     const [year, setYear] = useState<string>(String(new Date().getFullYear()));
     const [status, setStatus] = useState<string>("ALL");
     const [searchTerm, setSearchTerm] = useState("");
+    const [viewMode, setViewMode] = useState<"TABLE" | "KANBAN">("TABLE");
 
     const userPlan = session?.user?.plan as UserPlan || "FREE";
     const planConfig = PLANS[userPlan];
@@ -188,8 +191,23 @@ export default function BillingPage() {
                             );
                         })}
                     </div>
+                    {/* View Toggle */}
+                    <div className="flex justify-end mt-4 pt-4 border-t w-full">
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "TABLE" | "KANBAN")}>
+                            <TabsList className="grid w-full grid-cols-2 lg:w-[200px]">
+                                <TabsTrigger value="TABLE">
+                                    <List className="w-4 h-4 mr-2" />
+                                    Danh sách
+                                </TabsTrigger>
+                                <TabsTrigger value="KANBAN">
+                                    <LayoutGrid className="w-4 h-4 mr-2" />
+                                    Bảng (Kanban)
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 sm:p-6">
                     {isLoading ? (
                         <div className="flex justify-center py-12">
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -198,104 +216,110 @@ export default function BillingPage() {
                         <div className="text-center py-12 text-muted-foreground">
                             {searchTerm ? "Không có hóa đơn nào phù hợp với tìm kiếm." : "Chưa có hóa đơn nào cho tháng này."}
                         </div>
+                    ) : viewMode === "KANBAN" ? (
+                        <div className="px-1 overflow-x-hidden">
+                            <BillingKanban initialBills={filteredBills} />
+                        </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                    <TableHead className="w-[100px]">Mã HĐ</TableHead>
-                                    <TableHead>Phòng</TableHead>
-                                    <TableHead>Khách thuê</TableHead>
-                                    <TableHead className="text-right">Tổng tiền</TableHead>
-                                    <TableHead>Hạn thu</TableHead>
-                                    <TableHead>Trạng thái</TableHead>
-                                    <TableHead className="text-right w-[50px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredBills.map((bill) => (
-                                    <TableRow key={bill.id}>
-                                        <TableCell className="font-medium text-xs text-muted-foreground">
-                                            #{bill.id.slice(-6).toUpperCase()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">{bill.roomTenant.room.roomNumber}</span>
-                                                <span className="text-xs text-muted-foreground">{bill.roomTenant.room.property.name}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="font-medium text-sm">{bill.roomTenant.tenant.name}</span>
-                                        </TableCell>
-                                        <TableCell className="text-right font-bold text-base">
-                                            {formatCurrency(bill.total)}
-                                        </TableCell>
-                                        <TableCell className="text-sm">
-                                            {format(new Date(bill.dueDate), "dd/MM/yyyy")}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={statusMap[bill.status]?.variant as any || "outline"} className={`font-normal ${statusMap[bill.status]?.color}`}>
-                                                {statusMap[bill.status]?.label || bill.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link href={`/dashboard/billing/${bill.id}`} className="cursor-pointer">
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Chi tiết
-                                                        </Link>
-                                                    </DropdownMenuItem>
-
-                                                    {/* Export PDF - Premium Feature */}
-                                                    <DropdownMenuItem
-                                                        disabled={!planConfig.canExportPdf}
-                                                        onClick={(e) => {
-                                                            if (!planConfig.canExportPdf) {
-                                                                e.preventDefault();
-                                                                handlePremiumFeature("Xuất PDF");
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                        {planConfig.canExportPdf ? "Tải PDF (Sắp có)" : "Tải PDF (Pro)"}
-                                                        {!planConfig.canExportPdf && <Lock className="ml-auto h-3 w-3" />}
-                                                    </DropdownMenuItem>
-
-                                                    {/* Send Reminder - Premium Feature */}
-                                                    {bill.status === "PENDING" || bill.status === "OVERDUE" ? (
-                                                        <>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                className={planConfig.canSendReminders ? "text-blue-600 focus:text-blue-600" : ""}
-                                                                disabled={!planConfig.canSendReminders}
-                                                                onClick={(e) => {
-                                                                    if (!planConfig.canSendReminders) {
-                                                                        e.preventDefault();
-                                                                        handlePremiumFeature("Gửi nhắc nhở");
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Send className="mr-2 h-4 w-4" />
-                                                                {planConfig.canSendReminders ? "Gửi nhắc nhở" : "Gửi nhắc nhở (Pro)"}
-                                                                {!planConfig.canSendReminders && <Lock className="ml-auto h-3 w-3" />}
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    ) : null}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
+                        <div className="rounded-md border mx-0 sm:mx-0 overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                        <TableHead className="w-[100px]">Mã HĐ</TableHead>
+                                        <TableHead>Phòng</TableHead>
+                                        <TableHead>Khách thuê</TableHead>
+                                        <TableHead className="text-right">Tổng tiền</TableHead>
+                                        <TableHead>Hạn thu</TableHead>
+                                        <TableHead>Trạng thái</TableHead>
+                                        <TableHead className="text-right w-[50px]"></TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredBills.map((bill) => (
+                                        <TableRow key={bill.id}>
+                                            <TableCell className="font-medium text-xs text-muted-foreground">
+                                                #{bill.id.slice(-6).toUpperCase()}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{bill.roomTenant.room.roomNumber}</span>
+                                                    <span className="text-xs text-muted-foreground">{bill.roomTenant.room.property.name}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="font-medium text-sm">{bill.roomTenant.tenant.name}</span>
+                                            </TableCell>
+                                            <TableCell className="text-right font-bold text-base">
+                                                {formatCurrency(bill.total)}
+                                            </TableCell>
+                                            <TableCell className="text-sm">
+                                                {format(new Date(bill.dueDate), "dd/MM/yyyy")}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant={statusMap[bill.status]?.variant as any || "outline"} className={`font-normal ${statusMap[bill.status]?.color}`}>
+                                                    {statusMap[bill.status]?.label || bill.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={`/dashboard/billing/${bill.id}`} className="cursor-pointer">
+                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                Chi tiết
+                                                            </Link>
+                                                        </DropdownMenuItem>
+
+                                                        {/* Export PDF - Premium Feature */}
+                                                        <DropdownMenuItem
+                                                            disabled={!planConfig.canExportPdf}
+                                                            onClick={(e) => {
+                                                                if (!planConfig.canExportPdf) {
+                                                                    e.preventDefault();
+                                                                    handlePremiumFeature("Xuất PDF");
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Download className="mr-2 h-4 w-4" />
+                                                            {planConfig.canExportPdf ? "Tải PDF (Sắp có)" : "Tải PDF (Pro)"}
+                                                            {!planConfig.canExportPdf && <Lock className="ml-auto h-3 w-3" />}
+                                                        </DropdownMenuItem>
+
+                                                        {/* Send Reminder - Premium Feature */}
+                                                        {bill.status === "PENDING" || bill.status === "OVERDUE" ? (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    className={planConfig.canSendReminders ? "text-blue-600 focus:text-blue-600" : ""}
+                                                                    disabled={!planConfig.canSendReminders}
+                                                                    onClick={(e) => {
+                                                                        if (!planConfig.canSendReminders) {
+                                                                            e.preventDefault();
+                                                                            handlePremiumFeature("Gửi nhắc nhở");
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <Send className="mr-2 h-4 w-4" />
+                                                                    {planConfig.canSendReminders ? "Gửi nhắc nhở" : "Gửi nhắc nhở (Pro)"}
+                                                                    {!planConfig.canSendReminders && <Lock className="ml-auto h-3 w-3" />}
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        ) : null}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>

@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, MapPin, CreditCard, FileText, User, ArrowRight, Home } from "lucide-react";
+import { Phone, Mail, MapPin, CreditCard, FileText, User, ArrowRight, Home, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/billing";
 import { format } from "date-fns";
@@ -54,7 +54,18 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                             </AvatarFallback>
                         </Avatar>
                         <div>
-                            <SheetTitle className="text-xl">{tenant.name}</SheetTitle>
+                            <div className="flex items-center gap-3 mb-1">
+                                <SheetTitle className="text-xl">{tenant.name}</SheetTitle>
+                                <Badge
+                                    variant="secondary"
+                                    className={`text-xs border ${(tenant.creditScore || 600) >= 750 ? "border-green-200 text-green-700 bg-green-50" :
+                                        (tenant.creditScore || 600) < 550 ? "border-red-200 text-red-700 bg-red-50" :
+                                            "border-yellow-200 text-yellow-700 bg-yellow-50"
+                                        }`}
+                                >
+                                    Tín nhiệm: {tenant.creditScore || 600}
+                                </Badge>
+                            </div>
                             <SheetDescription>
                                 {currentRoom ? (
                                     <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
@@ -68,16 +79,17 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                     </div>
 
                     <div className="flex gap-2">
-                        <Button className="flex-1" asChild>
+                        <Button className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary border-0" asChild>
                             <Link href={`/dashboard/tenants/${tenant.id}`}>
-                                Xem chi tiết
+                                <User className="mr-2 h-4 w-4" />
+                                Hồ sơ chi tiết
                             </Link>
                         </Button>
                         {contract && (
                             <Button variant="outline" className="flex-1" asChild>
                                 <Link href={`/dashboard/contracts/${contract.id}`}>
                                     <FileText className="mr-2 h-4 w-4" />
-                                    Hợp đồng
+                                    Xem Hợp đồng
                                 </Link>
                             </Button>
                         )}
@@ -85,6 +97,27 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                 </SheetHeader>
 
                 <div className="mt-8 space-y-6">
+                    {/* Quick Actions */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <Button variant="outline" className="flex flex-col h-auto py-3 gap-1 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20" asChild>
+                            <Link href={`tel:${tenant.phone}`}>
+                                <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <span className="text-xs">Gọi điện</span>
+                            </Link>
+                        </Button>
+                        <Button variant="outline" className="flex flex-col h-auto py-3 gap-1 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20" asChild>
+                            <Link href={`https://zalo.me/${tenant.phone}`} target="_blank">
+                                <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <span className="text-xs">Zalo</span>
+                            </Link>
+                        </Button>
+                        <Button variant="outline" className="flex flex-col h-auto py-3 gap-1 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20" asChild>
+                            <Link href={`/dashboard/properties/${currentRoom?.propertyId}/readings?roomId=${currentRoom?.id}`}>
+                                <FileText className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                <span className="text-xs">Tạo Hóa đơn</span>
+                            </Link>
+                        </Button>
+                    </div>
                     {/* Account Status */}
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900">
                         <div className="flex items-center justify-between mb-3">

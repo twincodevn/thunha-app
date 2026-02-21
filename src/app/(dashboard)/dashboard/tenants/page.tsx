@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { TenantPageClient } from "./page-client";
 import Link from "next/link";
 import { Plus, Users, Phone, Mail, Home, AlertCircle, Clock, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -77,33 +78,10 @@ export default async function TenantsPage({
     ]);
 
     return (
-        <DashboardShell>
-            <PageHeader
-                title="Khách thuê"
-                description="Quản lý thông tin khách thuê của bạn"
-            >
-                <div className="flex gap-2">
-                    <TenantFilters properties={properties} />
-                    <Button asChild>
-                        <Link href="/dashboard/tenants/new">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Thêm khách thuê
-                        </Link>
-                    </Button>
-                </div>
-            </PageHeader>
-
-            {tenants.length === 0 ? (
-                <EmptyState
-                    icon={Users}
-                    title="Chưa có khách thuê nào"
-                    description={propertyId ? "Không tìm thấy khách thuê trong tòa nhà này." : "Thêm khách thuê để bắt đầu quản lý và tạo hóa đơn hàng tháng."}
-                    actionLabel={propertyId ? undefined : "Thêm khách thuê đầu tiên"}
-                    actionHref={propertyId ? undefined : "/dashboard/tenants/new"}
-                />
-            ) : (
-                <TenantList tenants={tenants} />
-            )}
-        </DashboardShell>
+        <TenantPageClient
+            tenants={tenants}
+            properties={properties}
+            propertyId={propertyId}
+        />
     );
 }

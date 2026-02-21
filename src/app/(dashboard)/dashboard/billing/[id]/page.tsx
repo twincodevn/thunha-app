@@ -135,9 +135,11 @@ export default function BillDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleDownloadPDF}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Tải PDF
+                    <Button variant="outline" asChild>
+                        <Link href={`/invoice/${bill.invoice?.token}/print`} target="_blank">
+                            <Download className="mr-2 h-4 w-4" />
+                            In Hóa đơn (PDF)
+                        </Link>
                     </Button>
                     {bill.status === "PENDING" && (
                         <Button onClick={() => handleUpdateStatus("PAID")} disabled={isUpdating}>

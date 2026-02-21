@@ -90,7 +90,7 @@ model Room {
   updatedAt     DateTime       @updatedAt
   assets        Asset[]
   meterReadings MeterReading[]
-  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   roomTenants   RoomTenant[]
 
   @@unique([propertyId, roomNumber])
@@ -108,14 +108,16 @@ model Tenant {
   idPhoto     String?
   avatar      String?
   dateOfBirth DateTime?
-  notes       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  username    String?      @unique
-  password    String?
-  lastLogin   DateTime?
-  roomTenants RoomTenant[]
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes          String?
+  creditScore    Int          @default(600)
+  paymentHistory Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  username       String?      @unique
+  password       String?
+  lastLogin      DateTime?
+  roomTenants    RoomTenant[]
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([phone])
@@ -136,8 +138,8 @@ model RoomTenant {
   contracts   Contract[]
   deposits    Deposit[]
   incidents   Incident[]
-  room        Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room        Room       @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([roomId])
   @@index([tenantId])
@@ -184,7 +186,7 @@ model Bill {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   meterReading      MeterReading? @relation(fields: [meterReadingId], references: [id])
-  roomTenant        RoomTenant    @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
+  roomTenant        RoomTenant    @relation(fields: [roomTenantId], references: [id], onDelete: Restrict)
   invoice           Invoice?
   payments          Payment[]
 
@@ -202,7 +204,7 @@ model Invoice {
   sentAt    DateTime?
   viewedAt  DateTime?
   createdAt DateTime  @default(now())
-  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Restrict)
 
   @@index([token])
 }
@@ -215,7 +217,7 @@ model Payment {
   transactionId String?
   note          String?
   paidAt        DateTime      @default(now())
-  bill          Bill          @relation(fields: [billId], references: [id], onDelete: Cascade)
+  bill          Bill          @relation(fields: [billId], references: [id], onDelete: Restrict)
 
   @@index([billId])
   @@index([transactionId])

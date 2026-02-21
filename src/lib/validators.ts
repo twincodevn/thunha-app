@@ -118,8 +118,8 @@ export const meterReadingSchema = z.object({
     roomId: z.string().min(1),
     month: z.number().min(1).max(12),
     year: z.number().min(2020).max(2100),
-    electricityCurrent: z.number().min(0).max(999999999),
-    waterCurrent: z.number().min(0).max(999999999),
+    electricityCurrent: z.number().min(0).max(999999, "Chỉ số điện không hợp lý"),
+    waterCurrent: z.number().min(0).max(999999, "Chỉ số nước không hợp lý"),
 });
 
 // =============================================
@@ -129,16 +129,16 @@ export const billSchema = z.object({
     roomTenantId: z.string().min(1),
     month: z.number().min(1).max(12),
     year: z.number().min(2020).max(2100),
-    baseRent: z.number().min(0).max(1000000000),
-    electricityUsage: z.number().min(0).max(999999999),
-    electricityAmount: z.number().min(0).max(1000000000),
-    waterUsage: z.number().min(0).max(999999999),
-    waterAmount: z.number().min(0).max(1000000000),
+    baseRent: z.number().min(0).max(100000000, "Giá phòng quá lớn"),
+    electricityUsage: z.number().min(0).max(5000, "Số điện sử dụng quá lớn (>5000)"),
+    electricityAmount: z.number().min(0).max(100000000, "Tiền điện quá lớn"),
+    waterUsage: z.number().min(0).max(500, "Số nước sử dụng quá lớn (>500)"),
+    waterAmount: z.number().min(0).max(100000000, "Tiền nước quá lớn"),
     extraCharges: z.array(z.object({
         name: z.string().max(100),
-        amount: z.number().min(0).max(1000000000),
+        amount: z.number().min(0).max(100000000, "Phí thu thêm quá lớn"),
     })).max(20).optional(),
-    discount: z.number().min(0).max(1000000000),
+    discount: z.number().min(0).max(100000000, "Giảm trừ quá lớn"),
     dueDate: z.string().min(1),
     notes: z.string().max(MAX_NOTES, "Ghi chú quá dài").optional(),
 });

@@ -8,17 +8,76 @@ import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, Home, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/billing";
 
+import { useMemo } from "react";
+
 interface TenantListProps {
     tenants: any[];
+    searchQuery: string;
+    statusFilter: string;
 }
 
-export function TenantList({ tenants }: TenantListProps) {
+export function TenantList({ tenants, searchQuery, statusFilter }: TenantListProps) {
     const [selectedTenant, setSelectedTenant] = useState<any>(null);
+
+    const filteredTenants = useMemo(() => {
+        return tenants.filter((tenant) => {
+            // 1. Search Logic
+            const normalizedSearch = searchQuery.toLowerCase().trim();
+            const matchesSearch =
+                !normalizedSearch ||
+                tenant.name.toLowerCase().includes(normalizedSearch) ||
+                tenant.phone.includes(normalizedSearch);
+
+            if (!matchesSearch) return false;
+
+            // 2. Status Logic
+            const contract = tenant.roomTenants[0];
+
+            // Calculate total debt for this specific tenant (similar to card logic)
+            const totalDebt = tenant.roomTenants.reduce((sum: number, rt: any) => {
+                const roomDebt = rt.bills.reduce((billSum: number, bill: any) => {
+                    const paidAmount = bill.payments.reduce((pSum: number, p: any) => pSum + p.amount, 0);
+                    return billSum + (bill.total - paidAmount);
+                }, 0);
+                return sum + roomDebt;
+            }, 0);
+
+            // Contract status logic for filtering
+            let contractStatus = "ACTIVE";
+            if (contract?.endDate) {
+                const daysLeft = Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                if (daysLeft < 0) contractStatus = "EXPIRED";
+                else if (daysLeft <= 30) contractStatus = "EXPIRING_SOON";
+            }
+
+            switch (statusFilter) {
+                case "in_debt":
+                    return totalDebt > 0;
+                case "paid":
+                    return totalDebt <= 0 && tenant.roomTenants.length > 0;
+                case "expiring":
+                    return contractStatus === "EXPIRING_SOON";
+                case "expired":
+                    return contractStatus === "EXPIRED";
+                case "all":
+                default:
+                    return true;
+            }
+        });
+    }, [tenants, searchQuery, statusFilter]);
+
+    if (filteredTenants.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-center bg-muted/30 rounded-lg border border-dashed">
+                <p className="text-muted-foreground">Không tìm thấy khách thuê phù hợp với bộ lọc.</p>
+            </div>
+        );
+    }
 
     return (
         <>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {tenants.map((tenant) => {
+                {filteredTenants.map((tenant) => {
                     const currentRoom = tenant.roomTenants[0]?.room;
                     const contract = tenant.roomTenants[0];
 
@@ -55,9 +114,20 @@ export function TenantList({ tenants }: TenantListProps) {
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors">
-                                                {tenant.name}
-                                            </CardTitle>
+                                            <div className="flex items-center gap-2">
+                                                <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors">
+                                                    {tenant.name}
+                                                </CardTitle>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className={`text-[10px] px-1.5 py-0 border ${(tenant.creditScore || 600) >= 750 ? "border-green-200 text-green-700 bg-green-50" :
+                                                        (tenant.creditScore || 600) < 550 ? "border-red-200 text-red-700 bg-red-50" :
+                                                            "border-yellow-200 text-yellow-700 bg-yellow-50"
+                                                        }`}
+                                                >
+                                                    Tín nhiệm: {tenant.creditScore || 600}
+                                                </Badge>
+                                            </div>
                                             <div className="flex items-center gap-2 mt-1">
                                                 {contractStatus === "EXPIRING_SOON" && (
                                                     <Badge variant="outline" className="text-xs border-orange-200 text-orange-600 bg-orange-50 px-1.5 py-0">

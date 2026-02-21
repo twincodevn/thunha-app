@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft, User, Phone, Mail, Calendar, Home, Search as SearchIcon, Users } from "lucide-react";
+import { Loader2, ArrowLeft, User, Phone, Mail, Calendar, Home, Search as SearchIcon, Users, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +31,7 @@ type Room = {
     id: string;
     roomNumber: string;
     status: string;
+    deposit?: number | null;
     property: { id: string; name: string };
 };
 
@@ -134,6 +135,7 @@ export default function NewTenantPage() {
 
     // Watch roomId for both modes (though mainly used in Create mode logic or display)
     const selectedRoomId = form.watch("roomId");
+    const selectedRoom = rooms.find(r => r.id === selectedRoomId);
 
     const handleSearch = async (value: string) => {
         setSearchQuery(value);
@@ -272,6 +274,16 @@ export default function NewTenantPage() {
                                             />
                                         </div>
                                     </div>
+
+                                    {(rooms.find(r => r.id === (form.getValues("roomId") || selectedRoomId))?.deposit === 0) && (
+                                        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 flex items-start gap-3 mt-4">
+                                            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                            <div className="text-sm">
+                                                <p className="font-semibold text-amber-800">Lưu ý: Phòng không có tiền cọc</p>
+                                                <p className="mt-1 opacity-90">Hợp đồng này được ghi nhận mức cọc là 0 VND theo cài đặt phòng. Hãy đảm bảo thỏa thuận kỹ với khách.</p>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <Button
                                         className="w-full mt-2"
@@ -443,6 +455,16 @@ export default function NewTenantPage() {
                                                         </FormItem>
                                                     )}
                                                 />
+                                            )}
+
+                                            {selectedRoom?.deposit === 0 && (
+                                                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 flex items-start gap-3 mt-4">
+                                                    <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                                    <div className="text-sm">
+                                                        <p className="font-semibold text-amber-800">Lưu ý: Phòng không có tiền cọc</p>
+                                                        <p className="mt-1 opacity-90">Hợp đồng này được ghi nhận mức cọc là 0 VND theo cài đặt phòng. Hãy đảm bảo thỏa thuận kỹ với khách thuê.</p>
+                                                    </div>
+                                                </div>
                                             )}
                                         </CardContent>
                                     </Card>

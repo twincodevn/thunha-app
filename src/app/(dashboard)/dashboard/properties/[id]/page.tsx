@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { ROOM_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/billing";
 import { RoomGrid } from "@/components/properties/room-grid";
+import { ImportWizard } from "@/components/dashboard/import-wizard";
 
 async function getProperty(id: string, userId: string) {
     return prisma.property.findFirst({
@@ -79,6 +80,7 @@ export default async function PropertyDetailPage({
                             <span className="sm:hidden">Sửa</span>
                         </Link>
                     </Button>
+                    <ImportWizard propertyId={property.id} />
                     <Button size="sm" asChild className="flex-1 sm:flex-none">
                         <Link href={`/dashboard/properties/${id}/rooms/new`}>
                             <Plus className="mr-2 h-4 w-4" />
