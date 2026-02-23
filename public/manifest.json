@@ -1,67 +1,97 @@
 {
-    "name": "ThuNhà - Quản lý nhà trọ",
-    "short_name": "ThuNhà",
-    "description": "Nền tảng quản lý nhà trọ thông minh cho chủ nhà Việt Nam",
-    "start_url": "/dashboard",
-    "scope": "/",
-    "display": "standalone",
-    "orientation": "portrait-primary",
-    "background_color": "#ffffff",
-    "theme_color": "#0d9488",
-    "lang": "vi",
-    "categories": [
-        "business",
-        "finance",
-        "productivity"
-    ],
-    "icons": [
+  "name": "ThuNhà - Quản lý nhà trọ",
+  "short_name": "ThuNhà",
+  "description": "Nền tảng quản lý nhà trọ thông minh cho chủ nhà Việt Nam",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "lang": "vi",
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "../icons/icon-48.webp",
+      "type": "image/png",
+      "sizes": "48x48",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-72.webp",
+      "type": "image/png",
+      "sizes": "72x72",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-96.webp",
+      "type": "image/png",
+      "sizes": "96x96",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-128.webp",
+      "type": "image/png",
+      "sizes": "128x128",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-192.webp",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-256.webp",
+      "type": "image/png",
+      "sizes": "256x256",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-512.webp",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Tạo hóa đơn",
+      "short_name": "Hóa đơn",
+      "url": "/dashboard/billing/generate",
+      "icons": [
         {
-            "src": "/icons/icon-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
         }
-    ],
-    "screenshots": [],
-    "shortcuts": [
+      ]
+    },
+    {
+      "name": "Ghi điện nước",
+      "short_name": "Điện nước",
+      "url": "/dashboard/utilities",
+      "icons": [
         {
-            "name": "Tạo hóa đơn",
-            "short_name": "Hóa đơn",
-            "url": "/dashboard/billing/generate",
-            "icons": [
-                {
-                    "src": "/icons/icon-192x192.png",
-                    "sizes": "192x192"
-                }
-            ]
-        },
-        {
-            "name": "Ghi điện nước",
-            "short_name": "Điện nước",
-            "url": "/dashboard/utilities",
-            "icons": [
-                {
-                    "src": "/icons/icon-192x192.png",
-                    "sizes": "192x192"
-                }
-            ]
-        },
-        {
-            "name": "Danh sách phòng",
-            "short_name": "Phòng",
-            "url": "/dashboard/properties",
-            "icons": [
-                {
-                    "src": "/icons/icon-192x192.png",
-                    "sizes": "192x192"
-                }
-            ]
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
         }
-    ]
+      ]
+    },
+    {
+      "name": "Danh sách phòng",
+      "short_name": "Phòng",
+      "url": "/dashboard/properties",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

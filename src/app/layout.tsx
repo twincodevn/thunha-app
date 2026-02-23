@@ -18,8 +18,14 @@ export const metadata: Metadata = {
     default: "ThuNhà - Nền Tảng Quản Lý Nhà Trọ Số 1 Việt Nam",
     template: "%s | ThuNhà Pro",
   },
-  description: "Trải nghiệm quản lý nhà trọ đẳng cấp mới. Tự động hóa 100% quy trình, tối ưu lợi nhuận và nâng tầm phong cách chủ nhà.",
-  keywords: ["quản lý nhà trọ premium", "phần mềm quản lý căn hộ", "thu tiền nhà tự động", "chủ nhà 4.0"],
+  description:
+    "Trải nghiệm quản lý nhà trọ đẳng cấp mới. Tự động hóa 100% quy trình, tối ưu lợi nhuận và nâng tầm phong cách chủ nhà.",
+  keywords: [
+    "quản lý nhà trọ premium",
+    "phần mềm quản lý căn hộ",
+    "thu tiền nhà tự động",
+    "chủ nhà 4.0",
+  ],
   authors: [{ name: "ThuNhà Pro Team" }],
   creator: "ThuNhà",
   manifest: "/manifest.json",
@@ -34,6 +40,7 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
+    viewportFit: "cover",
   },
   openGraph: {
     type: "website",
@@ -60,7 +67,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>
