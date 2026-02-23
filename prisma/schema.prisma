@@ -27,11 +27,12 @@ model User {
   createdIp         String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  contractTemplates ContractTemplate[]
-  properties        Property[]
-  tenants           Tenant[]
-  notifications     Notification[]
-  announcements     Announcement[]
+  contractTemplates   ContractTemplate[]
+  properties          Property[]
+  tenants             Tenant[]
+  notifications       Notification[]
+  announcements       Announcement[]
+  subscriptionOrders  SubscriptionOrder[]
 
   @@index([email])
   @@index([phone])
@@ -379,6 +380,22 @@ enum ContractStatus {
   SIGNED
   EXPIRED
   TERMINATED
+}
+
+model SubscriptionOrder {
+  id            String   @id @default(cuid())
+  userId        String
+  plan          UserPlan
+  amount        Float
+  status        String   @default("PENDING") // PENDING | PAID | FAILED
+  vnpayTxnRef   String?  @unique
+  vnpayTxnNo    String?
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([vnpayTxnRef])
 }
 
 model Deposit {

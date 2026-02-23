@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createVNPayUrl } from "@/lib/vnpay";
+import { requireFeature } from "@/lib/feature-gate";
 
 export async function POST(request: NextRequest) {
     try {
@@ -9,6 +10,10 @@ export async function POST(request: NextRequest) {
         if (!session?.user) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
+        // Feature gate: VNPay bill payment requires PRO+
+        const gate = await requireFeature(session.user.id, "canUseVnpay");
+        if (gate) return gate;
 
         const body = await request.json();
         const { billId, bankCode } = body;

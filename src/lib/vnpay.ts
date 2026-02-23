@@ -18,6 +18,7 @@ export interface VNPayParams {
     orderInfo: string;
     ipAddr: string;
     bankCode?: string;
+    returnUrl?: string; // Override default return URL (e.g. for subscription callbacks)
 }
 
 /**
@@ -38,7 +39,7 @@ export function createVNPayUrl(params: VNPayParams): string {
         vnp_OrderInfo: params.orderInfo,
         vnp_OrderType: "billpayment",
         vnp_Amount: String(params.amount * 100), // VNPay uses smallest currency unit
-        vnp_ReturnUrl: VNPAY_CONFIG.returnUrl,
+        vnp_ReturnUrl: params.returnUrl || VNPAY_CONFIG.returnUrl,
         vnp_IpAddr: params.ipAddr,
         vnp_CreateDate: createDate,
         vnp_ExpireDate: expireDate,

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { generateInvoicePDF, InvoiceData } from "@/lib/pdf";
 import { formatDate } from "@/lib/billing";
 import { getBankByCode } from "@/lib/vietqr";
+import { requireFeature } from "@/lib/feature-gate";
 
 export async function GET(
     request: NextRequest,
@@ -51,6 +52,12 @@ export async function GET(
                 error: "Unauthorized",
                 details: token ? "Token mismatch" : "Login required"
             }, { status: 401 });
+        }
+
+        // Feature gate: only BASIC+ can export PDF (landlord access only)
+        if (session?.user && userId === session.user.id) {
+            const gate = await requireFeature(session.user.id, "canExportPdf");
+            if (gate) return gate;
         }
 
         // Get user info for landlord details

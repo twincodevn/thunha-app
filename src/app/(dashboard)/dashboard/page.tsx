@@ -27,6 +27,8 @@ import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { getSmartInsights } from "@/lib/analytics/insights";
 import { SmartInsights } from "@/components/dashboard/smart-insights";
 import { ExpiringContracts } from "@/components/dashboard/expiring-contracts";
+import { PlanGate } from "@/components/subscription/plan-gate";
+import { UserPlan } from "@/lib/plans";
 
 interface ActivityItem {
     id: string;
@@ -274,12 +276,19 @@ export default async function DashboardPage() {
     if (!session?.user) return null;
 
     const data = await getDashboardData(session.user.id);
+    const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { plan: true },
+    });
+    const userPlan = (currentUser?.plan ?? "FREE") as UserPlan;
 
     return (
         <DashboardShell className="space-y-8">
             <WelcomeHero />
 
-            <SmartInsights insights={data.insights} />
+            <PlanGate requiredPlan="PRO" currentPlan={userPlan} featureName="AI Smart Insights">
+                <SmartInsights insights={data.insights} />
+            </PlanGate>
 
             <div className="grid gap-8 md:grid-cols-7 lg:grid-cols-7">
                 {/* Main Content (Left) */}

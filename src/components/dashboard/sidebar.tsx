@@ -34,6 +34,7 @@ import { BrandLogo } from "@/components/ui/brand-logo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { User } from "@prisma/client";
+import { PLANS, UserPlan } from "@/lib/plans";
 
 const navigation = [
     { name: "Tổng quan", href: "/dashboard", icon: LayoutDashboard },
@@ -206,8 +207,26 @@ function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentPr
                         </Avatar>
                         {!isCollapsed && (
                             <div className="flex flex-col truncate">
-                                <span className="text-sm font-medium truncate">{displayUser?.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-medium truncate">{displayUser?.name}</span>
+                                    {(displayUser as any)?.plan && (
+                                        <span className={cn(
+                                            "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold leading-none uppercase shrink-0",
+                                            (displayUser as any).plan === "FREE" ? "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400" :
+                                                (displayUser as any).plan === "BASIC" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" :
+                                                    (displayUser as any).plan === "PRO" ? "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" :
+                                                        "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                                        )}>
+                                            {(displayUser as any).plan}
+                                        </span>
+                                    )}
+                                </div>
                                 <span className="text-xs text-muted-foreground truncate">{displayUser?.email}</span>
+                                {(displayUser as any)?.plan === "FREE" && (
+                                    <Link href="/dashboard/subscription" className="text-[10px] text-orange-500 hover:text-orange-600 font-medium mt-0.5">
+                                        ✨ Nâng cấp gói Pro
+                                    </Link>
+                                )}
                             </div>
                         )}
                     </div>
