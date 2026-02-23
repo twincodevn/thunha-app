@@ -5,8 +5,7 @@ const config: CapacitorConfig = {
   appName: "ThuNha Tenant",
   webDir: "public",
   server: {
-    url: "http://localhost:3000/tenant",
-    cleartext: true,
+    url: 'https://thunha.vn/tenant'
   },
 };
 
