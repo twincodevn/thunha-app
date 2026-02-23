@@ -26,6 +26,7 @@ import { ActionCenter } from "@/components/dashboard/action-center";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { getSmartInsights } from "@/lib/analytics/insights";
 import { SmartInsights } from "@/components/dashboard/smart-insights";
+import { ExpiringContracts } from "@/components/dashboard/expiring-contracts";
 
 interface ActivityItem {
     id: string;
@@ -223,7 +224,15 @@ async function getDashboardData(userId: string) {
     });
 
     // Add new tenants
-    // Actually, I need to update the destructuring at the top. Let's start with proper destructuring.
+    recentTenants.forEach((tenant: any) => {
+        activities.push({
+            id: `tenant-${tenant.id}`,
+            type: "TENANT",
+            title: `Khách thuê mới`,
+            description: `${tenant.name} vừa được thêm vào hệ thống`,
+            timestamp: tenant.createdAt,
+        });
+    });
 
     // Sort activities by timestamp desc
     activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -297,6 +306,9 @@ export default async function DashboardPage() {
                             />
                         </div>
                     </div>
+
+                    {/* Expiry Tracking Widget */}
+                    <ExpiringContracts contracts={data.expiringContracts} />
                 </div>
 
                 {/* Sidebar (Right) */}

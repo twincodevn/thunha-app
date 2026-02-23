@@ -30,7 +30,8 @@ model User {
   contractTemplates ContractTemplate[]
   properties        Property[]
   tenants           Tenant[]
-  notifications   Notification[]
+  notifications     Notification[]
+  announcements     Announcement[]
 
   @@index([email])
   @@index([phone])
@@ -38,18 +39,38 @@ model User {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String   // INCIDENT, BILL, SYSTEM
-  link      String?
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  userId      String?
+  tenantId    String?
+  title       String
+  message     String
+  type        String   // INCIDENT, BILL, SYSTEM, ANNOUNCEMENT
+  link        String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([tenantId])
   @@index([isRead])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  propertyId  String
+  userId      String    // The landlord who created it
+  title       String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([userId])
 }
 
 
@@ -62,6 +83,8 @@ model Property {
   notes           String?
   electricityRate Float      @default(0)
   waterRate       Float      @default(25000)
+  lateFee         Float?     @default(0)
+  lateFeeType     String     @default("FIXED") // "FIXED" or "PERCENTAGE"
   services        Json?
   lat             Float?
   lng             Float?
@@ -69,8 +92,10 @@ model Property {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   incidents       Incident[]
-  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   rooms           Room[]
+  feedbacks       TenantFeedback[]
+  announcements   Announcement[]
 
   @@index([userId])
 }
@@ -92,6 +117,7 @@ model Room {
   meterReadings MeterReading[]
   property      Property       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   roomTenants   RoomTenant[]
+
 
   @@unique([propertyId, roomNumber])
   @@index([propertyId])
@@ -117,6 +143,8 @@ model Tenant {
   password       String?
   lastLogin      DateTime?
   roomTenants    RoomTenant[]
+  feedbacks      TenantFeedback[]
+  notifications  Notification[]
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -233,6 +261,7 @@ model Incident {
   status       IncidentStatus   @default(OPEN)
   priority     IncidentPriority @default(MEDIUM)
   cost         Float?
+  resolvedAt   DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   property     Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -363,4 +392,19 @@ model Deposit {
   roomTenant   RoomTenant @relation(fields: [roomTenantId], references: [id], onDelete: Cascade)
 
   @@index([roomTenantId])
+}
+
+model TenantFeedback {
+  id           String      @id @default(cuid())
+  tenantId     String
+  propertyId   String
+  rating       Int         @default(5) // 1 to 5 stars
+  comment      String?     @db.Text
+  createdAt    DateTime    @default(now())
+
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property     Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([tenantId])
 }

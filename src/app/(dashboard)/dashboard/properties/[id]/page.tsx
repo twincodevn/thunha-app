@@ -11,6 +11,8 @@ import { ROOM_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/billing";
 import { RoomGrid } from "@/components/properties/room-grid";
 import { ImportWizard } from "@/components/dashboard/import-wizard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnnouncementManager } from "@/components/properties/announcement-manager";
 
 async function getProperty(id: string, userId: string) {
     return prisma.property.findFirst({
@@ -25,6 +27,9 @@ async function getProperty(id: string, userId: string) {
                 },
                 orderBy: { roomNumber: "asc" },
             },
+            announcements: {
+                orderBy: { createdAt: "desc" }
+            }
         },
     });
 }
@@ -137,30 +142,50 @@ export default async function PropertyDetailPage({
 
             <Separator />
 
-            {/* Rooms List */}
-            <div>
-                <h2 className="text-lg font-semibold mb-4">Danh sách phòng</h2>
+            <Tabs defaultValue="overview" className="space-y-6">
+                <TabsList>
+                    <TabsTrigger value="overview">Tổng quan Phòng</TabsTrigger>
+                    <TabsTrigger value="announcements">
+                        Bảng tin Tòa nhà
+                        {property.announcements.length > 0 && (
+                            <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700 hover:bg-blue-100">{property.announcements.length}</Badge>
+                        )}
+                    </TabsTrigger>
+                </TabsList>
 
-                {property.rooms.length === 0 ? (
-                    <Card className="border-dashed border-2 bg-muted/50">
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Home className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">Chưa có phòng nào</h3>
-                            <p className="text-muted-foreground text-center mb-4">
-                                Thêm phòng để bắt đầu quản lý khách thuê và hóa đơn
-                            </p>
-                            <Button asChild>
-                                <Link href={`/dashboard/properties/${id}/rooms/new`}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Thêm phòng đầu tiên
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <RoomGrid propertyId={property.id} rooms={property.rooms as any} />
-                )}
-            </div>
+                <TabsContent value="overview" className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold">Danh sách phòng</h2>
+                    </div>
+
+                    {property.rooms.length === 0 ? (
+                        <Card className="border-dashed border-2 bg-muted/50">
+                            <CardContent className="flex flex-col items-center justify-center py-12">
+                                <Home className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold mb-2">Chưa có phòng nào</h3>
+                                <p className="text-muted-foreground text-center mb-4">
+                                    Thêm phòng để bắt đầu quản lý khách thuê và hóa đơn
+                                </p>
+                                <Button asChild>
+                                    <Link href={`/dashboard/properties/${id}/rooms/new`}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Thêm phòng đầu tiên
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <RoomGrid propertyId={property.id} rooms={property.rooms as any} />
+                    )}
+                </TabsContent>
+
+                <TabsContent value="announcements" className="pt-2">
+                    <AnnouncementManager
+                        propertyId={property.id}
+                        announcements={property.announcements}
+                    />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

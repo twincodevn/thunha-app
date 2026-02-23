@@ -190,6 +190,32 @@ export async function createBills(bills: z.infer<typeof createBillSchema>[]) {
             )
         );
 
+        // Fetch RoomTenants to get Tenant IDs for Notifications
+        const roomTenants = await prisma.roomTenant.findMany({
+            where: { id: { in: bills.map((b) => b.roomTenantId) } },
+            include: { room: true },
+        });
+
+        const notifications: any[] = [];
+        for (const bill of createdBills) {
+            const rt = roomTenants.find((r) => r.id === bill.roomTenantId);
+            if (rt && rt.tenantId) {
+                notifications.push({
+                    tenantId: rt.tenantId,
+                    title: "Có hóa đơn mới",
+                    message: `Hóa đơn tháng ${bill.month}/${bill.year} của phòng ${rt.room.roomNumber} đã được tạo. Số tiền: ${bill.total.toLocaleString('vi-VN')}đ.`,
+                    type: "BILL",
+                    link: "/portal/bills"
+                });
+            }
+        }
+
+        if (notifications.length > 0) {
+            await prisma.notification.createMany({
+                data: notifications
+            });
+        }
+
         revalidatePath("/dashboard/billing");
         return { success: true, count: bills.length };
     } catch (error: any) {

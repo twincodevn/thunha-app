@@ -92,7 +92,8 @@ export async function updateIncidentStatus(incidentId: string, status: "OPEN" | 
             where: { id: incidentId },
             data: {
                 status,
-                ...(cost !== undefined && { cost })
+                ...(cost !== undefined && { cost }),
+                ...(status === "RESOLVED" && { resolvedAt: new Date() })
             },
         });
 

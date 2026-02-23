@@ -42,6 +42,7 @@ const navigation = [
     { name: "Điện nước", href: "/dashboard/utilities", icon: Zap },
     { name: "Hóa đơn", href: "/dashboard/billing", icon: Receipt },
     { name: "Tiền cọc", href: "/dashboard/billing/deposits", icon: PiggyBank },
+    { name: "Báo cáo", href: "/dashboard/reports", icon: BarChart3 },
     { name: "Phân tích", href: "/dashboard/analytics", icon: BarChart3 },
     { name: "So sánh", href: "/dashboard/analytics/comparison", icon: GitCompareArrows },
     { name: "Báo cáo thuế", href: "/dashboard/analytics/tax-report", icon: FileText },

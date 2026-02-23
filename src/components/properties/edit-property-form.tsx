@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { propertySchema, PropertyInput } from "@/lib/validators";
 import { toast } from "sonner";
 import { updatePropertyAction } from "@/app/(dashboard)/dashboard/properties/actions";
@@ -33,6 +34,8 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
             notes: property.notes || "",
             electricityRate: property.electricityRate,
             waterRate: property.waterRate,
+            lateFee: property.lateFee || 0,
+            lateFeeType: property.lateFeeType || "FIXED",
             lat: property.lat,
             lng: property.lng,
         },
@@ -80,6 +83,8 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
             if (data.notes) formData.append("notes", data.notes);
             formData.append("electricityRate", data.electricityRate.toString());
             formData.append("waterRate", data.waterRate.toString());
+            if (data.lateFee !== undefined) formData.append("lateFee", data.lateFee.toString());
+            if (data.lateFeeType) formData.append("lateFeeType", data.lateFeeType);
             if (data.lat) formData.append("lat", data.lat.toString());
             if (data.lng) formData.append("lng", data.lng.toString());
 
@@ -178,6 +183,48 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
                                         onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                     />
                                 </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="lateFee"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Phí phạt trễ hạn</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        {...field}
+                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    />
+                                </FormControl>
+                                <FormDescription>Bỏ trống hoặc 0 để không áp dụng</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="lateFeeType"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Loại phí phạt</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Chọn loại phí" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="FIXED">Số tiền cố định (VNĐ/ngày)</SelectItem>
+                                        <SelectItem value="PERCENTAGE">Phần trăm (% trên Tổng HĐ/ngày)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                             </FormItem>
                         )}

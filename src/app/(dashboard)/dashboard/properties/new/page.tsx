@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { propertySchema, PropertyInput } from "@/lib/validators";
 import { toast } from "sonner";
 
@@ -27,6 +28,8 @@ export default function NewPropertyPage() {
             notes: "",
             electricityRate: 3500, // Common default
             waterRate: 15000,     // Common default
+            lateFee: 0,
+            lateFeeType: "FIXED" as any,
         },
     });
 
@@ -192,6 +195,51 @@ export default function NewPropertyPage() {
                                                     onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                                                 />
                                             </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name="lateFee"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Phí phạt trễ hạn</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    {...field}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>Bỏ trống hoặc 0 để không áp dụng</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="lateFeeType"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Loại phí phạt</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Chọn loại phí" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="FIXED">Số tiền cố định (VNĐ/ngày)</SelectItem>
+                                                    <SelectItem value="PERCENTAGE">Phần trăm (% trên Tổng HĐ/ngày)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

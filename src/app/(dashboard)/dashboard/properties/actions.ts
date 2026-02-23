@@ -15,6 +15,8 @@ export async function updatePropertyAction(formData: FormData) {
     const city = formData.get("city") as string;
     const electricityRate = parseFloat(formData.get("electricityRate") as string) || 0;
     const waterRate = parseFloat(formData.get("waterRate") as string) || 0;
+    const lateFee = parseFloat(formData.get("lateFee") as string) || 0;
+    const lateFeeType = (formData.get("lateFeeType") as string) || "FIXED";
     const lat = formData.get("lat") ? parseFloat(formData.get("lat") as string) : null;
     const lng = formData.get("lng") ? parseFloat(formData.get("lng") as string) : null;
     const notes = formData.get("notes") as string;
@@ -22,7 +24,7 @@ export async function updatePropertyAction(formData: FormData) {
     try {
         await prisma.property.update({
             where: { id, userId: session.user.id },
-            data: { name, address, city, electricityRate, waterRate, lat, lng, notes },
+            data: { name, address, city, electricityRate, waterRate, lateFee, lateFeeType, lat, lng, notes },
         });
 
         revalidatePath(`/dashboard/properties/${id}`);

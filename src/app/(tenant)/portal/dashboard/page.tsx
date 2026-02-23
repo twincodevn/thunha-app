@@ -45,6 +45,13 @@ export default async function TenantDashboard() {
     const property = room?.property;
     const latestContract = currentTenancy?.contracts[0];
 
+    // Fetch announcements for the property
+    const announcements = property ? await prisma.announcement.findMany({
+        where: { propertyId: property.id },
+        orderBy: { createdAt: "desc" },
+        take: 3
+    }) : [];
+
     // Fetch pending bills
     const pendingBills = await prisma.bill.findMany({
         where: {
@@ -196,6 +203,35 @@ export default async function TenantDashboard() {
                             </form>
                         </div>
                     </div>
+
+                    {/* Announcements list */}
+                    {announcements.length > 0 && (
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 mb-4 px-1 flex items-center gap-2">
+                                <Bell className="h-4 w-4 text-blue-500" />
+                                Bảng tin từ Ban quản lý
+                            </h3>
+                            <div className="space-y-3">
+                                {announcements.map((ann) => (
+                                    <div key={ann.id} className="bg-white rounded-[1.5rem] border shadow-sm p-5 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-2 h-full bg-blue-500 rounded-r-[1.5rem]"></div>
+                                        <div className="flex gap-4">
+                                            <div className="mt-1 h-10 w-10 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
+                                                <Bell className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 leading-tight mb-1">{ann.title}</h4>
+                                                <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{ann.content}</p>
+                                                <p className="text-[11px] text-slate-400 mt-3 font-medium">
+                                                    {formatDate(ann.createdAt)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Sidebar (Desktop) */}

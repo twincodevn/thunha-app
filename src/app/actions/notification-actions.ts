@@ -8,6 +8,37 @@ export async function getNotifications() {
     if (!session?.user?.id) return { overdueBills: [], expiringContracts: [], recentIncidents: [], counts: { total: 0, overdue: 0, expiring: 0, incidents: 0 } };
 
     const userId = session.user.id;
+    const isTenant = session.user.role === "TENANT";
+
+    if (isTenant) {
+        const notifications = await prisma.notification.findMany({
+            where: { tenantId: userId, isRead: false },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+        });
+
+        return {
+            notifications: notifications.map((n) => ({
+                id: n.id,
+                title: n.title,
+                message: n.message,
+                type: n.type,
+                link: n.link,
+                createdAt: n.createdAt.toISOString(),
+                isRead: n.isRead,
+            })),
+            overdueBills: [],
+            expiringContracts: [],
+            recentIncidents: [],
+            counts: {
+                total: notifications.length,
+                overdue: 0,
+                expiring: 0,
+                incidents: 0,
+                notifications: notifications.length,
+            },
+        };
+    }
 
     const [overdueBills, expiringContracts, recentIncidents, notifications] = await Promise.all([
         // Overdue bills

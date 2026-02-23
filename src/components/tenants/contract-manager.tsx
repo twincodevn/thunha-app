@@ -11,12 +11,13 @@ import { toast } from "sonner";
 import { createContract } from "@/app/(dashboard)/dashboard/contracts/generate-action";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { RoomTenant, Contract, ContractTemplate } from "@prisma/client";
+import { RoomTenant, Contract, ContractTemplate, Room } from "@prisma/client";
 import { useEffect } from "react";
 import { getTemplates } from "./actions"; // We need a way to fetch templates
+import { RenewContractDialog } from "./renew-contract-dialog";
 
 interface ContractManagerProps {
-    roomTenant: RoomTenant & { contracts?: Contract[] };
+    roomTenant: RoomTenant & { contracts?: Contract[], room?: Room };
 }
 
 export function ContractManager({ roomTenant }: ContractManagerProps) {
@@ -58,54 +59,54 @@ export function ContractManager({ roomTenant }: ContractManagerProps) {
         }
     }
 
-    // Since we don't pass contracts in props yet (need to update getTenant query),
-    // this specific part might be empty until we update the parent page query.
-    // For now, let's assume contracts are populated or we fetch them separately?
-    // Actually, let's update the parent page query in the next step.
-
     return (
         <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Hợp đồng thuê</span>
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-7 text-xs">
-                            <Plus className="mr-1 h-3 w-3" /> Tạo mới
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Tạo hợp đồng mới</DialogTitle>
-                            <DialogDescription>
-                                Chọn mẫu hợp đồng để áp dụng cho khách thuê này.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="template">Mẫu hợp đồng</Label>
-                                <Select onValueChange={setSelectedTemplate} value={selectedTemplate}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn mẫu..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {templates.map((t) => (
-                                            <SelectItem key={t.id} value={t.id}>
-                                                {t.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsOpen(false)}>Hủy</Button>
-                            <Button onClick={handleCreate} disabled={!selectedTemplate || isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Tạo hợp đồng
+                <div className="flex items-center gap-2">
+                    {roomTenant.room && (
+                        <RenewContractDialog roomTenant={roomTenant as any} />
+                    )}
+                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 text-xs">
+                                <Plus className="mr-1 h-3 w-3" /> Tạo mới
                             </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Tạo hợp đồng mới</DialogTitle>
+                                <DialogDescription>
+                                    Chọn mẫu hợp đồng để áp dụng cho khách thuê này.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="template">Mẫu hợp đồng</Label>
+                                    <Select onValueChange={setSelectedTemplate} value={selectedTemplate}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Chọn mẫu..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {templates.map((t) => (
+                                                <SelectItem key={t.id} value={t.id}>
+                                                    {t.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsOpen(false)}>Hủy</Button>
+                                <Button onClick={handleCreate} disabled={!selectedTemplate || isLoading}>
+                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Tạo hợp đồng
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             {roomTenant.contracts && roomTenant.contracts.length > 0 ? (

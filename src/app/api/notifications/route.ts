@@ -10,15 +10,20 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const isTenant = session.user.role === "TENANT";
+        const whereClause = isTenant
+            ? { tenantId: session.user.id }
+            : { userId: session.user.id };
+
         const notifications = await prisma.notification.findMany({
-            where: { userId: session.user.id },
+            where: whereClause,
             orderBy: { createdAt: "desc" },
             take: 20,
         });
 
         // Count unread
         const unreadCount = await prisma.notification.count({
-            where: { userId: session.user.id, isRead: false },
+            where: { ...whereClause, isRead: false },
         });
 
         return NextResponse.json({ notifications, unreadCount });
@@ -41,6 +46,9 @@ export async function PATCH(request: NextRequest) {
         const body = await request.json();
         const { id } = body;
 
+        const isTenant = session.user.role === "TENANT";
+        const whereFields = isTenant ? { tenantId: session.user.id } : { userId: session.user.id };
+
         if (id) {
             await prisma.notification.update({
                 where: { id },
@@ -48,7 +56,7 @@ export async function PATCH(request: NextRequest) {
             });
         } else {
             await prisma.notification.updateMany({
-                where: { userId: session.user.id, isRead: false },
+                where: { ...whereFields, isRead: false },
                 data: { isRead: true },
             });
         }

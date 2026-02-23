@@ -62,7 +62,26 @@ export async function POST(request: NextRequest) {
             notes: data.notes || null,
             electricityRate: data.electricityRate ?? 0,
             waterRate: data.waterRate ?? 0,
+            lateFee: data.lateFee ?? 0,
+            lateFeeType: data.lateFeeType ?? "FIXED",
         };
+
+        // Verify user exists and has the correct role before inserting
+        if (session.user.role !== "LANDLORD") {
+            return NextResponse.json({ error: "Forbidden: Only landlords can create properties" }, { status: 403 });
+        }
+
+        const dbUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
+
+        if (!dbUser) {
+            // This happens commonly during local development when the DB is reset but the session cookie remains
+            return NextResponse.json(
+                { error: "User session is invalid. Please sign out and sign in again." },
+                { status: 401 }
+            );
+        }
 
         const property = await prisma.property.create({
             data: {

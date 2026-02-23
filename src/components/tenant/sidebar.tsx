@@ -12,7 +12,8 @@ import {
     Menu,
     ChevronLeft,
     ChevronRight,
-    Settings
+    Settings,
+    MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,6 +34,7 @@ const navigation = [
     { name: "Tổng quan", href: "/portal/dashboard", icon: LayoutDashboard },
     { name: "Hóa đơn", href: "/portal/bills", icon: FileText },
     { name: "Sự cố", href: "/portal/incidents", icon: Wrench },
+    { name: "Đánh giá", href: "/portal/feedback", icon: MessageSquare },
     { name: "Tài khoản", href: "/portal/profile", icon: User },
 ];
 
