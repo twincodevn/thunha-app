@@ -309,15 +309,43 @@ export default function BillDetailPage() {
                             </div>
                             <Separator />
                             {/* We could add bank info here if we had it in property settings */}
-                            <div className="bg-muted p-4 rounded-md">
-                                <p className="text-sm font-medium">Thông tin chuyển khoản:</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Ngân hàng: ...<br />
-                                    Số tài khoản: ...<br />
-                                    Chủ tài khoản: ...<br />
-                                    Nội dung: {bill.roomTenant.room.roomNumber} T{bill.month}
-                                </p>
-                            </div>
+                            {(() => {
+                                const { bankName, bankAccountNumber, bankAccountName } = bill.roomTenant.room.property.user ?? {};
+                                const hasBank = bankName && bankAccountNumber;
+                                const description = encodeURIComponent(`${bill.roomTenant.room.roomNumber} T${bill.month}`);
+                                const accountNameEncoded = encodeURIComponent(bankAccountName ?? "");
+                                const qrUrl = hasBank
+                                    ? `https://img.vietqr.io/image/${bankName}-${bankAccountNumber}-compact2.png?amount=${bill.total}&addInfo=${description}&accountName=${accountNameEncoded}`
+                                    : null;
+                                return (
+                                    <div className="bg-muted p-4 rounded-md space-y-3">
+                                        <p className="text-sm font-medium">Thông tin chuyển khoản:</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Ngân hàng: <span className="font-medium text-foreground">{bankName || "Chưa cập nhật"}</span><br />
+                                            Số tài khoản: <span className="font-medium text-foreground">{bankAccountNumber || "Chưa cập nhật"}</span><br />
+                                            Chủ tài khoản: <span className="font-medium text-foreground">{bankAccountName || "Chưa cập nhật"}</span><br />
+                                            Nội dung: <span className="font-medium text-foreground">{bill.roomTenant.room.roomNumber} T{bill.month}</span>
+                                        </p>
+                                        {qrUrl ? (
+                                            <div className="flex flex-col items-center gap-2 pt-2 border-t">
+                                                <p className="text-xs text-muted-foreground">Quét mã QR để thanh toán</p>
+                                                <img
+                                                    src={qrUrl}
+                                                    alt="Mã QR thanh toán"
+                                                    className="w-52 h-auto rounded-lg border shadow-sm"
+                                                />
+                                                <p className="text-xs font-semibold text-primary">{formatCurrency(bill.total)}</p>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-amber-600 pt-1 border-t">
+                                                Chưa cấu hình thông tin ngân hàng. Vào{" "}
+                                                <a href="/dashboard/settings" className="underline">Cài đặt</a>{" "}
+                                                để thêm tài khoản ngân hàng.
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </CardContent>
                     </Card>
 
