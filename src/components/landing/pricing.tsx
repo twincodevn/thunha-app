@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { formatCurrency } from "@/lib/billing";
 import { PLAN_PRICING } from "@/lib/constants";
 
@@ -43,6 +43,25 @@ const plans = [
     },
 ];
 
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+        },
+    },
+};
+
+const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { type: "spring", stiffness: 100, damping: 15 }
+    },
+};
+
 export function Pricing() {
     return (
         <section id="pricing" className="py-24">
@@ -55,14 +74,19 @@ export function Pricing() {
                         Không chi phí ẩn. Bắt đầu miễn phí và nâng cấp khi quy mô của bạn phát triển.
                     </p>
                 </div>
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto"
+                >
                     {plans.map((plan, i) => (
                         <motion.div
                             key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: i * 0.1 }}
+                            variants={itemVariants}
+                            whileHover={{ y: -8 }}
+                            className="h-full"
                         >
                             <Card className={`flex flex-col h-full relative overflow-hidden ${plan.popular ? 'border-blue-600 shadow-xl shadow-blue-500/10 scale-105 z-10' : 'hover:shadow-lg transition-shadow'}`}>
                                 {plan.popular && (
@@ -107,7 +131,7 @@ export function Pricing() {
                             </Card>
                         </motion.div>
                     ))}
-                </div>
+                </motion.div>
             </div>
         </section>
     );

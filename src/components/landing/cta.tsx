@@ -8,10 +8,21 @@ import { motion } from "framer-motion";
 export function CTA() {
     return (
         <section className="py-24 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+            <motion.div
+                className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600"
+                animate={{
+                    backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
+                }}
+                transition={{
+                    duration: 15,
+                    repeat: Infinity,
+                    ease: "linear"
+                }}
+                style={{ backgroundSize: '200% 200%' }}
+            />
 
             {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 opacity-10 mix-blend-overlay">
                 <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" />
                 </svg>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Hero } from "@/components/landing/hero";
 import { BentoFeatures } from "@/components/landing/bento-features";
+import { HowItWorks } from "@/components/landing/how-it-works";
 import { Testimonials } from "@/components/landing/testimonials";
 import { Pricing } from "@/components/landing/pricing";
 import { CTA } from "@/components/landing/cta";
@@ -54,6 +55,7 @@ export default function HomePage() {
       <main>
         <Hero />
         <BentoFeatures />
+        <HowItWorks />
         <Testimonials />
         <Pricing />
         <CTA />

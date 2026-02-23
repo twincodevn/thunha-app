@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
     Zap,
     Shield,
@@ -14,6 +14,29 @@ import {
 import { cn } from "@/lib/utils";
 
 export function BentoFeatures() {
+    const containerVariants: Variants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.15,
+            },
+        },
+    };
+
+    const itemVariants: Variants = {
+        hidden: { opacity: 0, y: 40, scale: 0.95 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            transition: {
+                type: "spring",
+                stiffness: 100,
+                damping: 20,
+            },
+        },
+    };
     return (
         <section id="features" className="py-24 bg-slate-50 dark:bg-slate-950">
             <div className="container px-4 md:px-6">
@@ -53,13 +76,18 @@ export function BentoFeatures() {
                     </motion.p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px] lg:auto-rows-[340px]"
+                >
                     {/* Feature 1: Main (Span 2 cols) */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="md:col-span-2 relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-xl transition-all duration-300"
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02, translateY: -5 }}
+                        className="md:col-span-2 relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-2xl transition-all duration-300"
                     >
                         <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl group-hover:bg-blue-500/20 transition-all" />
 
@@ -99,11 +127,9 @@ export function BentoFeatures() {
 
                     {/* Feature 2: Analytics */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-xl transition-all duration-300"
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02, translateY: -5 }}
+                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-2xl transition-all duration-300"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent dark:from-indigo-900/10 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -130,11 +156,9 @@ export function BentoFeatures() {
 
                     {/* Feature 3: Mobile (Span 1) */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-xl transition-all duration-300 md:row-span-2"
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02, translateY: -5 }}
+                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-2xl transition-all duration-300 md:row-span-2"
                     >
                         <div className="absolute top-0 right-0 h-32 w-32 bg-purple-500/10 blur-3xl rounded-full" />
 
@@ -170,11 +194,9 @@ export function BentoFeatures() {
 
                     {/* Feature 4: Security */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.3 }}
-                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-xl transition-all duration-300"
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02, translateY: -5 }}
+                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-2xl transition-all duration-300"
                     >
                         <div className="absolute opacity-0 group-hover:opacity-100 inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] transition-opacity" />
 
@@ -191,11 +213,9 @@ export function BentoFeatures() {
 
                     {/* Feature 5: Tenant Portal */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.4 }}
-                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-xl transition-all duration-300"
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02, translateY: -5 }}
+                        className="relative overflow-hidden rounded-3xl border bg-background p-8 group shadow-lg hover:shadow-2xl transition-all duration-300"
                     >
                         <div className="relative z-10">
                             <div className="h-12 w-12 rounded-2xl bg-teal-100 dark:bg-teal-900/30 text-teal-600 flex items-center justify-center mb-4">
@@ -207,7 +227,7 @@ export function BentoFeatures() {
                             </p>
                         </div>
                     </motion.div>
-                </div>
+                </motion.div>
             </div>
         </section>
     );
