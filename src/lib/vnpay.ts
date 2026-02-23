@@ -114,14 +114,19 @@ export function getVNPayMessage(responseCode: string): string {
 
 // Helper functions
 function formatDate(date: Date): string {
+    // For VNPAY, dates must be in GMT+7. 
+    // Since Vercel servers run in UTC, we calculate the UTC+7 equivalent manually using UTC methods.
+    const offsetTime = date.getTime() + 7 * 60 * 60 * 1000; // Add 7 hours to UTC
+    const gmt7Date = new Date(offsetTime);
+
     const pad = (n: number) => String(n).padStart(2, "0");
     return (
-        date.getFullYear().toString() +
-        pad(date.getMonth() + 1) +
-        pad(date.getDate()) +
-        pad(date.getHours()) +
-        pad(date.getMinutes()) +
-        pad(date.getSeconds())
+        gmt7Date.getUTCFullYear().toString() +
+        pad(gmt7Date.getUTCMonth() + 1) +
+        pad(gmt7Date.getUTCDate()) +
+        pad(gmt7Date.getUTCHours()) +
+        pad(gmt7Date.getUTCMinutes()) +
+        pad(gmt7Date.getUTCSeconds())
     );
 }
 
