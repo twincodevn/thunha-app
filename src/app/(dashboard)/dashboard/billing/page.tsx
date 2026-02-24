@@ -84,10 +84,11 @@ export default function BillingPage() {
                 title="Quản lý hóa đơn"
                 description="Theo dõi và quản lý hóa đơn tiền nhà hàng tháng"
             >
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {/* Batch reminder */}
                     <Button
                         variant="outline"
+                        size="sm"
                         className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-800"
                         onClick={async () => {
                             const data = await getBatchReminderData();
@@ -98,20 +99,22 @@ export default function BillingPage() {
                             toast.success(`Đã copy ${data.bills.length} tin nhắn nhắc nhở!`);
                         }}
                     >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Nhắc nhở ({bills.filter(b => b.status === "PENDING" || b.status === "OVERDUE").length})
+                        <MessageSquare className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Nhắc nhở ({bills.filter(b => b.status === "PENDING" || b.status === "OVERDUE").length})</span>
                     </Button>
 
                     {/* Export Report Button (Premium) */}
-                    <Button variant="outline" onClick={() => !planConfig.hasAdvancedReports && handlePremiumFeature("Báo cáo")}>
-                        {!planConfig.hasAdvancedReports && <Lock className="mr-2 h-3 w-3 text-muted-foreground" />}
-                        Xuất báo cáo
+                    <Button size="sm" variant="outline" onClick={() => !planConfig.hasAdvancedReports && handlePremiumFeature("Báo cáo")}>
+                        {!planConfig.hasAdvancedReports && <Lock className="h-3 w-3 sm:mr-2 text-muted-foreground" />}
+                        <span className="hidden sm:inline">Xuất báo cáo</span>
+                        <span className="sm:hidden">Báo cáo</span>
                     </Button>
 
-                    <Button asChild>
+                    <Button size="sm" asChild>
                         <Link href="/dashboard/billing/generate">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Lập hóa đơn mới
+                            <Plus className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Lập hóa đơn mới</span>
+                            <span className="sm:hidden">Lập hoá đơn</span>
                         </Link>
                     </Button>
                 </div>
@@ -221,7 +224,7 @@ export default function BillingPage() {
                             <BillingKanban initialBills={filteredBills} />
                         </div>
                     ) : (
-                        <div className="rounded-md border mx-0 sm:mx-0 overflow-x-auto">
+                        <div className="w-full overflow-x-auto rounded-md border">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/50 hover:bg-muted/50">
