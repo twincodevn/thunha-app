@@ -68,3 +68,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+/.vscode
+/.github
+.copilotignore

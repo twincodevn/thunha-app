@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: thunha-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: thunha
+      POSTGRES_PASSWORD: thunha123
+      POSTGRES_DB: thunha
+    ports:
+      - "5432:5432"
+    volumes:
+      - thunha_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  thunha_postgres_data:
