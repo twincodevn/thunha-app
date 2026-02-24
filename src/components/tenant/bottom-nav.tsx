@@ -4,58 +4,60 @@ import { Home, FileText, Wrench, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+
+const navItems = [
+    { name: "Tổng quan", href: "/portal/dashboard", icon: Home },
+    { name: "Hóa đơn", href: "/portal/bills", icon: FileText },
+    { name: "Sự cố", href: "/portal/incidents", icon: Wrench },
+    { name: "Tài khoản", href: "/portal/profile", icon: User },
+];
 
 export function TenantBottomNav() {
     const pathname = usePathname();
 
-    const isActive = (path: string) => pathname === path;
-
     return (
-        <div className="fixed lg:absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t pb-safe pt-2 px-6 flex justify-between items-center z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-            <Link
-                href="/portal/dashboard"
-                className={cn(
-                    "flex flex-col items-center gap-1 w-16 group",
-                    isActive("/portal/dashboard") ? "text-indigo-600" : "text-slate-400 hover:text-indigo-600"
-                )}
-            >
-                <div className={cn("h-0.5 w-8 rounded-full mb-1 transition-colors", isActive("/portal/dashboard") ? "bg-indigo-600" : "bg-transparent")}></div>
-                <Home className={cn("h-6 w-6 transition-transform group-active:scale-95", isActive("/portal/dashboard") && "fill-current")} />
-                <span className={cn("text-[10px] font-medium transition-colors", isActive("/portal/dashboard") && "font-bold")}>Trang chủ</span>
-            </Link>
-            <Link
-                href="/portal/bills"
-                className={cn(
-                    "flex flex-col items-center gap-1 w-16 group",
-                    isActive("/portal/bills") ? "text-indigo-600" : "text-slate-400 hover:text-indigo-600"
-                )}
-            >
-                <div className={cn("h-0.5 w-8 rounded-full mb-1 transition-colors", isActive("/portal/bills") ? "bg-indigo-600" : "bg-transparent")}></div>
-                <FileText className="h-6 w-6 transition-transform group-active:scale-95" />
-                <span className={cn("text-[10px] font-medium transition-colors", isActive("/portal/bills") && "font-bold")}>Hóa đơn</span>
-            </Link>
-            <Link
-                href="/portal/incidents"
-                className={cn(
-                    "flex flex-col items-center gap-1 w-16 group",
-                    isActive("/portal/incidents") ? "text-indigo-600" : "text-slate-400 hover:text-indigo-600"
-                )}
-            >
-                <div className={cn("h-0.5 w-8 rounded-full mb-1 transition-colors", isActive("/portal/incidents") ? "bg-indigo-600" : "bg-transparent")}></div>
-                <Wrench className="h-6 w-6 transition-transform group-active:scale-95" />
-                <span className={cn("text-[10px] font-medium transition-colors", isActive("/portal/incidents") && "font-bold")}>Sự cố</span>
-            </Link>
-            <Link
-                href="/portal/profile"
-                className={cn(
-                    "flex flex-col items-center gap-1 w-16 group",
-                    isActive("/portal/profile") ? "text-indigo-600" : "text-slate-400 hover:text-indigo-600"
-                )}
-            >
-                <div className={cn("h-0.5 w-8 rounded-full mb-1 transition-colors", isActive("/portal/profile") ? "bg-indigo-600" : "bg-transparent")}></div>
-                <User className="h-6 w-6 transition-transform group-active:scale-95" />
-                <span className={cn("text-[10px] font-medium transition-colors", isActive("/portal/profile") && "font-bold")}>Tài khoản</span>
-            </Link>
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe lg:hidden pointer-events-none">
+            <nav className="mx-auto max-w-md bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl shadow-slate-200/20 dark:shadow-black/40 px-2 py-2 flex items-center justify-between pointer-events-auto relative overflow-hidden">
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/") && item.href !== "/portal/dashboard";
+
+                    return (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className="relative flex flex-col items-center justify-center w-16 h-14 rounded-xl group"
+                        >
+                            {isActive && (
+                                <motion.div
+                                    layoutId="bottom-nav-active"
+                                    className="absolute inset-0 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl"
+                                    initial={false}
+                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                />
+                            )}
+                            <item.icon
+                                className={cn(
+                                    "h-5 w-5 mb-1.5 relative z-10 transition-colors duration-200",
+                                    isActive
+                                        ? "text-indigo-600 dark:text-indigo-400"
+                                        : "text-slate-400 dark:text-zinc-500 group-hover:text-slate-600 dark:group-hover:text-zinc-300"
+                                )}
+                            />
+                            <span
+                                className={cn(
+                                    "text-[10px] font-medium relative z-10 transition-colors duration-200",
+                                    isActive
+                                        ? "text-indigo-600 dark:text-indigo-400"
+                                        : "text-slate-400 dark:text-zinc-500 group-hover:text-slate-600 dark:group-hover:text-zinc-300"
+                                )}
+                            >
+                                {item.name}
+                            </span>
+                        </Link>
+                    );
+                })}
+            </nav>
         </div>
     );
 }

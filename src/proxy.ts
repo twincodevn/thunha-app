@@ -52,7 +52,35 @@ export async function proxy(request: NextRequest) {
 
     // Redirect authenticated users away from auth pages
     if (token && (pathname === "/login" || pathname === "/register")) {
+        const role = token?.role as string;
+        if (role === "TENANT") {
+            return NextResponse.redirect(new URL("/portal/dashboard", request.url));
+        }
         return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    if (token && pathname === "/portal/login") {
+        const role = token?.role as string;
+        if (role === "LANDLORD") {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+        return NextResponse.redirect(new URL("/portal/dashboard", request.url));
+    }
+
+    // Role-based protection: Prevent Tenant from accessing Landlord Dashboard
+    if (token && pathname.startsWith("/dashboard")) {
+        const role = token?.role as string;
+        if (role === "TENANT") {
+            return NextResponse.redirect(new URL("/portal/dashboard", request.url));
+        }
+    }
+
+    // Role-based protection: Prevent Landlord from accessing Tenant Portal
+    if (token && pathname.startsWith("/portal/dashboard")) { // Allow them to access /portal/login though
+        const role = token?.role as string;
+        if (role === "LANDLORD" || role === "ADMIN") {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
     }
 
     // Check plan-based route restrictions
