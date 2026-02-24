@@ -14,17 +14,17 @@ export function PageHeader({
     ...props
 }: PageHeaderProps) {
     return (
-        <div className={cn("flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-6", className)} {...props}>
-            <div className="space-y-1">
-                <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <div className={cn("flex flex-col gap-3 pb-5", className)} {...props}>
+            <div className="space-y-0.5">
+                <h1 className="text-xl font-bold tracking-tight lg:text-2xl">{title}</h1>
                 {description && (
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground lg:text-base">
                         {description}
                     </p>
                 )}
             </div>
             {children && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full md:w-auto">
                     {children}
                 </div>
             )}

@@ -76,7 +76,7 @@ export function TenantList({ tenants, searchQuery, statusFilter }: TenantListPro
 
     return (
         <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {filteredTenants.map((tenant) => {
                     const currentRoom = tenant.roomTenants[0]?.room;
                     const contract = tenant.roomTenants[0];

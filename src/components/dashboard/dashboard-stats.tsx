@@ -73,7 +73,7 @@ export function DashboardStats({
             variants={container}
             initial="hidden"
             animate="show"
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
         >
             {stats.map((stat, i) => (
                 <motion.div key={i} variants={item}>

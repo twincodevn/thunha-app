@@ -98,11 +98,11 @@ export function ActionCenter({ overdueBills, expiringContracts, activeIncidents 
             <CardContent className="p-0">
                 <div className="divide-y">
                     {actions.map((action) => (
-                        <div key={action.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors group">
+                        <Link key={action.id} href={action.href} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors group touch-manipulation">
                             <div className="flex items-start gap-3">
                                 <div className={`mt-0.5 rounded-full p-1.5 ${action.type === "BILL_OVERDUE" ? "bg-red-100 text-red-600" :
-                                        action.type === "INCIDENT_OPEN" ? "bg-orange-100 text-orange-600" :
-                                            "bg-blue-100 text-blue-600"
+                                    action.type === "INCIDENT_OPEN" ? "bg-orange-100 text-orange-600" :
+                                        "bg-blue-100 text-blue-600"
                                     }`}>
                                     {action.type === "BILL_OVERDUE" && <AlertCircle className="h-4 w-4" />}
                                     {action.type === "INCIDENT_OPEN" && <AlertCircle className="h-4 w-4" />}
@@ -113,14 +113,11 @@ export function ActionCenter({ overdueBills, expiringContracts, activeIncidents 
                                     <p className="text-xs text-muted-foreground mt-1">{action.subtitle}</p>
                                 </div>
                             </div>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity" asChild>
-                                <Link href={action.href}>
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                        </Link>
                     ))}
                 </div>
+
                 <div className="p-2 border-t bg-muted/10 text-center">
                     <Button variant="link" size="sm" className="text-xs text-muted-foreground" asChild>
                         <Link href="/dashboard/notifications">Xem tất cả thông báo</Link>
