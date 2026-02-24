@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { sendPushToTenant } from "@/app/api/push/send/route";
 
 export async function createAnnouncement(data: { propertyId: string, title: string, content: string }) {
     const session = await auth();
@@ -51,6 +52,15 @@ export async function createAnnouncement(data: { propertyId: string, title: stri
             await prisma.notification.createMany({
                 data: notifications
             });
+
+            // 🔔 Web Push: thông báo đến từng cư dân (best-effort)
+            for (const notif of notifications) {
+                sendPushToTenant({
+                    tenantId: notif.tenantId,
+                    title: notif.title,
+                    message: notif.message,
+                }).catch((e) => console.warn("[Push] Announcement notify failed:", e));
+            }
         }
 
         revalidatePath(`/dashboard/properties/${data.propertyId}/announcements`);

@@ -7,6 +7,9 @@ import { TenantSidebar } from "@/components/tenant/sidebar";
 import { TenantHeader } from "@/components/tenant/header";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { SessionProvider } from "next-auth/react";
+import { OneSignalProvider } from "@/components/tenant/onesignal-provider";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,18 +29,19 @@ export default async function TenantLayout({
     return (
         <html lang="vi" suppressHydrationWarning>
             <body className={`${inter.className} min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900`}>
-                <div className="min-h-screen">
-                    <TenantSidebar user={user} />
-                    <div className="lg:pl-64 flex flex-col min-h-screen transition-all">
-                        <TenantHeader />
-                        <main className="flex-1 p-4 lg:p-6 pb-20 lg:pb-6 relative z-10">
-                            {children}
-                        </main>
-
-
+                <SessionProvider>
+                    <OneSignalProvider />
+                    <div className="min-h-screen">
+                        <TenantSidebar user={user} />
+                        <div className="lg:pl-64 flex flex-col min-h-screen transition-all">
+                            <TenantHeader />
+                            <main className="flex-1 p-4 lg:p-6 pb-20 lg:pb-6 relative z-10">
+                                {children}
+                            </main>
+                        </div>
+                        <Toaster />
                     </div>
-                    <Toaster />
-                </div>
+                </SessionProvider>
             </body>
         </html>
     );

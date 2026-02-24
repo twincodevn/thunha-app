@@ -142,8 +142,9 @@ model Tenant {
   notes          String?
   creditScore    Int          @default(600)
   paymentHistory Json?
-  zaloUserId     String?              // Zalo user ID (set when tenant messages OA)
-  zaloPhone      String?              // Normalized phone for ZNS (84xxxxxxxxx format)
+  zaloUserId          String?              // Zalo user ID (set when tenant messages OA)
+  zaloPhone           String?              // Normalized phone for ZNS (84xxxxxxxxx format)
+  oneSignalPlayerId   String?              // OneSignal subscription ID for Web Push
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   username       String?      @unique

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { sendBillCreatedZNS, sendPaymentConfirmedZNS, formatCurrencyVND, formatDateVN } from "@/lib/zalo";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { sendPushToTenant } from "@/app/api/push/send/route";
 
 // Helper type for Property Services
 interface Service {
@@ -225,6 +226,18 @@ export async function createBills(bills: z.infer<typeof createBillSchema>[]) {
       await prisma.notification.createMany({
         data: notifications,
       });
+
+      // 🔔 Web Push: gửi push cho từng tenant (best-effort)
+      for (const notif of notifications) {
+        if (notif.tenantId) {
+          sendPushToTenant({
+            tenantId: notif.tenantId,
+            title: notif.title,
+            message: notif.message,
+            url: notif.link,
+          }).catch((e) => console.warn("[Push] Bill notification failed:", e));
+        }
+      }
     }
 
     // 🔔 Fire ZNS for each bill (best-effort, non-blocking)
@@ -440,30 +453,40 @@ export async function confirmPayment(data: {
     revalidatePath("/dashboard/billing");
     revalidatePath(`/dashboard/billing/${data.billId}`);
 
-    // 🔔 ZNS: Xác nhận thanh toán nếu đã đủ tiền
+    // 🔔 ZNS + Web Push: Xác nhận thanh toán nếu đã đủ tiền
     if (newStatus === "PAID") {
       const fullBill = await prisma.bill.findUnique({
         where: { id: data.billId },
         include: {
           roomTenant: {
             include: {
-              tenant: { select: { phone: true, name: true } },
+              tenant: { select: { id: true, phone: true, name: true } },
               room: { include: { property: { select: { name: true, userId: true } } } },
             },
           },
         },
       });
-      if (fullBill?.roomTenant.tenant.phone) {
+      if (fullBill) {
         const methodLabel: Record<string, string> = {
           CASH: "Tiền mặt", BANK_TRANSFER: "Chuyển khoản", VNPAY: "VNPay", MOMO: "MoMo",
         };
-        sendPaymentConfirmedZNS(fullBill.roomTenant.room.property.userId, fullBill.roomTenant.tenant.phone, {
-          tenant_name: fullBill.roomTenant.tenant.name,
-          room_number: fullBill.roomTenant.room.roomNumber,
-          amount: formatCurrencyVND(data.amount),
-          month: `Tháng ${fullBill.month}/${fullBill.year}`,
-          payment_method: methodLabel[data.method] || data.method,
-        }).catch((e) => console.warn("[ZNS] Payment confirmed send failed:", e));
+        // ZNS
+        if (fullBill.roomTenant.tenant.phone) {
+          sendPaymentConfirmedZNS(fullBill.roomTenant.room.property.userId, fullBill.roomTenant.tenant.phone, {
+            tenant_name: fullBill.roomTenant.tenant.name,
+            room_number: fullBill.roomTenant.room.roomNumber,
+            amount: formatCurrencyVND(data.amount),
+            month: `Tháng ${fullBill.month}/${fullBill.year}`,
+            payment_method: methodLabel[data.method] || data.method,
+          }).catch((e) => console.warn("[ZNS] Payment confirmed send failed:", e));
+        }
+        // Web Push
+        sendPushToTenant({
+          tenantId: fullBill.roomTenant.tenantId,
+          title: "✅ Xác nhận thanh toán",
+          message: `Phòng ${fullBill.roomTenant.room.roomNumber} – Tháng ${fullBill.month}/${fullBill.year}: ${formatCurrencyVND(data.amount)}`,
+          url: "/portal/bills",
+        }).catch((e) => console.warn("[Push] Payment confirmed failed:", e));
       }
     }
 
