@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Shield, CreditCard } from "lucide-react";
+import { User, Shield, CreditCard, MessageSquare } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -24,6 +24,11 @@ const sidebarNavItems = [
         title: "Thanh toán",
         href: "/dashboard/settings/billing",
         icon: CreditCard,
+    },
+    {
+        title: "Zalo OA",
+        href: "/dashboard/settings/zalo",
+        icon: MessageSquare,
     },
 ];
 

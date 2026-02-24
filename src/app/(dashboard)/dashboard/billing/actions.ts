@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { calculateElectricityCost, formatDate } from "@/lib/billing";
 import { sendInvoiceEmail, sendPaymentReminder } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { sendBillCreatedZNS, sendPaymentConfirmedZNS, formatCurrencyVND, formatDateVN } from "@/lib/zalo";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -212,9 +213,8 @@ export async function createBills(bills: z.infer<typeof createBillSchema>[]) {
         notifications.push({
           tenantId: rt.tenantId,
           title: "Có hóa đơn mới",
-          message: `Hóa đơn tháng ${bill.month}/${bill.year} của phòng ${
-            rt.room.roomNumber
-          } đã được tạo. Số tiền: ${bill.total.toLocaleString("vi-VN")}đ.`,
+          message: `Hóa đơn tháng ${bill.month}/${bill.year} của phòng ${rt.room.roomNumber
+            } đã được tạo. Số tiền: ${bill.total.toLocaleString("vi-VN")}đ.`,
           type: "BILL",
           link: "/portal/bills",
         });
@@ -225,6 +225,35 @@ export async function createBills(bills: z.infer<typeof createBillSchema>[]) {
       await prisma.notification.createMany({
         data: notifications,
       });
+    }
+
+    // 🔔 Fire ZNS for each bill (best-effort, non-blocking)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    for (const bill of createdBills) {
+      const rt = roomTenants.find((r) => r.id === bill.roomTenantId);
+      if (!rt) continue;
+
+      // Fetch tenant phone + invoice token + property name
+      const fullRt = await prisma.roomTenant.findUnique({
+        where: { id: bill.roomTenantId },
+        include: {
+          tenant: { select: { phone: true, name: true } },
+          room: { include: { property: { select: { name: true, userId: true } } } },
+        },
+      });
+      const invoice = await prisma.invoice.findUnique({ where: { billId: bill.id } });
+
+      if (fullRt?.tenant.phone) {
+        sendBillCreatedZNS(fullRt.room.property.userId, fullRt.tenant.phone, {
+          tenant_name: fullRt.tenant.name,
+          room_number: fullRt.room.roomNumber,
+          property_name: fullRt.room.property.name,
+          month: `Tháng ${bill.month}/${bill.year}`,
+          amount: formatCurrencyVND(bill.total),
+          due_date: formatDateVN(new Date(bill.dueDate)),
+          invoice_url: invoice?.token ? `${appUrl}/invoice/${invoice.token}` : appUrl,
+        }).catch((e) => console.warn("[ZNS] Bill created send failed:", e));
+      }
     }
 
     revalidatePath("/dashboard/billing");
@@ -411,6 +440,33 @@ export async function confirmPayment(data: {
     revalidatePath("/dashboard/billing");
     revalidatePath(`/dashboard/billing/${data.billId}`);
 
+    // 🔔 ZNS: Xác nhận thanh toán nếu đã đủ tiền
+    if (newStatus === "PAID") {
+      const fullBill = await prisma.bill.findUnique({
+        where: { id: data.billId },
+        include: {
+          roomTenant: {
+            include: {
+              tenant: { select: { phone: true, name: true } },
+              room: { include: { property: { select: { name: true, userId: true } } } },
+            },
+          },
+        },
+      });
+      if (fullBill?.roomTenant.tenant.phone) {
+        const methodLabel: Record<string, string> = {
+          CASH: "Tiền mặt", BANK_TRANSFER: "Chuyển khoản", VNPAY: "VNPay", MOMO: "MoMo",
+        };
+        sendPaymentConfirmedZNS(fullBill.roomTenant.room.property.userId, fullBill.roomTenant.tenant.phone, {
+          tenant_name: fullBill.roomTenant.tenant.name,
+          room_number: fullBill.roomTenant.room.roomNumber,
+          amount: formatCurrencyVND(data.amount),
+          month: `Tháng ${fullBill.month}/${fullBill.year}`,
+          payment_method: methodLabel[data.method] || data.method,
+        }).catch((e) => console.warn("[ZNS] Payment confirmed send failed:", e));
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Confirm payment error:", error);
@@ -443,7 +499,7 @@ export async function sendReminderEmail(billId: string) {
 
     const daysOverdue = Math.floor(
       (new Date().getTime() - new Date(bill.dueDate).getTime()) /
-        (1000 * 60 * 60 * 24),
+      (1000 * 60 * 60 * 24),
     );
 
     const invoiceUrl = bill.invoice?.token
@@ -503,13 +559,11 @@ export async function generateSMSMessage(billId: string) {
       bill.roomTenant.room.property.user.email ||
       "chu tro";
 
-    const message = `Chao ${
-      bill.roomTenant.tenant.name
-    }, vui long thanh toan tien phong ${
-      bill.roomTenant.room.roomNumber
-    } thang ${bill.month}. Tong: ${bill.total.toLocaleString(
-      "vi-VN",
-    )}d. Lien he: ${landlordPhone}`;
+    const message = `Chao ${bill.roomTenant.tenant.name
+      }, vui long thanh toan tien phong ${bill.roomTenant.room.roomNumber
+      } thang ${bill.month}. Tong: ${bill.total.toLocaleString(
+        "vi-VN",
+      )}d. Lien he: ${landlordPhone}`;
 
     return {
       success: true,
@@ -604,13 +658,11 @@ export async function getBatchReminderData() {
 
     return {
       bills: bills.map((bill) => {
-        const message = `Chao ${
-          bill.roomTenant.tenant.name
-        }, vui long thanh toan tien phong ${
-          bill.roomTenant.room.roomNumber
-        } thang ${bill.month}. Tong: ${bill.total.toLocaleString(
-          "vi-VN",
-        )}d. Lien he: ${landlordPhone || "chu tro"}`;
+        const message = `Chao ${bill.roomTenant.tenant.name
+          }, vui long thanh toan tien phong ${bill.roomTenant.room.roomNumber
+          } thang ${bill.month}. Tong: ${bill.total.toLocaleString(
+            "vi-VN",
+          )}d. Lien he: ${landlordPhone || "chu tro"}`;
         const phone = bill.roomTenant.tenant.phone;
         const zaloPhone = phone.startsWith("0") ? "84" + phone.slice(1) : phone;
         return {

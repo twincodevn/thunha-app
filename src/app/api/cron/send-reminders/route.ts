@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPaymentReminder } from "@/lib/email";
+import { sendBillOverdueZNS, formatCurrencyVND, formatDateVN } from "@/lib/zalo";
 
 // GET /api/cron/send-reminders
 // This endpoint should be called by a cron job (e.g., Vercel Cron)
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
                                 id: true,
                                 name: true,
                                 email: true,
+                                phone: true,
                             },
                         },
                         room: {
@@ -39,6 +41,7 @@ export async function GET(request: Request) {
                                 property: {
                                     select: {
                                         name: true,
+                                        userId: true,
                                     },
                                 },
                             },
@@ -107,6 +110,19 @@ export async function GET(request: Request) {
                         status: "sent",
                         messageId: (result.data as any)?.id,
                     });
+
+                    // 🔔 Also send Zalo ZNS (best-effort, don't fail if unavailable)
+                    if (tenant.phone) {
+                        const landlordUserId = room.property.userId;
+                        sendBillOverdueZNS(landlordUserId, tenant.phone, {
+                            tenant_name: tenant.name,
+                            room_number: room.roomNumber,
+                            property_name: room.property.name,
+                            amount: formatCurrencyVND(bill.total),
+                            days_overdue: String(daysOverdue),
+                            invoice_url: invoiceUrl,
+                        }).catch((e) => console.warn("[ZNS] Send failed:", e));
+                    }
                 } else {
                     failCount++;
                     results.push({

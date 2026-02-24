@@ -27,6 +27,10 @@ model User {
   createdIp         String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  zaloOaAccessToken  String?           // Zalo OA access token
+  zaloOaRefreshToken String?           // Zalo OA refresh token
+  zaloOaTokenExpiry  DateTime?         // Token expiry time
+  zaloOaId           String?           // OA ID from Zalo developer portal
   contractTemplates   ContractTemplate[]
   properties          Property[]
   tenants             Tenant[]
@@ -138,6 +142,8 @@ model Tenant {
   notes          String?
   creditScore    Int          @default(600)
   paymentHistory Json?
+  zaloUserId     String?              // Zalo user ID (set when tenant messages OA)
+  zaloPhone      String?              // Normalized phone for ZNS (84xxxxxxxxx format)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   username       String?      @unique
