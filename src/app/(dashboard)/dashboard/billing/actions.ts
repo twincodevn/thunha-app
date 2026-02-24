@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { sendBillCreatedZNS, sendPaymentConfirmedZNS, formatCurrencyVND, formatDateVN } from "@/lib/zalo";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { sendPushToTenant } from "@/app/api/push/send/route";
+import { sendPushToTenant } from "@/lib/push";
 
 // Helper type for Property Services
 interface Service {

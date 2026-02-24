@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { sendPushToTenant } from "@/app/api/push/send/route";
+import { sendPushToTenant } from "@/lib/push";
 
 export async function createAnnouncement(data: { propertyId: string, title: string, content: string }) {
     const session = await auth();
