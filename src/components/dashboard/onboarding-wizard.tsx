@@ -5,8 +5,10 @@ import { Building2, DoorOpen, Users, Receipt, CheckCircle2, ArrowRight, X, Spark
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 const ONBOARDING_KEY = "thunha-onboarding-dismissed";
+const CONFETTI_KEY = "thunha-onboarding-confetti-fired";
 
 interface OnboardingStep {
     icon: React.ReactNode;
@@ -29,10 +31,14 @@ export function OnboardingWizard({
     hasBills: boolean;
 }) {
     const [dismissed, setDismissed] = useState(true);
+    const [hasFiredConfetti, setHasFiredConfetti] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem(ONBOARDING_KEY);
         if (!stored) setDismissed(false);
+
+        const confettiFired = localStorage.getItem(CONFETTI_KEY);
+        if (confettiFired) setHasFiredConfetti(true);
     }, []);
 
     if (dismissed) return null;
@@ -75,6 +81,19 @@ export function OnboardingWizard({
     const completedCount = steps.filter((s) => s.completed).length;
     const progress = (completedCount / steps.length) * 100;
     const allDone = completedCount === steps.length;
+
+    useEffect(() => {
+        if (allDone && !hasFiredConfetti) {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#8b5cf6', '#6366f1', '#3b82f6', '#10b981'],
+            });
+            setHasFiredConfetti(true);
+            localStorage.setItem(CONFETTI_KEY, "1");
+        }
+    }, [allDone, hasFiredConfetti]);
 
     const handleDismiss = () => {
         localStorage.setItem(ONBOARDING_KEY, "1");
@@ -129,15 +148,15 @@ export function OnboardingWizard({
                         <div
                             key={i}
                             className={`group relative rounded-xl p-4 transition-all duration-200 ${step.completed
-                                    ? "bg-white/50 dark:bg-white/5 border border-emerald-200 dark:border-emerald-800"
-                                    : "bg-white/70 dark:bg-white/10 border border-transparent hover:border-violet-200 dark:hover:border-violet-800 hover:shadow-md"
+                                ? "bg-white/50 dark:bg-white/5 border border-emerald-200 dark:border-emerald-800"
+                                : "bg-white/70 dark:bg-white/10 border border-transparent hover:border-violet-200 dark:hover:border-violet-800 hover:shadow-md"
                                 }`}
                         >
                             <div className="flex items-center gap-2 mb-2">
                                 <div
                                     className={`p-1.5 rounded-lg ${step.completed
-                                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
-                                            : "bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400"
+                                        ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400"
+                                        : "bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400"
                                         }`}
                                 >
                                     {step.completed ? <CheckCircle2 className="h-4 w-4" /> : step.icon}

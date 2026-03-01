@@ -13,7 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Phone, Mail, MapPin, CreditCard, FileText, User, ArrowRight, Home, MessageCircle } from "lucide-react";
+import { Phone, Mail, MapPin, CreditCard, FileText, User, ArrowRight, Home, MessageCircle, Share2 } from "lucide-react";
+import { ShareCreditReportDialog } from "./share-credit-report-dialog";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/billing";
 import { format } from "date-fns";
@@ -27,6 +28,7 @@ interface TenantDrawerProps {
 
 export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
     const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
     if (!tenant) return null;
 
@@ -98,7 +100,7 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
 
                 <div className="mt-8 space-y-6">
                     {/* Quick Actions */}
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         <Button variant="outline" className="flex flex-col h-auto py-3 gap-1 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20" asChild>
                             <Link href={`tel:${tenant.phone}`}>
                                 <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -114,8 +116,12 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                         <Button variant="outline" className="flex flex-col h-auto py-3 gap-1 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20" asChild>
                             <Link href={`/dashboard/properties/${currentRoom?.propertyId}/readings?roomId=${currentRoom?.id}`}>
                                 <FileText className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                <span className="text-xs">Tạo Hóa đơn</span>
+                                <span className="text-xs">Hóa đơn</span>
                             </Link>
+                        </Button>
+                        <Button variant="outline" className="flex flex-col h-auto py-3 gap-1 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" onClick={() => setIsShareDialogOpen(true)}>
+                            <Share2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                            <span className="text-xs">Chia sẻ</span>
                         </Button>
                     </div>
                     {/* Account Status */}
@@ -260,6 +266,11 @@ export function TenantDrawer({ tenant, isOpen, onClose }: TenantDrawerProps) {
                     currentUsername={tenant.username}
                     open={isAccountDialogOpen}
                     onOpenChange={setIsAccountDialogOpen}
+                />
+                <ShareCreditReportDialog
+                    tenant={tenant}
+                    isOpen={isShareDialogOpen}
+                    onClose={() => setIsShareDialogOpen(false)}
                 />
             </SheetContent>
         </Sheet>

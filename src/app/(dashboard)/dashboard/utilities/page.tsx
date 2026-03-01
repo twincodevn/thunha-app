@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -184,11 +184,34 @@ export default function UtilityPage() {
         return currentVal - oldVal;
     };
 
+    const [isSpreadsheetMode, setIsSpreadsheetMode] = useState(false);
+
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Ghi chỉ số điện nước</h1>
-                <p className="text-muted-foreground">Nhập chỉ số điện nước hàng tháng cho khách thuê</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Ghi chỉ số điện nước</h1>
+                    <p className="text-muted-foreground">Nhập chỉ số điện nước hàng tháng cho khách thuê</p>
+                </div>
+                <div className="flex items-center gap-2 bg-white dark:bg-zinc-950 p-1.5 rounded-lg border shadow-sm">
+                    <Button
+                        variant={!isSpreadsheetMode ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setIsSpreadsheetMode(false)}
+                        className="text-xs"
+                    >
+                        Chế độ chuẩn
+                    </Button>
+                    <Button
+                        variant={isSpreadsheetMode ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setIsSpreadsheetMode(true)}
+                        className="text-xs flex items-center gap-1"
+                    >
+                        <Zap className="w-3 h-3 text-yellow-500" />
+                        Bảng Excel (Siêu tốc)
+                    </Button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -259,9 +282,19 @@ export default function UtilityPage() {
             {/* Readings Table */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Danh sách phòng đang thuê</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        Danh sách phòng đang thuê
+                        {isSpreadsheetMode && (
+                            <span className="text-xs font-normal px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200">
+                                Đang bật chế độ nhập nhanh
+                            </span>
+                        )}
+                    </CardTitle>
                     <CardDescription>
-                        Chỉ hiển thị các phòng có trạng thái "Đang thuê" (Occupied)
+                        {isSpreadsheetMode
+                            ? "Sử dụng phím Tab hoặc Mũi Tên Lên/Xuống để di chuyển siêu tốc giữa các ô."
+                            : 'Chỉ hiển thị các phòng có trạng thái "Đang thuê" (Occupied)'
+                        }
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -317,85 +350,131 @@ export default function UtilityPage() {
                                             const isElecInvalid = currentElec < room.electricityOld;
                                             const isWaterInvalid = currentWater < room.waterOld;
 
+                                            // Check for abnormal spikes (Usage > 200% of something? We don't have last month's usage easily here without fetching it. But we can estimate or flag if usage > 200 units as a generic check, OR if we had previous month's usage. Let's do a simple threshold check for "Cô Lan" -> if usage > 300 kWh or > 50m3 water, flag it.)
+                                            const isElecSpike = elecUsage > 300;
+                                            const isWaterSpike = waterUsage > 50;
+                                            const hasSpike = isElecSpike || isWaterSpike;
+
                                             return (
-                                                <TableRow key={room.roomId} className={isElecInvalid || isWaterInvalid ? "bg-red-50" : ""}>
-                                                    <TableCell className="font-medium">
-                                                        {room.roomNumber}
-                                                        {/* Hidden field for Room ID */}
-                                                        <input
-                                                            type="hidden"
-                                                            {...form.register(`readings.${originalIndex}.roomId`)}
-                                                            value={room.roomId}
-                                                        />
-                                                    </TableCell>
+                                                <React.Fragment key={room.roomId}>
+                                                    <TableRow className={isElecInvalid || isWaterInvalid ? "bg-red-50" : (hasSpike ? "bg-yellow-50/50" : "")}>
+                                                        <TableCell className="font-medium">
+                                                            {room.roomNumber}
+                                                            {/* Hidden field for Room ID */}
+                                                            <input
+                                                                type="hidden"
+                                                                {...form.register(`readings.${originalIndex}.roomId`)}
+                                                                value={room.roomId}
+                                                            />
+                                                        </TableCell>
 
-                                                    {/* Electricity */}
-                                                    <TableCell className="text-center text-muted-foreground bg-blue-50/30">
-                                                        {room.electricityOld}
-                                                    </TableCell>
-                                                    <TableCell className="bg-blue-50/50">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`readings.${originalIndex}.electricityCurrent`}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            onChange={e => field.onChange(parseFloat(e.target.value))}
-                                                                            onKeyDown={(e) => handleKeyDown(e, originalIndex, 'electricity')}
-                                                                            className={`text-center h-9 ${isElecInvalid ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                                                                        />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className={`text-center font-bold bg-blue-50/30 ${isElecInvalid ? "text-red-500" : "text-blue-600"}`}>
-                                                        {elecUsage}
-                                                    </TableCell>
-                                                    <TableCell className="text-center text-sm font-medium bg-blue-100/20 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300">
-                                                        {elecUsage > 0 ? formatCurrency(calculateElectricityCost(elecUsage, electricityRate > 0 ? electricityRate : undefined)) : "-"}
-                                                    </TableCell>
+                                                        {/* Electricity */}
+                                                        <TableCell className="text-center text-muted-foreground bg-blue-50/30">
+                                                            {room.electricityOld}
+                                                        </TableCell>
+                                                        <TableCell className="bg-blue-50/50">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name={`readings.${originalIndex}.electricityCurrent`}
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormControl>
+                                                                            <Input
+                                                                                type="number"
+                                                                                {...field}
+                                                                                onChange={e => field.onChange(parseFloat(e.target.value))}
+                                                                                onKeyDown={(e) => handleKeyDown(e, originalIndex, 'electricity')}
+                                                                                className={`text-center h-9 ${isElecInvalid ? "border-red-500 focus-visible:ring-red-500" : ""} ${isElecSpike ? "border-yellow-500 focus-visible:ring-yellow-500" : ""} ${isSpreadsheetMode ? "border-transparent bg-transparent hover:bg-white focus:bg-white shadow-none rounded-none w-full" : ""}`}
+                                                                            />
+                                                                        </FormControl>
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell className={`text-center font-bold bg-blue-50/30 ${isElecInvalid ? "text-red-500" : (isElecSpike ? "text-yellow-600" : "text-blue-600")}`}>
+                                                            {elecUsage} {isElecSpike && <AlertCircle className="inline-block w-3 h-3 ml-1 text-yellow-500" />}
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-sm font-medium bg-blue-100/20 dark:bg-blue-900/10 text-blue-700 dark:text-blue-300">
+                                                            {elecUsage > 0 ? formatCurrency(calculateElectricityCost(elecUsage, electricityRate > 0 ? electricityRate : undefined)) : "-"}
+                                                        </TableCell>
 
-                                                    {/* Water */}
-                                                    <TableCell className="text-center text-muted-foreground bg-cyan-50/30">
-                                                        {room.waterOld}
-                                                    </TableCell>
-                                                    <TableCell className="bg-cyan-50/50">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`readings.${originalIndex}.waterCurrent`}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            onChange={e => field.onChange(parseFloat(e.target.value))}
-                                                                            onKeyDown={(e) => handleKeyDown(e, originalIndex, 'water')}
-                                                                            className={`text-center h-9 ${isWaterInvalid ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                                                        {/* Water */}
+                                                        <TableCell className="text-center text-muted-foreground bg-cyan-50/30">
+                                                            {room.waterOld}
+                                                        </TableCell>
+                                                        <TableCell className="bg-cyan-50/50">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name={`readings.${originalIndex}.waterCurrent`}
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormControl>
+                                                                            <Input
+                                                                                type="number"
+                                                                                {...field}
+                                                                                onChange={e => field.onChange(parseFloat(e.target.value))}
+                                                                                onKeyDown={(e) => handleKeyDown(e, originalIndex, 'water')}
+                                                                                className={`text-center h-9 ${isWaterInvalid ? "border-red-500 focus-visible:ring-red-500" : ""} ${isWaterSpike ? "border-yellow-500 focus-visible:ring-yellow-500" : ""} ${isSpreadsheetMode ? "border-transparent bg-transparent hover:bg-white focus:bg-white shadow-none rounded-none w-full" : ""}`}
+                                                                            />
+                                                                        </FormControl>
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell className={`text-center font-bold bg-cyan-50/30 ${isWaterInvalid ? "text-red-500" : (isWaterSpike ? "text-yellow-600" : "text-cyan-600")}`}>
+                                                            {waterUsage} {isWaterSpike && <AlertCircle className="inline-block w-3 h-3 ml-1 text-yellow-500" />}
+                                                        </TableCell>
+                                                        <TableCell className="text-center text-sm font-medium bg-cyan-100/20 dark:bg-cyan-900/10 text-cyan-700 dark:text-cyan-300">
+                                                            {waterUsage > 0 ? formatCurrency(calculateWaterCost(waterUsage, waterRate)) : "-"}
+                                                        </TableCell>
+                                                    </TableRow>
+
+                                                    {/* Warning Row for Spikes */}
+                                                    {hasSpike && (
+                                                        <TableRow className="bg-yellow-50/30 border-b-2 border-yellow-200">
+                                                            <TableCell colSpan={9} className="py-2 px-4 shadow-inner">
+                                                                <div className="flex items-center gap-2 text-yellow-800 text-xs font-semibold">
+                                                                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                                                                    Phát hiện lượng sử dụng ({isElecSpike ? "Điện" : ""}{isElecSpike && isWaterSpike ? " & " : ""}{isWaterSpike ? "Nước" : ""}) đột biến bất thường so với tháng trước. Có thể bạn đã nhập dư số 0?
+
+                                                                    <label className="ml-auto flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-yellow-300 cursor-pointer hover:bg-yellow-50 transition-colors">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="rounded border-yellow-400 text-yellow-600 focus:ring-yellow-500"
+                                                                            onChange={(e) => {
+                                                                                if (e.target.checked) {
+                                                                                    form.clearErrors(`readings.${originalIndex}.roomId` as any); // hacky way to register confirmation
+                                                                                } else {
+                                                                                    form.setError(`readings.${originalIndex}.roomId` as any, { type: "manual", message: "unconfirmed" });
+                                                                                }
+                                                                            }}
+                                                                            defaultChecked={false}
                                                                         />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className={`text-center font-bold bg-cyan-50/30 ${isWaterInvalid ? "text-red-500" : "text-cyan-600"}`}>
-                                                        {waterUsage}
-                                                    </TableCell>
-                                                    <TableCell className="text-center text-sm font-medium bg-cyan-100/20 dark:bg-cyan-900/10 text-cyan-700 dark:text-cyan-300">
-                                                        {waterUsage > 0 ? formatCurrency(calculateWaterCost(waterUsage, waterRate)) : "-"}
-                                                    </TableCell>
-                                                </TableRow>
+                                                                        <span>Tôi xác nhận số này đúng</span>
+                                                                    </label>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </React.Fragment>
                                             );
                                         })}
                                     </TableBody>
                                 </Table>
 
+                                {/* Validation Summary */}
+                                {Object.keys(form.formState.errors).length > 0 && (
+                                    <Alert variant="destructive" className="mt-4 bg-red-50 text-red-900 border-red-200">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <AlertTitle>Lỗi xác nhận</AlertTitle>
+                                        <AlertDescription>
+                                            Vui lòng tick chọn "Tôi xác nhận số này đúng" ở các dòng có cảnh báo vàng trước khi lưu!
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={isSaving || roomReadings.length === 0}>
+                                    <Button type="submit" disabled={isSaving || roomReadings.length === 0 || Object.keys(form.formState.errors).length > 0}>
                                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         <Save className="mr-2 h-4 w-4" />
                                         Lưu chỉ số

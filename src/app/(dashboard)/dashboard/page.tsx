@@ -29,6 +29,7 @@ import { SmartInsights } from "@/components/dashboard/smart-insights";
 import { ExpiringContracts } from "@/components/dashboard/expiring-contracts";
 import { PlanGate } from "@/components/subscription/plan-gate";
 import { UserPlan } from "@/lib/plans";
+import { ViralShareCard } from "@/components/dashboard/viral-share-card";
 
 interface ActivityItem {
     id: string;
@@ -322,6 +323,8 @@ export default async function DashboardPage() {
 
                 {/* Sidebar (Right) */}
                 <div className="space-y-6 md:col-span-3 lg:col-span-2">
+                    <ViralShareCard />
+
                     <ActionCenter
                         overdueBills={data.overdueBills}
                         expiringContracts={data.expiringContracts.length}

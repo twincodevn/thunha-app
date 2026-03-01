@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft, User, Phone, Mail, Calendar, Home, Search as SearchIcon, Users, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, User, Phone, Mail, Calendar, Home, Search as SearchIcon, Users, AlertTriangle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -127,11 +127,18 @@ export default function NewTenantPage() {
         }
     }
 
-    const [mode, setMode] = useState<"create" | "existing">("create");
+    const [mode, setMode] = useState<"create" | "existing" | "quick">("create");
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [selectedTenant, setSelectedTenant] = useState<any>(null);
     const [assignDate, setAssignDate] = useState(new Date().toISOString().split("T")[0]);
+
+    // Quick Add States
+    const [qaProperty, setQaProperty] = useState("");
+    const [qaRoom, setQaRoom] = useState("");
+    const [qaTenant, setQaTenant] = useState("");
+    const [qaRent, setQaRent] = useState("");
+    const [isQuickAdding, setIsQuickAdding] = useState(false);
 
     // Watch roomId for both modes (though mainly used in Create mode logic or display)
     const selectedRoomId = form.watch("roomId");
@@ -171,25 +178,130 @@ export default function NewTenantPage() {
         }
     };
 
+    const handleQuickAdd = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!qaTenant || !qaRent) {
+            toast.error("Vui lòng nhập tên khách và giá tiền");
+            return;
+        }
+        setIsQuickAdding(true);
+        try {
+            // Setup dynamic import or direct call to action
+            const { superQuickAdd } = await import('./quick-add-action');
+            const res = await superQuickAdd({
+                propertyName: qaProperty,
+                roomNumber: qaRoom,
+                tenantName: qaTenant,
+                baseRent: parseInt(qaRent) || 0
+            });
+            if (res.success && res.id) {
+                toast.success("Tạo dữ liệu tốc độ cao thành công!");
+                router.push(`/dashboard/tenants/${res.id}`);
+            } else {
+                toast.error(res.error || "Gặp lỗi khi tạo nhanh");
+            }
+        } catch (error) {
+            toast.error("Gặp lỗi kết nối");
+        } finally {
+            setIsQuickAdding(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/dashboard/tenants">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Link>
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Thêm thành viên</h1>
-                    <p className="text-muted-foreground">Quản lý hồ sơ khách thuê</p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href="/dashboard/tenants">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Thêm thành viên</h1>
+                        <p className="text-muted-foreground">Quản lý hồ sơ khách thuê</p>
+                    </div>
                 </div>
             </div>
 
-            <Tabs value={mode} onValueChange={(v) => setMode(v as "create" | "existing")} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+            <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 max-w-[600px] bg-muted/50 p-1">
+                    <TabsTrigger value="quick" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-500 data-[state=active]:text-white font-medium transition-all shadow-sm">⚡ Tạo Nhanh (1 Giây)</TabsTrigger>
                     <TabsTrigger value="create">Tạo khách mới</TabsTrigger>
                     <TabsTrigger value="existing">Chọn khách cũ</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="quick" className="mt-6">
+                    <Card className="border-indigo-100 dark:border-indigo-900/50 shadow-md bg-gradient-to-br from-white to-indigo-50/50 dark:from-zinc-950 dark:to-indigo-950/20 overflow-hidden">
+                        <div className="h-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
+                                <Zap className="h-5 w-5 text-amber-500" />
+                                Onboarding Siêu Tốc
+                            </CardTitle>
+                            <CardDescription>
+                                Dành cho người mới. Gộp 4 bước (Tạo Nhà, Phòng, Khách, Hợp đồng) vào một biểu mẫu duy nhất.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleQuickAdd} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <FormLabel className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Tên Khu Trọ</FormLabel>
+                                            <Input
+                                                placeholder="VD: Trọ Số 1 (Để trống mặc định: Nhà trọ của tôi)"
+                                                value={qaProperty}
+                                                onChange={(e) => setQaProperty(e.target.value)}
+                                                className="bg-white dark:bg-zinc-950"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <FormLabel className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Số Phòng</FormLabel>
+                                            <Input
+                                                placeholder="VD: 101"
+                                                value={qaRoom}
+                                                onChange={(e) => setQaRoom(e.target.value)}
+                                                className="bg-white dark:bg-zinc-950"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <FormLabel className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Tên Khách Thuê <span className="text-red-500">*</span></FormLabel>
+                                            <Input
+                                                placeholder="Nguyễn Văn A"
+                                                required
+                                                value={qaTenant}
+                                                onChange={(e) => setQaTenant(e.target.value)}
+                                                className="border-indigo-200 dark:border-indigo-800 bg-white dark:bg-zinc-950 focus-visible:ring-indigo-500 font-medium"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <FormLabel className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">Giá Tiền Cơ Bản (VNĐ) <span className="text-red-500">*</span></FormLabel>
+                                            <Input
+                                                type="number"
+                                                placeholder="3000000"
+                                                required
+                                                value={qaRent}
+                                                onChange={(e) => setQaRent(e.target.value)}
+                                                className="border-indigo-200 dark:border-indigo-800 bg-white dark:bg-zinc-950 focus-visible:ring-indigo-500 font-medium"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button
+                                    type="submit"
+                                    className="w-full h-12 text-lg font-bold bg-gradient-to-r from-indigo-600 hover:from-indigo-700 to-purple-600 hover:to-purple-700 shadow-md hover:shadow-lg transition-all"
+                                    disabled={isQuickAdding}
+                                >
+                                    {isQuickAdding ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5 text-yellow-300" />}
+                                    Lưu Tất Cả ({isQuickAdding ? "Đang xử lý..." : "1 Click"})
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
                 <TabsContent value="existing" className="mt-6 space-y-6">
                     <Card>

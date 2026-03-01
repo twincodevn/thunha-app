@@ -7,6 +7,13 @@ import { Testimonials } from "@/components/landing/testimonials";
 import { Pricing } from "@/components/landing/pricing";
 import { CTA } from "@/components/landing/cta";
 import { BrandLogo } from "@/components/ui/brand-logo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User, Home, ChevronDown } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -34,18 +41,72 @@ export default function HomePage() {
             <Link href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors">
               Bảng giá
             </Link>
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors">
-              Đăng nhập
-            </Link>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm font-medium text-muted-foreground hover:text-blue-600 transition-colors flex items-center gap-1 outline-none">
+                  Đăng nhập <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl">
+                <DropdownMenuItem asChild className="cursor-pointer p-3 rounded-lg focus:bg-blue-50 dark:focus:bg-blue-900/20">
+                  <Link href="/login" className="flex items-center gap-3 w-full">
+                    <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center">
+                      <Home className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Chủ nhà</p>
+                      <p className="text-xs text-muted-foreground">Quản lý nhà trọ của bạn</p>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem asChild className="cursor-pointer p-3 rounded-lg focus:bg-indigo-50 dark:focus:bg-indigo-900/20">
+                  <Link href="/portal/login" className="flex items-center gap-3 w-full">
+                    <div className="h-8 w-8 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Khách thuê</p>
+                      <p className="text-xs text-muted-foreground">Xem hóa đơn, hợp đồng</p>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button asChild className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all hover:scale-105">
               <Link href="/register">Dùng thử miễn phí</Link>
             </Button>
           </nav>
           <div className="flex md:hidden items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+            <Button asChild variant="ghost" size="sm" className="text-muted-foreground px-2">
               <Link href="/listings">Tìm phòng</Link>
             </Button>
-            <Button asChild size="sm" className="rounded-full">
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-full text-xs px-3">
+                  Đăng nhập
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 p-2 rounded-xl">
+                <DropdownMenuItem asChild className="cursor-pointer p-2.5 rounded-lg">
+                  <Link href="/login" className="flex items-center gap-3 w-full">
+                    <Home className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-sm">Dành cho Chủ nhà</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="cursor-pointer p-2.5 rounded-lg">
+                  <Link href="/portal/login" className="flex items-center gap-3 w-full">
+                    <User className="h-4 w-4 text-indigo-600" />
+                    <span className="font-medium text-sm">Dành cho Khách thuê</span>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button asChild size="sm" className="rounded-full bg-blue-600">
               <Link href="/register">Đăng ký</Link>
             </Button>
           </div>

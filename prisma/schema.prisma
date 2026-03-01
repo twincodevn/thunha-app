@@ -8,54 +8,94 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  email             String?            @unique
-  phone             String?            @unique
-  password          String
-  name              String
-  avatar            String?
-  plan              UserPlan           @default(FREE)
-  planExpiresAt     DateTime?
-  maxRooms          Int                @default(3)
-  emailVerified     DateTime?
-  phoneVerified     DateTime?
-  resetToken        String?
-  resetTokenExpiry  DateTime?
-  bankName          String?
-  bankAccountNumber String?
-  bankAccountName   String?
-  createdIp         String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  zaloOaAccessToken  String?           // Zalo OA access token
-  zaloOaRefreshToken String?           // Zalo OA refresh token
-  zaloOaTokenExpiry  DateTime?         // Token expiry time
-  zaloOaId           String?           // OA ID from Zalo developer portal
-  contractTemplates   ContractTemplate[]
-  properties          Property[]
-  tenants             Tenant[]
-  notifications       Notification[]
-  announcements       Announcement[]
-  subscriptionOrders  SubscriptionOrder[]
+  id                 String              @id @default(cuid())
+  email              String?             @unique
+  phone              String?             @unique
+  password           String
+  name               String
+  avatar             String?
+  plan               UserPlan            @default(FREE)
+  planExpiresAt      DateTime?
+  maxRooms           Int                 @default(3)
+  emailVerified      DateTime?
+  phoneVerified      DateTime?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  bankName           String?
+  bankAccountNumber  String?
+  bankAccountName    String?
+  createdIp          String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  zaloOaAccessToken  String? // Zalo OA access token
+  zaloOaRefreshToken String? // Zalo OA refresh token
+  zaloOaTokenExpiry  DateTime? // Token expiry time
+  zaloOaId           String? // OA ID from Zalo developer portal
+  contractTemplates  ContractTemplate[]
+  properties         Property[]
+  tenants            Tenant[]
+  notifications      Notification[]
+  announcements      Announcement[]
+  subscriptionOrders SubscriptionOrder[]
+  managedProperties  PropertyManager[]
+  auditLogs          AuditLog[]
 
   @@index([email])
   @@index([phone])
   @@index([resetToken])
 }
 
-model Notification {
-  id          String   @id @default(cuid())
-  userId      String?
-  tenantId    String?
-  title       String
-  message     String
-  type        String   // INCIDENT, BILL, SYSTEM, ANNOUNCEMENT
-  link        String?
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+enum UserRole {
+  OWNER
+  MANAGER
+  STAFF
+}
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+model PropertyManager {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  role       UserRole @default(MANAGER)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String // e.g., "PAYMENT_RECEIVED", "BILL_CREATED", "ROOM_UPDATED"
+  entityType String // e.g., "Payment", "Bill", "Room"
+  entityId   String
+  details    Json? // Stores the before/after state or specific action info
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  tenantId  String?
+  title     String
+  message   String
+  type      String // INCIDENT, BILL, SYSTEM, ANNOUNCEMENT
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([tenantId])
@@ -63,44 +103,44 @@ model Notification {
 }
 
 model Announcement {
-  id          String    @id @default(cuid())
-  propertyId  String
-  userId      String    // The landlord who created it
-  title       String
-  content     String    @db.Text
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String   @id @default(cuid())
+  propertyId String
+  userId     String // The landlord who created it
+  title      String
+  content    String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
   @@index([userId])
 }
 
-
 model Property {
-  id              String     @id @default(cuid())
+  id              String            @id @default(cuid())
   userId          String
   name            String
   address         String
   city            String?
   notes           String?
-  electricityRate Float      @default(0)
-  waterRate       Float      @default(25000)
-  lateFee         Float?     @default(0)
-  lateFeeType     String     @default("FIXED") // "FIXED" or "PERCENTAGE"
+  electricityRate Float             @default(0)
+  waterRate       Float             @default(25000)
+  lateFee         Float?            @default(0)
+  lateFeeType     String            @default("FIXED") // "FIXED" or "PERCENTAGE"
   services        Json?
   lat             Float?
   lng             Float?
-  images          String[]   @default([])
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  images          String[]          @default([])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   incidents       Incident[]
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   rooms           Room[]
   feedbacks       TenantFeedback[]
   announcements   Announcement[]
+  managers        PropertyManager[]
 
   @@index([userId])
 }
@@ -123,37 +163,36 @@ model Room {
   property      Property       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   roomTenants   RoomTenant[]
 
-
   @@unique([propertyId, roomNumber])
   @@index([propertyId])
 }
 
 model Tenant {
-  id          String       @id @default(cuid())
-  userId      String
-  name        String
-  phone       String
-  email       String?
-  idNumber    String?
-  address     String?
-  idPhoto     String?
-  avatar      String?
-  dateOfBirth DateTime?
-  notes          String?
-  creditScore    Int          @default(600)
-  paymentHistory Json?
-  zaloUserId          String?              // Zalo user ID (set when tenant messages OA)
-  zaloPhone           String?              // Normalized phone for ZNS (84xxxxxxxxx format)
-  oneSignalPlayerId   String?              // OneSignal subscription ID for Web Push
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  username       String?      @unique
-  password       String?
-  lastLogin      DateTime?
-  roomTenants    RoomTenant[]
-  feedbacks      TenantFeedback[]
-  notifications  Notification[]
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String           @id @default(cuid())
+  userId            String
+  name              String
+  phone             String
+  email             String?
+  idNumber          String?
+  address           String?
+  idPhoto           String?
+  avatar            String?
+  dateOfBirth       DateTime?
+  notes             String?
+  creditScore       Int              @default(600)
+  paymentHistory    Json?
+  zaloUserId        String? // Zalo user ID (set when tenant messages OA)
+  zaloPhone         String? // Normalized phone for ZNS (84xxxxxxxxx format)
+  oneSignalPlayerId String? // OneSignal subscription ID for Web Push
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  username          String?          @unique
+  password          String?
+  lastLogin         DateTime?
+  roomTenants       RoomTenant[]
+  feedbacks         TenantFeedback[]
+  notifications     Notification[]
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([phone])
@@ -390,16 +429,16 @@ enum ContractStatus {
 }
 
 model SubscriptionOrder {
-  id            String   @id @default(cuid())
-  userId        String
-  plan          UserPlan
-  amount        Float
-  status        String   @default("PENDING") // PENDING | PAID | FAILED
-  vnpayTxnRef   String?  @unique
-  vnpayTxnNo    String?
-  paidAt        DateTime?
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String
+  plan        UserPlan
+  amount      Float
+  status      String    @default("PENDING") // PENDING | PAID | FAILED
+  vnpayTxnRef String?   @unique
+  vnpayTxnNo  String?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([vnpayTxnRef])
@@ -409,7 +448,7 @@ model Deposit {
   id           String     @id @default(cuid())
   roomTenantId String
   amount       Float
-  type         String     // RECEIVED, RETURNED, DEDUCTED
+  type         String // RECEIVED, RETURNED, DEDUCTED
   reason       String?
   date         DateTime   @default(now())
   createdAt    DateTime   @default(now())
@@ -419,15 +458,15 @@ model Deposit {
 }
 
 model TenantFeedback {
-  id           String      @id @default(cuid())
-  tenantId     String
-  propertyId   String
-  rating       Int         @default(5) // 1 to 5 stars
-  comment      String?     @db.Text
-  createdAt    DateTime    @default(now())
+  id         String   @id @default(cuid())
+  tenantId   String
+  propertyId String
+  rating     Int      @default(5) // 1 to 5 stars
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now())
 
-  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property     Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
   @@index([tenantId])

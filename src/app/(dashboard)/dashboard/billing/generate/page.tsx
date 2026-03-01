@@ -4,12 +4,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Loader2, Plus, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, Plus, ArrowLeft, CheckCircle, AlertCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -264,12 +265,16 @@ export default function GenerateBillPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        <div className="flex justify-center py-16">
+                            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
                         </div>
                     ) : items.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                            Không tìm thấy dữ liệu
+                        <div className="py-6">
+                            <EmptyState
+                                icon={FileText}
+                                title="Tuyệt vời, không có hóa đơn nào trống!"
+                                description="Tất cả các phòng trong tòa nhà này đều đã được lập hóa đơn hoặc chưa tới kỳ hạn."
+                            />
                         </div>
                     ) : (
                         <div className="rounded-md border">

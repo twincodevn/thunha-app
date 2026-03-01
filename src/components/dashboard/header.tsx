@@ -62,14 +62,14 @@ export function Header() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 flex h-14 lg:h-16 items-center gap-3 bg-background/90 px-4 lg:px-6 backdrop-blur-xl border-b transition-all">
+            <header className="sticky top-0 z-40 flex h-14 lg:h-[72px] items-center gap-3 bg-white/60 dark:bg-zinc-950/60 px-4 lg:px-6 backdrop-blur-2xl border-b border-slate-200/40 dark:border-zinc-800/40 transition-all w-full">
 
                 {/* Mobile: Logo + Page Title */}
                 <div className="flex items-center gap-2 lg:hidden">
                     <Link href="/dashboard" className="flex items-center gap-1.5">
                         <BrandLogo variant="gradient" className="h-7 w-7" />
                     </Link>
-                    <span className="font-semibold text-base text-foreground">{mobileTitle}</span>
+                    <span className="font-semibold text-base text-slate-900 dark:text-white">{mobileTitle}</span>
                 </div>
 
                 {/* Desktop: Breadcrumb */}

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { TenantFeedbackClient } from "./page-client";
+import { MessageSquareHeart } from "lucide-react";
 
 export default async function TenantFeedbackPage() {
     const session = await auth();
@@ -30,7 +31,7 @@ export default async function TenantFeedbackPage() {
     if (!tenant) {
         return (
             <div className="flex items-center justify-center p-8 h-full">
-                <p className="text-muted-foreground">Không tìm thấy thông tin khách thuê.</p>
+                <p className="text-slate-500 dark:text-zinc-400">Không tìm thấy thông tin khách thuê.</p>
             </div>
         );
     }
@@ -38,10 +39,13 @@ export default async function TenantFeedbackPage() {
     const activeRoomTenant = tenant.roomTenants[0];
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Đánh giá & Góp ý</h1>
-                <p className="text-muted-foreground">
+        <div className="w-full max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+            {/* Header section */}
+            <div className="flex flex-col px-2 pt-2 relative z-10 space-y-1">
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                    Đánh giá <span className="text-3xl">⭐</span>
+                </h1>
+                <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 max-w-[280px]">
                     Chia sẻ trải nghiệm của bạn để chúng tôi phục vụ tốt hơn
                 </p>
             </div>
@@ -55,3 +59,4 @@ export default async function TenantFeedbackPage() {
         </div>
     );
 }
+

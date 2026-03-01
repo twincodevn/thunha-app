@@ -9,10 +9,10 @@ const PROTECTED_ROUTES: Record<string, string[]> = {
 };
 
 // Routes that require authentication
-const AUTH_ROUTES = ["/dashboard"];
+const AUTH_ROUTES = ["/dashboard", "/portal"];
 
 // Public routes (no auth needed)
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/portal/login"];
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -41,17 +41,18 @@ export async function proxy(request: NextRequest) {
 
     // Check if route requires authentication
     const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-    const _isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route);
+    const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route);
 
     // Redirect unauthenticated users to login
-    if (isAuthRoute && !token) {
-        const loginUrl = new URL("/login", request.url);
+    if (isAuthRoute && !isPublicRoute && !token) {
+        const loginPath = pathname.startsWith("/portal") ? "/portal/login" : "/login";
+        const loginUrl = new URL(loginPath, request.url);
         loginUrl.searchParams.set("callbackUrl", pathname);
         return NextResponse.redirect(loginUrl);
     }
 
     // Redirect authenticated users away from auth pages
-    if (token && (pathname === "/login" || pathname === "/register")) {
+    if (token && isPublicRoute && (pathname === "/login" || pathname === "/register" || pathname === "/portal/login")) {
         const role = token?.role as string;
         if (role === "TENANT") {
             return NextResponse.redirect(new URL("/portal/dashboard", request.url));

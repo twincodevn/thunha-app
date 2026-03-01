@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, ExternalLink, CalendarDays, AlertCircle } from "lucide-react";
+import { Clock, ExternalLink, CalendarDays, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { differenceInDays, format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -13,7 +13,26 @@ interface ExpiringContractsProps {
 }
 
 export function ExpiringContracts({ contracts }: ExpiringContractsProps) {
-    if (!contracts || contracts.length === 0) return null;
+    if (!contracts || contracts.length === 0) {
+        return (
+            <Card className="border-orange-100 dark:border-orange-950 shadow-sm relative overflow-hidden h-full">
+                <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                <CardHeader className="pb-3 border-b bg-orange-50/30 dark:bg-orange-950/20">
+                    <CardTitle className="text-lg flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                        <Clock className="h-5 w-5 text-orange-500" />
+                        Hợp đồng sắp hết hạn
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center p-8 text-center min-h-[200px] animate-in fade-in duration-500">
+                    <div className="h-14 w-14 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center mb-3 ring-1 ring-orange-100 dark:ring-orange-900/50">
+                        <CheckCircle2 className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Không có hợp đồng sắp hết hạn</h3>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">Tất cả hợp đồng của bạn đều đang trong thời hạn ổn định.</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card className="border-orange-100 dark:border-orange-950 shadow-sm relative overflow-hidden">

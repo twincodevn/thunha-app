@@ -65,9 +65,10 @@ const mobileBottomTabs = [
 
 interface SidebarProps {
     user?: User | null;
+    isOwner?: boolean;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, isOwner = true }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
@@ -75,7 +76,7 @@ export function Sidebar({ user }: SidebarProps) {
             {/* Desktop Sidebar only */}
             <aside
                 className={cn(
-                    "peer fixed inset-y-0 left-0 z-50 hidden lg:flex flex-col border-r bg-background/80 backdrop-blur-xl transition-all duration-300 ease-in-out",
+                    "peer fixed inset-y-0 left-0 z-50 hidden lg:flex flex-col bg-white/60 dark:bg-zinc-950/60 backdrop-blur-2xl border-r border-slate-200/40 dark:border-zinc-800/40 transition-all duration-300 ease-in-out",
                     isCollapsed ? "w-[70px]" : "w-64"
                 )}
             >
@@ -106,6 +107,7 @@ export function Sidebar({ user }: SidebarProps) {
                     <SidebarContent
                         user={user}
                         isCollapsed={isCollapsed}
+                        isOwner={isOwner}
                     />
                 </div>
             </aside>
@@ -120,13 +122,30 @@ interface SidebarContentProps {
     user?: User | null;
     isCollapsed?: boolean;
     onClose?: () => void;
+    isOwner?: boolean;
 }
 
-function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentProps) {
+function SidebarContent({ user, isCollapsed = false, onClose, isOwner = true }: SidebarContentProps) {
     const pathname = usePathname();
     const { data: session } = useSession();
 
     const displayUser = user || session?.user;
+
+    const userRoleText = isOwner ? "Chủ nhà" : "Quản lý";
+
+    const filteredNav = navigation.filter(item => {
+        if (isOwner) return true;
+        // Hide advanced analytics and tax reports for non-owners
+        if (["Báo cáo thuế", "Dự báo AI", "So sánh"].includes(item.name)) return false;
+        return true;
+    });
+
+    const filteredBottomNav = bottomNavigation.filter(item => {
+        if (isOwner) return true;
+        // Hide Team and Subscription settings for non-owners
+        if (["Nhân viên", "Gói dịch vụ"].includes(item.name)) return false;
+        return true;
+    });
 
     const renderLinks = (items: typeof navigation) => (
         <nav className="space-y-1 px-2">
@@ -141,8 +160,8 @@ function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentPr
                             className={cn(
                                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group relative overflow-hidden",
                                 isActive
-                                    ? "bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-900/40 dark:text-blue-300"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                                    ? "bg-gradient-to-tr from-blue-50 to-indigo-50/50 text-blue-700 shadow-sm dark:from-blue-900/40 dark:to-indigo-900/20 dark:text-blue-300"
+                                    : "text-muted-foreground hover:bg-slate-100/50 dark:hover:bg-zinc-800/50 hover:text-foreground",
                                 isCollapsed && "justify-center px-2"
                             )}
                         >
@@ -172,18 +191,18 @@ function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentPr
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 py-4 space-y-6">
-                {renderLinks(navigation)}
+                {renderLinks(filteredNav)}
 
                 <div className="my-2">
                     <Separator />
                     {!isCollapsed && <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cài đặt</p>}
                 </div>
 
-                {renderLinks(bottomNavigation)}
+                {renderLinks(filteredBottomNav)}
             </div>
 
             {/* User Profile */}
-            <div className="border-t bg-background/50 p-3 backdrop-blur-xl">
+            <div className="border-t border-slate-200/40 dark:border-zinc-800/40 bg-white/40 dark:bg-zinc-950/40 p-3 backdrop-blur-2xl">
                 <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "justify-between")}>
                     <div className="flex items-center gap-3 overflow-hidden">
                         <Avatar className="h-9 w-9 border cursor-pointer transition-transform hover:scale-105">
@@ -193,22 +212,14 @@ function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentPr
                         {!isCollapsed && (
                             <div className="flex flex-col truncate">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-medium truncate">{displayUser?.name}</span>
-                                    {(displayUser as any)?.plan && (
-                                        <span className={cn(
-                                            "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold leading-none uppercase shrink-0",
-                                            (displayUser as any).plan === "FREE" ? "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400" :
-                                                (displayUser as any).plan === "BASIC" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" :
-                                                    (displayUser as any).plan === "PRO" ? "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" :
-                                                        "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                                        )}>
-                                            {(displayUser as any).plan}
-                                        </span>
-                                    )}
+                                    <span className="text-sm font-medium truncate text-slate-900 dark:text-white">{displayUser?.name}</span>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold leading-none uppercase shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                        {userRoleText}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-muted-foreground truncate">{displayUser?.email}</span>
-                                {(displayUser as any)?.plan === "FREE" && (
-                                    <Link href="/dashboard/subscription" className="text-[10px] text-orange-500 hover:text-orange-600 font-medium mt-0.5">
+                                <span className="text-xs text-slate-500 dark:text-zinc-400 truncate">{displayUser?.email}</span>
+                                {isOwner && (displayUser as any)?.plan === "FREE" && (
+                                    <Link href="/dashboard/subscription" className="text-[10px] text-amber-600 hover:text-amber-700 dark:text-amber-400 font-medium mt-0.5">
                                         ✨ Nâng cấp gói Pro
                                     </Link>
                                 )}
@@ -220,7 +231,7 @@ function SidebarContent({ user, isCollapsed = false, onClose }: SidebarContentPr
                             variant="ghost"
                             size="icon"
                             onClick={() => signOut()}
-                            className="text-muted-foreground hover:text-foreground"
+                            className="text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white"
                         >
                             <LogOut className="h-4 w-4" />
                         </Button>
@@ -235,7 +246,7 @@ export function MobileBottomNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/95 backdrop-blur-xl border-t safe-area-bottom">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-t border-slate-200/40 dark:border-zinc-800/40 safe-area-bottom pb-2">
             <div className="flex items-center justify-around px-2 py-1">
                 {mobileBottomTabs.map((tab) => {
                     const isActive =

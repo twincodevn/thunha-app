@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Plus, Search, FileText, Loader2, MoreHorizontal, Download, Send, Eye, Lock, MessageSquare, LayoutGrid, List } from "lucide-react";
+import { Plus, Search, FileText, Loader2, MoreHorizontal, Download, Send, Eye, Lock, MessageSquare, LayoutGrid, List, AlertCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,43 @@ export default function BillingPage() {
                 </div>
             </PageHeader>
 
+            {/* WOW FACTOR: AI Bad Debt Detection Banner */}
+            {bills.filter(b => b.status === "OVERDUE").length > 0 && (
+                <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 border border-red-100 dark:border-red-900/50 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm animate-in slide-in-from-top-2">
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <span className="absolute -inset-1 rounded-full bg-red-400/30 animate-ping"></span>
+                            <div className="h-12 w-12 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-center border border-red-200 dark:border-red-800 relative z-10 shadow-sm">
+                                <AlertCircle className="h-6 w-6 text-red-500" />
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="destructive" className="bg-red-500 hover:bg-red-600 text-[10px] px-1.5 py-0">AI Nhận diện</Badge>
+                                <h3 className="font-bold text-red-900 dark:text-red-400">Phát hiện {bills.filter(b => b.status === "OVERDUE").length} khoản nợ chờ thu</h3>
+                            </div>
+                            <p className="text-sm text-red-700/80 dark:text-red-300">Tổng dòng tiền đang kẹt: <span className="font-semibold">{formatCurrency(bills.filter(b => b.status === "OVERDUE").reduce((sum, b) => sum + b.total, 0))}</span></p>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="destructive"
+                        className="w-full sm:w-auto rounded-full shadow-md shadow-red-500/20 hover:scale-105 active:scale-95 transition-all"
+                        onClick={async () => {
+                            const data = await getBatchReminderData();
+                            if (data.error) { toast.error(data.error); return; }
+                            const overdue = data.bills.filter((b: any) => b.status === "OVERDUE");
+                            const messages = overdue.map((b: any) => `${b.tenantName} (P.${b.roomNumber}): ${b.message}\nZalo: ${b.zaloLink}`).join("\n\n");
+                            await navigator.clipboard.writeText(messages);
+                            toast.success(`Đã sao chép kịch bản đòi nợ AI cho ${overdue.length} phòng!`);
+                        }}
+                    >
+                        <Send className="w-4 h-4 mr-2" />
+                        Gửi nhắc nợ tự động
+                    </Button>
+                </div>
+            )}
+
             <Card>
                 <CardHeader className="pb-3">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -216,8 +253,26 @@ export default function BillingPage() {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : filteredBills.length === 0 ? (
-                        <div className="text-center py-12 text-muted-foreground">
-                            {searchTerm ? "Không có hóa đơn nào phù hợp với tìm kiếm." : "Chưa có hóa đơn nào cho tháng này."}
+                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-slate-50/50 dark:bg-zinc-800/20 rounded-2xl border border-slate-100 dark:border-zinc-800/50 m-4 animate-in fade-in duration-500">
+                            <div className="h-16 w-16 bg-white dark:bg-zinc-800 shadow-sm rounded-full flex items-center justify-center mb-4 ring-1 ring-slate-100 dark:ring-zinc-700">
+                                <FileText className="h-8 w-8 text-slate-400 dark:text-zinc-400" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                                {searchTerm ? "Không tìm thấy hóa đơn" : "Bảng hóa đơn trống"}
+                            </h3>
+                            <p className="text-slate-500 dark:text-zinc-400 text-sm max-w-sm mb-6 leading-relaxed">
+                                {searchTerm
+                                    ? "Thử thay đổi từ khóa tìm kiếm hoặc xóa các bộ lọc trạng thái để xem nhiều kết quả hơn."
+                                    : "Bạn chưa có hóa đơn nào cho tháng này. Hãy lập hóa đơn mới để bắt đầu theo dõi thu chi."}
+                            </p>
+                            {!searchTerm && (
+                                <Button asChild className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">
+                                    <Link href="/dashboard/billing/generate">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Lập hóa đơn mới
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     ) : viewMode === "KANBAN" ? (
                         <div className="px-1 overflow-x-hidden">

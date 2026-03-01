@@ -188,7 +188,7 @@ export async function sendZNS(
     }
 
     try {
-        const body: any = {
+        const body: Record<string, unknown> = {
             phone: normalizedPhone,
             template_id: templateId,
             template_data: templateData,
@@ -218,8 +218,8 @@ export async function sendZNS(
                 error: `ZNS Error ${data.error}: ${data.message}`,
             };
         }
-    } catch (err: any) {
-        return { success: false, error: err.message };
+    } catch (err: unknown) {
+        return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
     }
 }
 
