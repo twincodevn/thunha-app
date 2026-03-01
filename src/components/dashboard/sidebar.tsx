@@ -80,7 +80,7 @@ export function Sidebar({ user, isOwner = true }: SidebarProps) {
                     isCollapsed ? "w-[70px]" : "w-64"
                 )}
             >
-                <div className={cn("flex h-16 items-center border-b px-4", isCollapsed ? "justify-center" : "justify-between")}>
+                <div className={cn("flex shrink-0 h-14 lg:h-[72px] items-center border-b border-slate-200/40 dark:border-zinc-800/40 px-4", isCollapsed ? "justify-center" : "justify-between")}>
                     {!isCollapsed && (
                         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl group">
                             <BrandLogo variant="gradient" className="h-8 w-8 transition-transform group-hover:scale-110 duration-500" />
@@ -111,6 +111,14 @@ export function Sidebar({ user, isOwner = true }: SidebarProps) {
                     />
                 </div>
             </aside>
+
+            {/* Spacer to push main content based on sidebar collapsed state */}
+            <div
+                className={cn(
+                    "hidden lg:block shrink-0 transition-all duration-300 ease-in-out",
+                    isCollapsed ? "w-[70px]" : "w-64"
+                )}
+            />
 
             {/* Mobile Bottom Navigation Bar */}
             <MobileBottomNav />

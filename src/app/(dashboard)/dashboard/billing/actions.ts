@@ -212,7 +212,7 @@ export async function createBills(bills: z.infer<typeof createBillSchema>[]) {
         }),
       ),
       ...createdBills.map((bill) =>
-        prisma.auditLog.create({
+        (prisma as any).auditLog.create({
           data: {
             userId: session.user.id as string,
             action: "BILL_CREATED",
@@ -484,7 +484,7 @@ export async function confirmPayment(data: {
         data: { status: newStatus as any },
       }),
       // 3. Write purely to Financial Audit Ledger (Enterprise Feature)
-      prisma.auditLog.create({
+      (prisma as any).auditLog.create({
         data: {
           userId: session.user.id as string,
           action: "PAYMENT_RECEIVED",

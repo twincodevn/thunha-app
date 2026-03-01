@@ -327,14 +327,43 @@ export default function BillDetailPage() {
                                             Nội dung: <span className="font-medium text-foreground">{bill.roomTenant.room.roomNumber} T{bill.month}</span>
                                         </p>
                                         {qrUrl ? (
-                                            <div className="flex flex-col items-center gap-2 pt-2 border-t">
-                                                <p className="text-xs text-muted-foreground">Quét mã QR để thanh toán</p>
+                                            <div className="flex flex-col items-center gap-3 pt-3 border-t">
+                                                {/* Auto-detect badge */}
+                                                <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1">
+                                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                                    <span className="text-xs font-semibold text-green-700">SePay tự động xác nhận</span>
+                                                </div>
+
                                                 <img
                                                     src={qrUrl}
                                                     alt="Mã QR thanh toán"
-                                                    className="w-52 h-auto rounded-lg border shadow-sm"
+                                                    className="w-52 h-auto rounded-xl border shadow-md"
                                                 />
-                                                <p className="text-xs font-semibold text-primary">{formatCurrency(bill.total)}</p>
+                                                <p className="text-base font-bold text-primary">{formatCurrency(bill.total)}</p>
+
+                                                {/* Transfer code - critical for auto-matching */}
+                                                <div className="w-full bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                                    <p className="text-[11px] text-amber-700 font-semibold uppercase tracking-wide mb-1">⚠️ Nội dung chuyển khoản (bắt buộc)</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <code className="flex-1 text-sm font-mono font-bold text-amber-900 bg-amber-100 px-2 py-1 rounded">
+                                                            TN-{bill.id.slice(-6).toUpperCase()}
+                                                        </code>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="shrink-0 h-7 px-2 text-amber-700 hover:text-amber-900"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(`TN-${bill.id.slice(-6).toUpperCase()}`);
+                                                                toast.success("Đã copy mã chuyển khoản!");
+                                                            }}
+                                                        >
+                                                            <Copy className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                    <p className="text-[10px] text-amber-600 mt-1">
+                                                        Khách thuê PHẢI ghi đúng mã này. Hệ thống sẽ tự động gạch nợ khi nhận được tiền.
+                                                    </p>
+                                                </div>
                                             </div>
                                         ) : (
                                             <p className="text-xs text-amber-600 pt-1 border-t">

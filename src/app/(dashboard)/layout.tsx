@@ -41,8 +41,8 @@ export default async function DashboardLayout({
             <div className="relative z-10 flex min-h-screen">
                 <Sidebar user={user} isOwner={!!isOwner} />
 
-                {/* Content area: shifts right on desktop for sidebar, adds bottom padding on mobile for bottom nav */}
-                <div className="flex-1 lg:pl-[70px] transition-all duration-300 ease-in-out w-full max-w-[100vw]">
+                {/* Content area */}
+                <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out">
                     <Header />
                     <main className="relative p-4 lg:p-6 z-10 pb-24 lg:pb-6">{children}</main>
                 </div>
