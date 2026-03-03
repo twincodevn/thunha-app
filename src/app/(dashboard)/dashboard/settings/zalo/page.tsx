@@ -1,25 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
     MessageSquare, CheckCircle2, XCircle, AlertTriangle,
-    ExternalLink, Phone, Loader2, Link2, Link2Off,
-    Zap, Info, RefreshCw
+    Phone, Loader2, Link2, Link2Off,
+    Zap, Info
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
-export default function ZaloSettingsPage() {
+function ZaloSettingsContent() {
     const { data: session } = useSession();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -32,6 +31,8 @@ export default function ZaloSettingsPage() {
 
     // Xử lý query params từ OAuth callback
     useEffect(() => {
+        if (!searchParams) return;
+
         const success = searchParams.get("success");
         const error = searchParams.get("error");
 
@@ -295,5 +296,23 @@ export default function ZaloSettingsPage() {
                 </Card>
             </div>
         </DashboardShell>
+    );
+}
+
+export default function ZaloSettingsPage() {
+    return (
+        <Suspense fallback={
+            <DashboardShell>
+                <PageHeader
+                    title="Tích hợp Zalo OA"
+                    description="Kết nối Zalo Official Account để gửi thông báo tự động đến khách thuê"
+                />
+                <div className="flex items-center justify-center p-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </DashboardShell>
+        }>
+            <ZaloSettingsContent />
+        </Suspense>
     );
 }

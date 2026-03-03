@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft, User, Phone, Mail, Calendar, Home, Search as SearchIcon, Users, AlertTriangle, Zap } from "lucide-react";
+import { Loader2, ArrowLeft, Phone, Mail, Calendar, Home, Search as SearchIcon, Users, AlertTriangle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
@@ -36,10 +35,10 @@ type Room = {
     property: { id: string; name: string };
 };
 
-export default function NewTenantPage() {
+function NewTenantContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const preselectedRoomId = searchParams.get("roomId");
+    const preselectedRoomId = searchParams?.get("roomId");
 
     const [isLoading, setIsLoading] = useState(false);
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -141,7 +140,7 @@ export default function NewTenantPage() {
     const [qaRent, setQaRent] = useState("");
     const [isQuickAdding, setIsQuickAdding] = useState(false);
 
-    // Watch roomId for both modes (though mainly used in Create mode logic or display)
+    // Watch roomId for both modes
     const selectedRoomId = form.watch("roomId");
     const selectedRoom = rooms.find(r => r.id === selectedRoomId);
 
@@ -157,8 +156,6 @@ export default function NewTenantPage() {
 
     const handleAssignExisting = async () => {
         if (!selectedTenant) return;
-        // If roomId is not selected in form, we might need to handle it.
-        // In existing mode, we use form.watch('roomId') to get the value.
         const roomIdToAssign = form.getValues("roomId") || selectedRoomId;
 
         if (!roomIdToAssign) {
@@ -187,7 +184,6 @@ export default function NewTenantPage() {
         }
         setIsQuickAdding(true);
         try {
-            // Setup dynamic import or direct call to action
             const { superQuickAdd } = await import('./quick-add-action');
             const res = await superQuickAdd({
                 propertyName: qaProperty,
@@ -307,7 +303,6 @@ export default function NewTenantPage() {
                             <CardDescription>Nhập tên hoặc số điện thoại để tìm khách đã có trên hệ thống</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            {/* Search Input */}
                             <div className="relative z-50">
                                 <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -317,11 +312,11 @@ export default function NewTenantPage() {
                                     onChange={(e) => handleSearch(e.target.value)}
                                 />
                                 {searchResults.length > 0 && !selectedTenant && (
-                                    <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                                    <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-900 border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto z-[100]">
                                         {searchResults.map(tenant => (
                                             <div
                                                 key={tenant.id}
-                                                className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-0 flex items-center justify-between"
+                                                className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b last:border-0 flex items-center justify-between"
                                                 onClick={() => {
                                                     setSelectedTenant(tenant);
                                                     setSearchQuery(tenant.name);
@@ -343,7 +338,6 @@ export default function NewTenantPage() {
                                 )}
                             </div>
 
-                            {/* Selected Tenant Preview */}
                             {selectedTenant && (
                                 <div className="border rounded-lg p-4 bg-muted/30 space-y-4">
                                     <div className="flex items-start gap-4">
@@ -509,9 +503,9 @@ export default function NewTenantPage() {
                                                     <FormItem>
                                                         <FormLabel>Ghi chú</FormLabel>
                                                         <FormControl>
-                                                            <Textarea
+                                                            <textarea
                                                                 placeholder="Thông tin bổ sung về khách thuê..."
-                                                                className="resize-none"
+                                                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                                                                 {...field}
                                                             />
                                                         </FormControl>
@@ -578,7 +572,6 @@ export default function NewTenantPage() {
                                         </CardContent>
                                     </Card>
 
-                                    {/* Action Buttons */}
                                     <div className="flex gap-4">
                                         <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -595,5 +588,17 @@ export default function NewTenantPage() {
                 </TabsContent>
             </Tabs>
         </div>
+    );
+}
+
+export default function NewTenantPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        }>
+            <NewTenantContent />
+        </Suspense>
     );
 }
