@@ -8,6 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -326,32 +327,49 @@ export async function sendPaymentConfirmedZNS(
 
 // ─── OAuth Helpers ────────────────────────────────────────────────────────────
 
-/** Tạo URL để redirect user đến Zalo OAuth */
-export function getZaloOAuthUrl(redirectUri: string, state: string): string {
+/** Tạo URL để redirect user đến Zalo OAuth (hỗ trợ PKCE cho v4) */
+export function getZaloOAuthUrl(redirectUri: string, state: string, codeChallenge?: string): string {
     const params = new URLSearchParams({
         app_id: process.env.ZALO_APP_ID || "",
         redirect_uri: redirectUri,
         state,
     });
+    if (codeChallenge) {
+        params.append("code_challenge", codeChallenge);
+    }
     return `${ZALO_OAUTH_URL}?${params.toString()}`;
 }
 
-/** Đổi code lấy access_token sau OAuth callback */
-export async function exchangeCodeForToken(code: string): Promise<{
+/** PKCE Helpers */
+export function generateCodeVerifier() {
+    return crypto.randomBytes(32).toString('base64url');
+}
+
+export function generateCodeChallenge(codeVerifier: string) {
+    return crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+}
+
+/** Đổi code lấy access_token sau OAuth callback (hỗ trợ PKCE) */
+export async function exchangeCodeForToken(code: string, codeVerifier?: string): Promise<{
     access_token: string;
     refresh_token: string;
     expires_in: number;
 } | null> {
     try {
+        const bodyParams: Record<string, string> = {
+            app_id: process.env.ZALO_APP_ID || "",
+            app_secret: process.env.ZALO_APP_SECRET || "",
+            code,
+            grant_type: "authorization_code",
+        };
+        if (codeVerifier) {
+            bodyParams.code_verifier = codeVerifier;
+        }
+
         const res = await fetch(ZALO_TOKEN_URL, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                app_id: process.env.ZALO_APP_ID || "",
-                app_secret: process.env.ZALO_APP_SECRET || "",
-                code,
-                grant_type: "authorization_code",
-            }),
+            body: new URLSearchParams(bodyParams),
         });
 
         const data = await res.json();

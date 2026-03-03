@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { exchangeCodeForToken, verifyZaloWebhookSignature } from "@/lib/zalo";
+import { cookies } from "next/headers";
 
 /**
  * GET /api/zalo/callback?code=xxx&state=userId&oa_id=xxx
@@ -14,6 +15,10 @@ export async function GET(req: NextRequest) {
     const oaId = searchParams.get("oa_id");
     const appUrl = req.nextUrl.origin;
 
+    // Lấy verifier từ cookie cho PKCE
+    const cookieStore = await cookies();
+    const codeVerifier = cookieStore.get("zalo_code_verifier")?.value;
+
     if (!code || !state) {
         return NextResponse.redirect(`${appUrl}/dashboard/settings/zalo?error=missing_params`);
     }
@@ -24,8 +29,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(`${appUrl}/dashboard/settings/zalo?error=invalid_state`);
     }
 
-    // Exchange code for token
-    const tokenData = await exchangeCodeForToken(code);
+    // Exchange code for token (có hỗ trợ PKCE verifier)
+    const tokenData = await exchangeCodeForToken(code, codeVerifier);
+
+    // Dọn dẹp cookie
+    cookieStore.delete("zalo_code_verifier");
     if (!tokenData) {
         return NextResponse.redirect(`${appUrl}/dashboard/settings/zalo?error=token_exchange_failed`);
     }
