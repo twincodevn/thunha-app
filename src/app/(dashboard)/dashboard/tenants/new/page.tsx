@@ -232,72 +232,68 @@ export default function NewTenantPage() {
                 </TabsList>
 
                 <TabsContent value="quick" className="mt-6">
-                    <Card className="border-indigo-100 dark:border-indigo-900/50 shadow-md bg-gradient-to-br from-white to-indigo-50/50 dark:from-zinc-950 dark:to-indigo-950/20 overflow-hidden">
-                        <div className="h-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+                    <Card>
                         <CardHeader>
-                            <CardTitle className="text-xl flex items-center gap-2 text-indigo-900 dark:text-indigo-200">
+                            <CardTitle className="text-xl flex items-center gap-2">
                                 <Zap className="h-5 w-5 text-amber-500" />
-                                Onboarding Siêu Tốc
+                                Theo tác nhanh
                             </CardTitle>
                             <CardDescription>
-                                Dành cho người mới. Gộp 4 bước (Tạo Nhà, Phòng, Khách, Hợp đồng) vào một biểu mẫu duy nhất.
+                                Dành cho tạo nhanh. Gộp 4 bước (Tạo Nhà, Tạo Phòng, Tạo Khách, Tạo Hợp đồng) vào một biểu mẫu duy nhất.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleQuickAdd} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Tên Khu Trọ</Label>
+                                            <Label>Tên Khu Trọ</Label>
                                             <Input
                                                 placeholder="VD: Trọ Số 1 (Để trống mặc định: Nhà trọ của tôi)"
                                                 value={qaProperty}
                                                 onChange={(e) => setQaProperty(e.target.value)}
-                                                className="bg-white dark:bg-zinc-950"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Số Phòng</Label>
+                                            <Label>Số Phòng</Label>
                                             <Input
                                                 placeholder="VD: 101"
                                                 value={qaRoom}
                                                 onChange={(e) => setQaRoom(e.target.value)}
-                                                className="bg-white dark:bg-zinc-950"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Tên Khách Thuê <span className="text-red-500">*</span></Label>
+                                            <Label>Tên Khách Thuê *</Label>
                                             <Input
                                                 placeholder="Nguyễn Văn A"
                                                 required
                                                 value={qaTenant}
                                                 onChange={(e) => setQaTenant(e.target.value)}
-                                                className="border-indigo-200 dark:border-indigo-800 bg-white dark:bg-zinc-950 focus-visible:ring-indigo-500 font-medium"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">Giá Tiền Cơ Bản (VNĐ) <span className="text-red-500">*</span></Label>
+                                            <Label>Giá Tiền Cơ Bản (VNĐ) *</Label>
                                             <Input
                                                 type="number"
                                                 placeholder="3000000"
                                                 required
                                                 value={qaRent}
                                                 onChange={(e) => setQaRent(e.target.value)}
-                                                className="border-indigo-200 dark:border-indigo-800 bg-white dark:bg-zinc-950 focus-visible:ring-indigo-500 font-medium"
                                             />
                                         </div>
                                     </div>
                                 </div>
                                 <Button
                                     type="submit"
-                                    className="w-full h-12 text-lg font-bold bg-gradient-to-r from-indigo-600 hover:from-indigo-700 to-purple-600 hover:to-purple-700 shadow-md hover:shadow-lg transition-all"
+                                    className="w-full"
+                                    size="lg"
                                     disabled={isQuickAdding}
                                 >
-                                    {isQuickAdding ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5 text-yellow-300" />}
-                                    Lưu Tất Cả ({isQuickAdding ? "Đang xử lý..." : "1 Click"})
+                                    {isQuickAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Tiến hành tạo nhanh
                                 </Button>
                             </form>
                         </CardContent>
