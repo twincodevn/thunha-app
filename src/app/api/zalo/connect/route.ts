@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const redirectUri = `${appUrl}/api/zalo/callback`;
+    const origin = req.nextUrl.origin;
+    const redirectUri = `${origin}/api/zalo/callback`;
 
     // state = userId để verify sau khi callback
     const state = session.user.id;

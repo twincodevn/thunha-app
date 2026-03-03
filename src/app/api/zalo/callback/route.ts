@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get("code");
     const state = searchParams.get("state"); // userId we passed
     const oaId = searchParams.get("oa_id");
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = req.nextUrl.origin;
 
     if (!code || !state) {
         return NextResponse.redirect(`${appUrl}/dashboard/settings/zalo?error=missing_params`);
