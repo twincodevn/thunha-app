@@ -156,7 +156,7 @@ export default function NewPropertyPage() {
                                 )}
                             />
 
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-4 sm:grid-cols-2 items-start">
                                 <FormField
                                     control={form.control}
                                     name="electricityRate"
@@ -201,7 +201,7 @@ export default function NewPropertyPage() {
                                 />
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-4 sm:grid-cols-2 items-start">
                                 <FormField
                                     control={form.control}
                                     name="lateFee"
@@ -260,7 +260,7 @@ export default function NewPropertyPage() {
                                         Lấy tọa độ từ địa chỉ
                                     </Button>
                                 </div>
-                                <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-4 sm:grid-cols-2 items-start">
                                     <FormField
                                         control={form.control}
                                         name="lat"

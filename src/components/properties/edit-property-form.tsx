@@ -108,7 +108,7 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <input type="hidden" {...form.register("id")} />
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 items-start">
                     <FormField
                         control={form.control}
                         name="name"
@@ -151,7 +151,7 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
                     )}
                 />
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 items-start">
                     <FormField
                         control={form.control}
                         name="electricityRate"
@@ -189,7 +189,7 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
                     />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 items-start">
                     <FormField
                         control={form.control}
                         name="lateFee"
@@ -245,7 +245,7 @@ export function EditPropertyForm({ property }: EditPropertyFormProps) {
                             Lấy tọa độ từ địa chỉ
                         </Button>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 md:grid-cols-2 items-start">
                         <FormField
                             control={form.control}
                             name="lat"
