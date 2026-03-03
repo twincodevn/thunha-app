@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const appId = process.env.ZALO_APP_ID || "";
+        const appId = (process.env.ZALO_APP_ID || "").trim();
         const mac = req.headers.get("x-zalo-signature") || req.headers.get("mac") || "";
 
         // Zalo OA Webhook v4 sends 'mac' header or 'x-zalo-signature' depending on version

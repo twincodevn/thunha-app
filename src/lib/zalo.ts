@@ -16,6 +16,10 @@ const ZALO_API_BASE = "https://business.openapi.zalo.me";
 const ZALO_OAUTH_URL = "https://oauth.zaloapp.com/v4/oa/permission";
 const ZALO_TOKEN_URL = "https://oauth.zaloapp.com/v4/oa/access_token";
 
+const ZALO_APP_ID = (process.env.ZALO_APP_ID || "").trim();
+const ZALO_APP_SECRET = (process.env.ZALO_APP_SECRET || "").trim();
+const ZALO_OA_SECRET_KEY = (process.env.ZALO_OA_SECRET_KEY || "").trim();
+
 /** ZNS Template IDs — phải được Zalo duyệt trước ở portal OA */
 export const ZNS_TEMPLATES = {
     BILL_CREATED: process.env.ZALO_TEMPLATE_BILL_CREATED || "",
@@ -131,7 +135,7 @@ async function refreshAccessToken(userId: string, refreshToken: string): Promise
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
-                app_id: process.env.ZALO_APP_ID || "",
+                app_id: ZALO_APP_ID,
                 grant_type: "refresh_token",
                 refresh_token: refreshToken,
             }),
@@ -330,7 +334,7 @@ export async function sendPaymentConfirmedZNS(
 /** Tạo URL để redirect user đến Zalo OAuth (hỗ trợ PKCE cho v4) */
 export function getZaloOAuthUrl(redirectUri: string, state: string, codeChallenge?: string): string {
     const params = new URLSearchParams({
-        app_id: process.env.ZALO_APP_ID || "",
+        app_id: ZALO_APP_ID,
         redirect_uri: redirectUri,
         state,
     });
@@ -357,8 +361,8 @@ export async function exchangeCodeForToken(code: string, codeVerifier?: string):
 } | null> {
     try {
         const bodyParams: Record<string, string> = {
-            app_id: process.env.ZALO_APP_ID || "",
-            app_secret: process.env.ZALO_APP_SECRET || "",
+            app_id: ZALO_APP_ID,
+            app_secret: ZALO_APP_SECRET,
             code,
             grant_type: "authorization_code",
         };
@@ -414,7 +418,7 @@ export function verifyZaloWebhookSignature(
     timestamp: string,
     mac: string
 ): boolean {
-    const appSecret = process.env.ZALO_APP_SECRET || "";
+    const appSecret = ZALO_OA_SECRET_KEY || ZALO_APP_SECRET;
     if (!appSecret) return false;
 
     const raw = appId + data + timestamp + appSecret;
