@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { tenantSchema } from "@/lib/validators";
@@ -247,7 +248,7 @@ export default function NewTenantPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <FormLabel className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Tên Khu Trọ</FormLabel>
+                                            <Label className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Tên Khu Trọ</Label>
                                             <Input
                                                 placeholder="VD: Trọ Số 1 (Để trống mặc định: Nhà trọ của tôi)"
                                                 value={qaProperty}
@@ -256,7 +257,7 @@ export default function NewTenantPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <FormLabel className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Số Phòng</FormLabel>
+                                            <Label className="text-muted-foreground flex items-center gap-1.5"><Home className="h-3.5 w-3.5" /> Số Phòng</Label>
                                             <Input
                                                 placeholder="VD: 101"
                                                 value={qaRoom}
@@ -268,7 +269,7 @@ export default function NewTenantPage() {
 
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <FormLabel className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Tên Khách Thuê <span className="text-red-500">*</span></FormLabel>
+                                            <Label className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Tên Khách Thuê <span className="text-red-500">*</span></Label>
                                             <Input
                                                 placeholder="Nguyễn Văn A"
                                                 required
@@ -278,7 +279,7 @@ export default function NewTenantPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <FormLabel className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">Giá Tiền Cơ Bản (VNĐ) <span className="text-red-500">*</span></FormLabel>
+                                            <Label className="font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">Giá Tiền Cơ Bản (VNĐ) <span className="text-red-500">*</span></Label>
                                             <Input
                                                 type="number"
                                                 placeholder="3000000"
