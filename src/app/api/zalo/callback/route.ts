@@ -44,3 +44,22 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.redirect(`${appUrl}/dashboard/settings/zalo?success=connected`);
 }
+
+/**
+ * POST /api/zalo/callback
+ * Zalo OA Webhook: Receive events like user messages, send status, etc.
+ * Zalo requires this to return 200 OK for verification.
+ */
+export async function POST(req: NextRequest) {
+    try {
+        const body = await req.json();
+        console.log("[Zalo Webhook Event]:", JSON.stringify(body, null, 2));
+
+        // Logic to handle events can be added here (oa_send_text, user_send_text, etc.)
+
+        return NextResponse.json({ success: true }, { status: 200 });
+    } catch (e) {
+        // Return 200 even on error to satisfy Zalo's initial validation if needed
+        return NextResponse.json({ success: true }, { status: 200 });
+    }
+}
