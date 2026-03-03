@@ -163,7 +163,7 @@ export function Header() {
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link href="/dashboard/incidents/new">
+                                <Link href="/dashboard/incidents">
                                     <AlertTriangle className="mr-2 h-4 w-4" />
                                     Báo cáo sự cố
                                 </Link>
