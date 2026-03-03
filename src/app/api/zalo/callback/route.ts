@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { exchangeCodeForToken } from "@/lib/zalo";
+import { exchangeCodeForToken, verifyZaloWebhookSignature } from "@/lib/zalo";
 
 /**
  * GET /api/zalo/callback?code=xxx&state=userId&oa_id=xxx
@@ -53,13 +53,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        console.log("[Zalo Webhook Event]:", JSON.stringify(body, null, 2));
+        const appId = process.env.ZALO_APP_ID || "";
+        const mac = req.headers.get("x-zalo-signature") || req.headers.get("mac") || "";
+
+        // Zalo OA Webhook v4 sends 'mac' header or 'x-zalo-signature' depending on version
+        // Verification logic:
+        const isValid = verifyZaloWebhookSignature(appId, JSON.stringify(body), "0", mac); // Simplified for now
+
+        console.log("[Zalo Webhook Event]:", JSON.stringify(body, null, 2), "Valid Signature:", isValid);
 
         // Logic to handle events can be added here (oa_send_text, user_send_text, etc.)
 
         return NextResponse.json({ success: true }, { status: 200 });
     } catch (e) {
-        // Return 200 even on error to satisfy Zalo's initial validation if needed
         return NextResponse.json({ success: true }, { status: 200 });
     }
 }

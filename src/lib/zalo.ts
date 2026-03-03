@@ -381,3 +381,26 @@ export function formatDateVN(date: Date): string {
         year: "numeric",
     });
 }
+
+// ─── Security Helpers ─────────────────────────────────────────────────────────
+
+import { createHash } from "crypto";
+
+/**
+ * Xác thực chữ ký của Webhook Zalo gửi tới.
+ * mac = sha256(appId + data + timestamp + appSecret)
+ */
+export function verifyZaloWebhookSignature(
+    appId: string,
+    data: string,
+    timestamp: string,
+    mac: string
+): boolean {
+    const appSecret = process.env.ZALO_APP_SECRET || "";
+    if (!appSecret) return false;
+
+    const raw = appId + data + timestamp + appSecret;
+    const computedMac = createHash("sha256").update(raw).digest("hex");
+
+    return computedMac === mac;
+}
