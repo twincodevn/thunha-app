@@ -346,7 +346,7 @@ export default function BillingPage() {
                                                             }}
                                                         >
                                                             <Download className="mr-2 h-4 w-4" />
-                                                            {planConfig.canExportPdf ? "Tải PDF (Sắp có)" : "Tải PDF (Pro)"}
+                                                            {planConfig.canExportPdf ? "Tải PDF" : "Tải PDF (Pro)"}
                                                             {!planConfig.canExportPdf && <Lock className="ml-auto h-3 w-3" />}
                                                         </DropdownMenuItem>
 

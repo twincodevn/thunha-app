@@ -7,15 +7,13 @@ import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ArrowLeft, Download, Loader2, Send, Copy, MessageSquareText } from "lucide-react";
 import { toast } from "sonner";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { getBillZaloContent } from "@/lib/billing";
+import { getBillZaloContent, formatCurrency } from "@/lib/billing";
 import { Label } from "@/components/ui/label";
 
 import { getBill, updateBillStatus } from "../actions";
@@ -42,7 +40,7 @@ export default function BillDetailPage() {
             }
         }
         fetchBill();
-    }, [params.id]);
+    }, [id]);
 
     const handleUpdateStatus = async (status: string) => {
         setIsUpdating(true);
@@ -64,34 +62,11 @@ export default function BillDetailPage() {
     };
 
     const handleDownloadPDF = () => {
-        if (!bill) return;
-
-        const doc = new jsPDF();
-
-        // Font setup (using standard font for MVP, robust setup needs custom font for Vietnamese)
-        // For MVP we might see garbled text for Vietnamese if we don't add a font.
-        // Assuming we rely on basic ASCII or hope for the best for now, 
-        // OR we can add a VFS font. 
-        // Since I don't have a ttf file handy to add via code without downloading it,
-        // I will use standard font and try to stick to unaccented or standard chars if possible, 
-        // or just accept that "hóa đơn" might look weird. 
-        // actually, modern browsers/OS might handle it if we just use HTML? 
-        // But jspdf needs font.
-        // Let's use `doc.html` on a hidden div like we did for Contracts?
-        // Yes, that was reliable.
-
-        const element = document.getElementById("invoice-content");
-        if (element) {
-            doc.html(element, {
-                callback: function (doc) {
-                    doc.save(`bill-${bill.roomTenant.room.roomNumber}-${bill.month}-${bill.year}.pdf`);
-                },
-                x: 15,
-                y: 15,
-                width: 180, // target width in the PDF document
-                windowWidth: 800 // window width in CSS pixels
-            });
+        if (!bill?.invoice?.token) {
+            toast.error("Chưa có hóa đơn để tải PDF");
+            return;
         }
+        window.open(`/invoice/${bill.invoice.token}/print`, '_blank');
     };
 
     if (isLoading) {
@@ -114,9 +89,6 @@ export default function BillDetailPage() {
     }
 
     const services = bill.extraCharges as any[] || [];
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-    };
 
     return (
         <div className="space-y-6">
@@ -135,13 +107,15 @@ export default function BillDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href={`/invoice/${bill.invoice?.token}/print`} target="_blank">
-                            <Download className="mr-2 h-4 w-4" />
-                            In Hóa đơn (PDF)
-                        </Link>
-                    </Button>
-                    {bill.status === "PENDING" && (
+                    {bill.invoice?.token && (
+                        <Button variant="outline" asChild>
+                            <Link href={`/invoice/${bill.invoice.token}/print`} target="_blank">
+                                <Download className="mr-2 h-4 w-4" />
+                                In Hóa đơn (PDF)
+                            </Link>
+                        </Button>
+                    )}
+                    {(bill.status === "PENDING" || bill.status === "OVERDUE") && (
                         <Button onClick={() => handleUpdateStatus("PAID")} disabled={isUpdating}>
                             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Xác nhận thanh toán
@@ -236,8 +210,8 @@ export default function BillDetailPage() {
                             <div>
                                 <Label>Trạng thái</Label>
                                 <div className="mt-1">
-                                    <Badge variant={bill.status === "PAID" ? "default" : "secondary"} className={bill.status === "PAID" ? "bg-green-600" : ""}>
-                                        {bill.status === "PAID" ? "Đã thanh toán" : bill.status === "PENDING" ? "Chờ thanh toán" : bill.status}
+                                    <Badge variant={bill.status === "PAID" ? "default" : "secondary"} className={bill.status === "PAID" ? "bg-green-600" : bill.status === "OVERDUE" ? "bg-red-500 text-white" : ""}>
+                                        {bill.status === "PAID" ? "Đã thanh toán" : bill.status === "PENDING" ? "Chờ thanh toán" : bill.status === "OVERDUE" ? "Quá hạn" : bill.status === "CANCELLED" ? "Đã hủy" : bill.status}
                                     </Badge>
                                 </div>
                             </div>
@@ -253,7 +227,9 @@ export default function BillDetailPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
+                                        disabled={!bill.invoice?.token}
                                         onClick={() => {
+                                            if (!bill.invoice?.token) return;
                                             const url = `${window.location.origin}/invoice/${bill.invoice.token}`;
                                             navigator.clipboard.writeText(url);
                                             toast.success("Đã sao chép liên kết");

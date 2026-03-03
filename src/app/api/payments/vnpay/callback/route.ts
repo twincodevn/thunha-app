@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyVNPayCallback, getVNPayMessage } from "@/lib/vnpay";
+import { calculateNewScore } from "@/lib/scoring-engine";
 
 export async function GET(request: NextRequest) {
     try {
@@ -61,6 +62,20 @@ export async function GET(request: NextRequest) {
                     where: { id: payment.billId },
                     data: { status: "PAID" },
                 });
+
+                // Credit score: fetch tenantId then +5
+                const billWithTenant = await prisma.bill.findUnique({
+                    where: { id: payment.billId },
+                    select: { roomTenant: { select: { tenantId: true } } },
+                });
+                const tenantId = billWithTenant?.roomTenant?.tenantId;
+                if (tenantId) {
+                    calculateNewScore({
+                        tenantId,
+                        pointsChange: 5,
+                        reason: `Thanh toán đúng hạn hóa đơn qua VNPay`,
+                    }).catch(() => { });
+                }
             }
 
             return NextResponse.redirect(

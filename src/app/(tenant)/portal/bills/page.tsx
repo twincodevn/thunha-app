@@ -110,7 +110,7 @@ export default async function TenantBillsPage() {
                             return (
                                 <Link
                                     key={bill.id}
-                                    href={bill.invoice?.token ? `/invoice/${bill.invoice.token}` : "#"}
+                                    href={bill.invoice?.token ? `/invoice/${bill.invoice.token}` : `/portal/bills`}
                                     className="block group active:scale-[0.98] transition-transform outline-none"
                                 >
                                     <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-[28px] p-5 shadow-sm border border-slate-200/50 dark:border-zinc-800/50 transition-all duration-300 relative overflow-hidden hover:shadow-md group-hover:border-indigo-100 dark:group-hover:border-indigo-900/30">

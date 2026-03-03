@@ -44,7 +44,7 @@ export async function superQuickAdd(data: {
                 data: {
                     userId: session.user?.id as string,
                     name: data.tenantName,
-                    phone: "0000000000", // Placeholder if not provided
+                    phone: "", // No phone provided yet
                 },
             });
 

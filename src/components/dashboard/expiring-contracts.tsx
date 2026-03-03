@@ -82,7 +82,7 @@ export function ExpiringContracts({ contracts }: ExpiringContractsProps) {
                                 </div>
                                 <div className="flex sm:flex-col gap-2 shrink-0">
                                     <Button variant="default" size="sm" className="w-full sm:w-auto text-xs" asChild>
-                                        <Link href={`/dashboard/tenants/${contract.tenantId}/renew`}>
+                                        <Link href={`/dashboard/tenants/${contract.tenantId}`}>
                                             Gia hạn ngay
                                         </Link>
                                     </Button>

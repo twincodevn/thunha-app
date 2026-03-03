@@ -10,6 +10,8 @@ import {
     Users,
     Receipt,
     BarChart3,
+    PieChart,
+    TrendingUp,
     Settings,
     LogOut,
     Zap,
@@ -42,10 +44,10 @@ const navigation = [
     { name: "Hóa đơn", href: "/dashboard/billing", icon: Receipt },
     { name: "Tiền cọc", href: "/dashboard/billing/deposits", icon: PiggyBank },
     { name: "Báo cáo", href: "/dashboard/reports", icon: BarChart3 },
-    { name: "Phân tích", href: "/dashboard/analytics", icon: BarChart3 },
+    { name: "Phân tích", href: "/dashboard/analytics", icon: PieChart },
     { name: "So sánh", href: "/dashboard/analytics/comparison", icon: GitCompareArrows },
     { name: "Báo cáo thuế", href: "/dashboard/analytics/tax-report", icon: FileText },
-    { name: "Dự báo AI", href: "/dashboard/analytics/forecast", icon: BarChart3 },
+    { name: "Dự báo AI", href: "/dashboard/analytics/forecast", icon: TrendingUp },
 ];
 
 const bottomNavigation = [

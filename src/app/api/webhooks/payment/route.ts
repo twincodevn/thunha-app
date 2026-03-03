@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { calculateNewScore } from "@/lib/scoring-engine";
 
 /**
  * SePay Webhook — Auto Payment Reconciliation for TPBank
@@ -95,8 +96,12 @@ export async function POST(request: NextRequest) {
         const shortId = codeMatch[1].toLowerCase();
 
         // ─── Find pending bill by last-6-chars of ID ──────────────────────────
-        const pendingBills = await prisma.bill.findMany({
-            where: { status: { in: ["PENDING", "OVERDUE"] } },
+        // Use endsWith filter to avoid loading all pending bills into memory
+        const matchedBill = await prisma.bill.findFirst({
+            where: {
+                status: { in: ["PENDING", "OVERDUE"] },
+                id: { endsWith: shortId },
+            },
             select: {
                 id: true,
                 total: true,
@@ -119,10 +124,6 @@ export async function POST(request: NextRequest) {
                 },
             },
         });
-
-        const matchedBill = pendingBills.find(
-            (b) => b.id.slice(-6).toLowerCase() === shortId
-        );
 
         if (!matchedBill) {
             console.log(`[Webhook] No pending bill found for shortId: ${shortId}`);
@@ -212,9 +213,29 @@ export async function POST(request: NextRequest) {
             }).catch(() => { });
         }
 
-        // Revalidate billing dashboard cache
-        revalidatePath("/dashboard/billing");
-        revalidatePath(`/dashboard/billing/${matchedBill.id}`);
+        // ─── Credit Score: +5 for on-time, update for PAID ──────────────────
+        if (newStatus === "PAID" && tenantId) {
+            const daysDiff = matchedBill
+                ? Math.floor((Date.now() - new Date(matchedBill.year + "-" + String(matchedBill.month).padStart(2, "0") + "-01").getTime()) / (1000 * 60 * 60 * 24))
+                : 0;
+            const isLate = daysDiff > 30;
+            calculateNewScore({
+                tenantId,
+                pointsChange: isLate ? -15 : 5,
+                reason: isLate
+                    ? `Thanh toán trễ hóa đơn T${month}/${year}`
+                    : `Thanh toán đúng hạn hóa đơn T${month}/${year}`,
+            }).catch(() => { }); // Non-blocking
+        }
+
+        // Note: revalidatePath may not work reliably for external webhook requests.
+        // Using try-catch to prevent webhook failure if revalidation fails.
+        try {
+            revalidatePath("/dashboard/billing");
+            revalidatePath(`/dashboard/billing/${matchedBill.id}`);
+        } catch (e) {
+            // Non-critical: cache will refresh on next user visit
+        }
 
         return NextResponse.json({
             success: true,

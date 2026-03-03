@@ -287,6 +287,16 @@ export default async function DashboardPage() {
         <DashboardShell className="space-y-8">
             <WelcomeHero />
 
+            {/* Onboarding Wizard (Only show if no properties — shown prominently at top) */}
+            {data.properties === 0 && (
+                <OnboardingWizard
+                    hasProperties={data.properties > 0}
+                    hasRooms={data.totalRooms > 0}
+                    hasTenants={data.tenants > 0}
+                    hasBills={data.hasBills}
+                />
+            )}
+
             <PlanGate requiredPlan="PRO" currentPlan={userPlan} featureName="AI Smart Insights">
                 <SmartInsights insights={data.insights} />
             </PlanGate>
@@ -335,17 +345,6 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* Onboarding Wizard (Only show if no properties) */}
-            {data.properties === 0 && (
-                <div className="mt-8">
-                    <OnboardingWizard
-                        hasProperties={data.properties > 0}
-                        hasRooms={data.totalRooms > 0}
-                        hasTenants={data.tenants > 0}
-                        hasBills={data.hasBills}
-                    />
-                </div>
-            )}
         </DashboardShell>
     );
 }

@@ -108,7 +108,7 @@ export default async function TenantDashboard() {
                         {hasPending && nextDueDate ? (
                             <span className="text-sm font-bold truncate max-w-[140px] text-white/90">Hạn: {formatDate(nextDueDate)}</span>
                         ) : (
-                            <span className="text-sm font-bold text-white/90">Đã tinh toán</span>
+                            <span className="text-sm font-bold text-white/90">Đã thanh toán</span>
                         )}
                     </div>
                     <Button variant="secondary" className="rounded-full bg-white/95 text-slate-900 hover:bg-white font-bold px-6 shadow-[0_8px_16px_-4px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.3)] active:scale-95 transition-all duration-300 backdrop-blur-md" asChild>
@@ -135,7 +135,7 @@ export default async function TenantDashboard() {
                     <span className="text-[11px] font-bold tracking-tight text-slate-600 dark:text-zinc-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Báo sự cố</span>
                 </Link>
 
-                <Link href={latestContract ? `/portal/contracts/${latestContract.id}` : "#"} className="flex flex-col items-center gap-2 group cursor-pointer relative outline-none">
+                <Link href={latestContract ? `/portal/contracts/${latestContract.id}` : "/portal/contracts"} className="flex flex-col items-center gap-2 group cursor-pointer relative outline-none">
                     <div className="h-16 w-full max-w-[72px] bg-white dark:bg-zinc-900/80 rounded-[24px] shadow-sm border border-slate-100 dark:border-zinc-800/60 flex items-center justify-center text-amber-500 group-hover:shadow-md group-hover:border-amber-100 dark:group-hover:border-amber-900/50 group-active:scale-90 transition-all duration-300">
                         <FileText className="h-7 w-7 transition-transform group-hover:scale-110" />
                     </div>
