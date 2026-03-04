@@ -16,16 +16,16 @@ const ZALO_API_BASE = "https://business.openapi.zalo.me";
 const ZALO_OAUTH_URL = "https://oauth.zaloapp.com/v4/oa/permission";
 const ZALO_TOKEN_URL = "https://oauth.zaloapp.com/v4/oa/access_token";
 
-const ZALO_APP_ID = (process.env.ZALO_APP_ID || "").trim();
+const ZALO_APP_ID = (process.env.ZALO_APP_ID || "").replace(/\D/g, ""); // Chỉ lấy số
 const ZALO_APP_SECRET = (process.env.ZALO_APP_SECRET || "").trim();
 const ZALO_OA_SECRET_KEY = (process.env.ZALO_OA_SECRET_KEY || "").trim();
 
 /** ZNS Template IDs — phải được Zalo duyệt trước ở portal OA */
 export const ZNS_TEMPLATES = {
-    BILL_CREATED: process.env.ZALO_TEMPLATE_BILL_CREATED || "",
-    BILL_OVERDUE: process.env.ZALO_TEMPLATE_BILL_OVERDUE || "",
-    CONTRACT_EXPIRY: process.env.ZALO_TEMPLATE_CONTRACT_EXPIRY || "",
-    PAYMENT_CONFIRMED: process.env.ZALO_TEMPLATE_PAYMENT_CONFIRM || "",
+    BILL_CREATED: (process.env.ZALO_TEMPLATE_BILL_CREATED || "").trim(),
+    BILL_OVERDUE: (process.env.ZALO_TEMPLATE_BILL_OVERDUE || "").trim(),
+    CONTRACT_EXPIRY: (process.env.ZALO_TEMPLATE_CONTRACT_EXPIRY || "").trim(),
+    PAYMENT_CONFIRMED: (process.env.ZALO_TEMPLATE_PAYMENT_CONFIRM || "").trim(),
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -335,11 +335,12 @@ export async function sendPaymentConfirmedZNS(
 export function getZaloOAuthUrl(redirectUri: string, state: string, codeChallenge?: string): string {
     const params = new URLSearchParams({
         app_id: ZALO_APP_ID,
-        redirect_uri: redirectUri,
-        state,
+        redirect_uri: redirectUri.trim(),
+        state: state.trim(),
     });
     if (codeChallenge) {
         params.append("code_challenge", codeChallenge);
+        params.append("code_challenge_method", "S256");
     }
     return `${ZALO_OAUTH_URL}?${params.toString()}`;
 }

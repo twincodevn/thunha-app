@@ -10,29 +10,34 @@ import { cookies } from "next/headers";
 export async function GET(req: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
     }
 
-    const origin = req.nextUrl.origin;
-    const redirectUri = `${origin}/api/zalo/callback`;
+    // Đảm bảo dùng domain chính thức thunha.vercel.app để tránh mismatch
+    const redirectUri = "https://thunha.vercel.app/api/zalo/callback";
 
     // PKCE
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = generateCodeChallenge(codeVerifier);
 
-    // Lưu verifier vào cookie để dùng lại ở callback
+    // Lưu verifier vào cookie
     const cookieStore = await cookies();
+
+    // Xóa cookie cũ nếu có để tránh Header too large
+    cookieStore.delete("zalo_code_verifier");
+
     cookieStore.set("zalo_code_verifier", codeVerifier, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
-        maxAge: 60 * 10, // 10 phút
+        maxAge: 600,
         path: "/",
     });
 
-    // state = userId để verify sau khi callback
-    const state = session.user.id;
-    const authUrl = getZaloOAuthUrl(redirectUri, state, codeChallenge);
+    const authUrl = getZaloOAuthUrl(redirectUri, session.user.id, codeChallenge);
+
+    // Log URL để debug
+    console.log("[Zalo Connect URL]:", authUrl);
 
     return NextResponse.redirect(authUrl);
 }
