@@ -168,11 +168,13 @@ export function getBillSMSContent(billInfo: {
     roomNumber: string;
     total: number;
     invoiceUrl: string;
+    transferCode?: string;
 }): string {
+    const transferText = billInfo.transferCode ? `\n\nNội dung CK: ${billInfo.transferCode}` : '';
     return `[ThuNhà] Thông báo tiền phòng T${billInfo.month}/${billInfo.year}
 
 ${billInfo.propertyName} - Phòng ${billInfo.roomNumber}
-Tổng cộng: ${formatCurrency(billInfo.total)}
+Tổng cộng: ${formatCurrency(billInfo.total)}${transferText}
 
 Xem chi tiết: ${billInfo.invoiceUrl}
 
@@ -190,12 +192,14 @@ export function getBillZaloContent(billInfo: {
     tenantName: string;
     total: number;
     invoiceUrl: string;
+    transferCode?: string;
 }): string {
+    const transferText = billInfo.transferCode ? `\n📝 Nội dung CK: ${billInfo.transferCode}` : '';
     return `📝 HÓA ĐƠN TIỀN PHÒNG - T${billInfo.month}/${billInfo.year}
 
 🏠 ${billInfo.propertyName} - Phòng ${billInfo.roomNumber}
 👤 Khách: ${billInfo.tenantName}
-💰 Tổng cộng: ${formatCurrency(billInfo.total)}
+💰 Tổng cộng: ${formatCurrency(billInfo.total)}${transferText}
 
 🔗 Xem chi tiết: ${billInfo.invoiceUrl}
 

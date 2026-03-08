@@ -322,7 +322,7 @@ export default async function PublicInvoicePage({
                                     <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl shadow-sm border border-slate-100 relative group order-2 md:order-1">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
-                                            src={`https://img.vietqr.io/image/${getBankBin(bill.roomTenant.room.property.user.bankName)}-${bill.roomTenant.room.property.user.bankAccountNumber}-compact2.png?amount=${Math.round(remainingAmount)}&addInfo=${encodeURIComponent(`Tien phong T${bill.month}/${bill.year} - ${bill.roomTenant.room.roomNumber}`)}`}
+                                            src={`https://img.vietqr.io/image/${getBankBin(bill.roomTenant.room.property.user.bankName)}-${bill.roomTenant.room.property.user.bankAccountNumber}-compact2.png?amount=${Math.round(remainingAmount)}&addInfo=${encodeURIComponent(`TN-${bill.id.slice(-6).toUpperCase()}`)}`}
                                             alt="VietQR Payment"
                                             width={260}
                                             height={260}
@@ -362,8 +362,8 @@ export default async function PublicInvoicePage({
                                                 <span className="text-amber-600 font-black">!</span>
                                             </div>
                                             <p className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-2">Lời nhắn chuyển khoản bắt buộc</p>
-                                            <div className="bg-white p-3 rounded-xl border border-amber-100 font-mono text-sm text-center text-slate-800 font-bold shadow-sm">
-                                                Tien phong T{bill.month}/{bill.year} - P.{bill.roomTenant.room.roomNumber}
+                                            <div className="bg-white p-3 rounded-xl border border-amber-100 font-mono text-base text-center text-amber-900 font-bold shadow-sm">
+                                                TN-{bill.id.slice(-6).toUpperCase()}
                                             </div>
                                         </div>
                                     </div>

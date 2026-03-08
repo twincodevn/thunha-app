@@ -133,7 +133,7 @@ export async function GET(
         let qrCodeDataURL: string | undefined = undefined;
         if (invoiceData.bank) {
             try {
-                const qrUrl = `https://img.vietqr.io/image/${invoiceData.bank.bin}-${invoiceData.bank.accountNumber}-compact2.png?amount=${Math.round(bill.total)}&addInfo=${encodeURIComponent(`Tien phong T${bill.month}/${bill.year} - ${bill.roomTenant.room.roomNumber}`)}`;
+                const qrUrl = `https://img.vietqr.io/image/${invoiceData.bank.bin}-${invoiceData.bank.accountNumber}-compact2.png?amount=${Math.round(bill.total)}&addInfo=${encodeURIComponent(`TN-${bill.id.slice(-6).toUpperCase()}`)}`;
                 const qrResponse = await fetch(qrUrl);
                 if (qrResponse.ok) {
                     const qrBuffer = await qrResponse.arrayBuffer();

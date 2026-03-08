@@ -43,7 +43,7 @@ export function VietQRButton({
     const [isOpen, setIsOpen] = useState(false);
 
     // ... (keep generated qrUrl logic)
-    const description = `Tiền ${roomName} T${month}`;
+    const description = `TN-${_billId.slice(-6).toUpperCase()}`;
 
     const qrUrl = generateVietQRUrl({
         bankId,

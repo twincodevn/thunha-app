@@ -198,7 +198,7 @@ export default async function InvoicePrintPage({
                         <p>Ngân hàng: <span className="font-bold">{property.user.bankName}</span></p>
                         <p>Số tài khoản: <span className="font-bold">{property.user.bankAccountNumber}</span></p>
                         <p>Chủ tài khoản: <span className="font-bold">{property.user.bankAccountName}</span></p>
-                        <p className="mt-2 text-sm italic">Nội dung CK: Tien phong T{bill.month}/{bill.year} P.{room.roomNumber}</p>
+                        <p className="mt-2 text-sm italic font-bold">Nội dung CK: TN-{bill.id.slice(-6).toUpperCase()}</p>
                     </div>
 
                     <div className="w-1/3 text-center">
@@ -206,7 +206,7 @@ export default async function InvoicePrintPage({
                             <div className="border border-gray-300 p-2 rounded-lg inline-block">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                    src={`https://img.vietqr.io/image/${getBankBin(property.user.bankName)}-${property.user.bankAccountNumber}-compact2.png?amount=${Math.round(remainingAmount)}&addInfo=${encodeURIComponent(`Tien phong T${bill.month}/${bill.year} P.${room.roomNumber}`)}`}
+                                    src={`https://img.vietqr.io/image/${getBankBin(property.user.bankName)}-${property.user.bankAccountNumber}-compact2.png?amount=${Math.round(remainingAmount)}&addInfo=${encodeURIComponent(`TN-${bill.id.slice(-6).toUpperCase()}`)}`}
                                     alt="QR Code"
                                     className="w-32 h-32 mx-auto"
                                 />

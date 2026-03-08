@@ -256,7 +256,8 @@ export default function BillDetailPage() {
                                                 roomNumber: bill.roomTenant.room.roomNumber,
                                                 tenantName: bill.roomTenant.tenant.name,
                                                 total: bill.total,
-                                                invoiceUrl: `${window.location.origin}/invoice/${bill.invoice?.token}`
+                                                invoiceUrl: `${window.location.origin}/invoice/${bill.invoice?.token}`,
+                                                transferCode: `TN-${bill.id.slice(-6).toUpperCase()}`
                                             });
                                             navigator.clipboard.writeText(content);
                                             toast.success("Đã copy lời nhắn. Hãy dán vào Zalo/Messenger.");
@@ -288,7 +289,7 @@ export default function BillDetailPage() {
                             {(() => {
                                 const { bankName, bankAccountNumber, bankAccountName } = bill.roomTenant.room.property.user ?? {};
                                 const hasBank = bankName && bankAccountNumber;
-                                const description = encodeURIComponent(`${bill.roomTenant.room.roomNumber} T${bill.month}`);
+                                const description = encodeURIComponent(`TN-${bill.id.slice(-6).toUpperCase()}`);
                                 const accountNameEncoded = encodeURIComponent(bankAccountName ?? "");
                                 const qrUrl = hasBank
                                     ? `https://img.vietqr.io/image/${bankName}-${bankAccountNumber}-compact2.png?amount=${bill.total}&addInfo=${description}&accountName=${accountNameEncoded}`
@@ -300,7 +301,7 @@ export default function BillDetailPage() {
                                             Ngân hàng: <span className="font-medium text-foreground">{bankName || "Chưa cập nhật"}</span><br />
                                             Số tài khoản: <span className="font-medium text-foreground">{bankAccountNumber || "Chưa cập nhật"}</span><br />
                                             Chủ tài khoản: <span className="font-medium text-foreground">{bankAccountName || "Chưa cập nhật"}</span><br />
-                                            Nội dung: <span className="font-medium text-foreground">{bill.roomTenant.room.roomNumber} T{bill.month}</span>
+                                            Nội dung: <span className="font-medium text-foreground">TN-{bill.id.slice(-6).toUpperCase()}</span>
                                         </p>
                                         {qrUrl ? (
                                             <div className="flex flex-col items-center gap-3 pt-3 border-t">
