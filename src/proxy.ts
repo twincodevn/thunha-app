@@ -16,6 +16,30 @@ const PUBLIC_ROUTES = ["/", "/login", "/register", "/forgot-password", "/reset-p
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    let response = NextResponse.next();
+
+    // Clean up zalo_code_verifier cookie on non-Zalo routes
+    if (!pathname.startsWith("/api/zalo")) {
+        const zaloVerifier = request.cookies.get("zalo_code_verifier");
+        if (zaloVerifier) {
+            response.cookies.delete("zalo_code_verifier");
+        }
+    }
+
+    // Check total cookie header size — if approaching limit, clear non-essential cookies
+    const cookieHeader = request.headers.get("cookie") || "";
+    const cookieSize = new TextEncoder().encode(cookieHeader).length;
+
+    // Vercel limit is ~16KB for all headers. Warn at 12KB of cookies alone.
+    if (cookieSize > 12000) {
+        console.warn(`[Middleware] Cookie header size: ${cookieSize} bytes — approaching Vercel limit`);
+        const nonEssentialCookies = ["zalo_code_verifier", "__vercel_live_token"];
+        for (const name of nonEssentialCookies) {
+            if (request.cookies.has(name)) {
+                response.cookies.delete(name);
+            }
+        }
+    }
 
     // Skip middleware for static files and API auth routes
     if (
@@ -23,7 +47,7 @@ export async function proxy(request: NextRequest) {
         pathname.startsWith("/api/auth") ||
         pathname.includes(".")
     ) {
-        return NextResponse.next();
+        return response;
     }
 
     // Get JWT token - Auth.js v5 uses "authjs.session-token" cookie name
@@ -99,7 +123,7 @@ export async function proxy(request: NextRequest) {
         }
     }
 
-    return NextResponse.next();
+    return response;
 }
 
 export const config = {
