@@ -33,7 +33,14 @@ export default async function ContractDetailPage({
         },
     });
 
-    if (!contract) notFound();
+    if (!contract) {
+        return (
+            <div className="p-8 text-center">
+                <h2>Lỗi: Không tìm thấy hợp đồng</h2>
+                <p>ID: {id}</p>
+            </div>
+        );
+    }
 
     const isLandlord = contract.roomTenant.room.property.userId === session.user.id;
     // const isTenant = contract.roomTenant.userId === session.user.id; 
@@ -43,7 +50,13 @@ export default async function ContractDetailPage({
     if (!isLandlord) {
         // Simple security check. 
         // If we implement tenant login, update this to allow tenant too.
-        return notFound();
+        return (
+            <div className="p-8 text-center">
+                <h2>Lỗi: Không có quyền truy cập</h2>
+                <p>Contract Owner ID: {contract.roomTenant.room.property.userId}</p>
+                <p>Your User ID: {session.user.id}</p>
+            </div>
+        );
     }
 
     return (
