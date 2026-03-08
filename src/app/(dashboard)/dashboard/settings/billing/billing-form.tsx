@@ -8,8 +8,14 @@ import * as z from "zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
+import {
+    ExternalLink,
+    CheckCircle2,
+    Copy,
+    AlertCircle
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
     Form,
     FormControl,
@@ -160,12 +166,77 @@ export function BillingForm({ initialData }: BillingFormProps) {
                         />
                     </CardContent>
                 </Card>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-4">
                     <Button type="submit" size="lg" disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Lưu thay đổi
                     </Button>
                 </div>
+
+                <Card className="border-blue-200 bg-blue-50/30">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                                    Tự động gạch nợ (SePay)
+                                </CardTitle>
+                                <CardDescription>
+                                    Tự động cập nhật trạng thái "Đã thanh toán" khi có tiền về ngân hàng.
+                                </CardDescription>
+                            </div>
+                            <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">
+                                Khuyên dùng
+                            </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="rounded-lg border bg-white p-4 space-y-4">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium">URL Webhook của bạn:</p>
+                                <div className="flex gap-2">
+                                    <code className="flex-1 bg-muted p-2 rounded text-xs break-all border select-all">
+                                        https://thunha.vercel.app/api/webhooks/payment
+                                    </code>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="shrink-0"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText("https://thunha.vercel.app/api/webhooks/payment");
+                                            toast.success("Đã copy URL Webhook");
+                                        }}
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <p className="text-sm font-medium">Hướng dẫn 3 bước:</p>
+                                <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                                    <li>
+                                        Truy cập <a href="https://sepay.vn" target="_blank" className="text-blue-600 underline font-medium inline-flex items-center gap-1">SePay.vn <ExternalLink className="h-3 w-3" /></a> và tạo tài khoản miễn phí.
+                                    </li>
+                                    <li>
+                                        Thêm ngân hàng của bạn (Số tài khoản: <strong>{form.getValues("bankAccountNumber") || "..."}</strong>).
+                                    </li>
+                                    <li>
+                                        Vào mục <strong>Tích hợp {">"} Webhooks</strong>, chọn "Thêm mới" và dán URL ở trên vào.
+                                    </li>
+                                </ol>
+                            </div>
+
+                            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded text-amber-800 text-xs">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                <p>
+                                    <strong>Lưu ý:</strong> Sau khi cài đặt trên SePay, hãy nhớ thêm API Key vào biến môi trường <code>SEPAY_API_KEY</code> trên Vercel để kích hoạt.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </form>
         </Form>
     );
