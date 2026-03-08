@@ -4,12 +4,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SignaturePad } from "./signature-pad";
-import { saveSignature } from "@/app/(dashboard)/dashboard/contracts/signing-actions";
 import { toast } from "sonner";
 import { Contract } from "@prisma/client";
 import { PenTool, CheckCircle } from "lucide-react";
-import Image from "next/image";
+import dynamic from "next/dynamic";
+import { saveSignature } from "@/app/(dashboard)/dashboard/contracts/signing-actions";
+
+const SignaturePad = dynamic(() => import("./signature-pad").then(m => m.SignaturePad), { ssr: false });
 
 interface ContractSigningSectionProps {
     contract: Contract;
@@ -71,12 +72,12 @@ export function ContractSigningSection({ contract, isLandlord }: ContractSigning
                         </div>
                     ) : (
                         contract.landlordSignature ? (
-                            <div className="relative h-20 w-full bg-white border rounded">
-                                <Image
+                            <div className="relative h-20 w-full bg-white border rounded flex items-center justify-center">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
                                     src={contract.landlordSignature}
                                     alt="Chữ ký chủ nhà"
-                                    fill
-                                    className="object-contain p-2"
+                                    className="h-full object-contain p-2"
                                 />
                             </div>
                         ) : (
@@ -116,12 +117,12 @@ export function ContractSigningSection({ contract, isLandlord }: ContractSigning
                         </div>
                     ) : (
                         contract.tenantSignature ? (
-                            <div className="relative h-20 w-full bg-white border rounded">
-                                <Image
+                            <div className="relative h-20 w-full bg-white border rounded flex items-center justify-center">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
                                     src={contract.tenantSignature}
                                     alt="Chữ ký khách thuê"
-                                    fill
-                                    className="object-contain p-2"
+                                    className="h-full object-contain p-2"
                                 />
                             </div>
                         ) : (
