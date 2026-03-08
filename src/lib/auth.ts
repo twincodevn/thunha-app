@@ -95,8 +95,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 });
                 if (dbUser) {
                     token.name = dbUser.name;
-                    token.picture = dbUser.avatar; // Map avatar to picture/image
-                    // token.email = dbUser.email; // Email usually doesn't change or needs verify
+                    // Only include avatar if it's a short URL, not a large base64
+                    if (dbUser.avatar && !dbUser.avatar.startsWith('data:')) {
+                        token.picture = dbUser.avatar;
+                    } else {
+                        token.picture = null;
+                    }
                 }
             }
 
@@ -109,7 +113,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     token.id = dbUser.id;
                     token.plan = dbUser.plan;
                     token.role = "LANDLORD"; // OAuth implies Landlord for now
-                    token.picture = dbUser.avatar; // Ensure avatar is synced
+                    if (dbUser.avatar && !dbUser.avatar.startsWith('data:')) {
+                        token.picture = dbUser.avatar;
+                    } else {
+                        token.picture = null;
+                    }
                 }
             }
             return token;
