@@ -41,6 +41,7 @@ const bankFormSchema = z.object({
     bankName: z.string().min(1, "Vui lòng chọn ngân hàng"),
     bankAccountNumber: z.string().min(1, "Vui lòng nhập số tài khoản"),
     bankAccountName: z.string().min(1, "Vui lòng nhập tên chủ tài khoản"),
+    sepayApiKey: z.string().optional(),
 });
 
 type BankFormValues = z.infer<typeof bankFormSchema>;
@@ -64,6 +65,7 @@ interface BillingFormProps {
         bankName: string;
         bankAccountNumber: string;
         bankAccountName: string;
+        sepayApiKey: string;
     };
 }
 
@@ -77,6 +79,7 @@ export function BillingForm({ initialData }: BillingFormProps) {
             bankName: initialData.bankName || "",
             bankAccountNumber: initialData.bankAccountNumber || "",
             bankAccountName: initialData.bankAccountName || "",
+            sepayApiKey: initialData.sepayApiKey || "",
         },
     });
 
@@ -223,17 +226,39 @@ export function BillingForm({ initialData }: BillingFormProps) {
                                         Thêm ngân hàng của bạn (Số tài khoản: <strong>{form.getValues("bankAccountNumber") || "..."}</strong>).
                                     </li>
                                     <li>
-                                        Vào mục <strong>Tích hợp {">"} Webhooks</strong>, chọn "Thêm mới" và dán URL ở trên vào.
+                                        Vào mục <strong>Tích hợp {">"} Webhooks</strong>, chọn "Thêm mới" dán URL ở trên vào và lưu lại.
                                     </li>
                                 </ol>
                             </div>
 
-                            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded text-amber-800 text-xs">
-                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                                <p>
-                                    <strong>Lưu ý:</strong> Sau khi cài đặt trên SePay, hãy nhớ thêm API Key vào biến môi trường <code>SEPAY_API_KEY</code> trên Vercel để kích hoạt.
-                                </p>
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="sepayApiKey"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-2">
+                                            SePay API Key (Webhook Key)
+                                        </FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Nhập API Key lấy từ SePay"
+                                                    className="pr-10"
+                                                    {...field}
+                                                />
+                                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                                                </div>
+                                            </div>
+                                        </FormControl>
+                                        <FormDescription>
+                                            Tìm thấy trong mục <strong>Tích hợp {">"} API và Webhooks</strong> trên SePay.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                     </CardContent>
                 </Card>

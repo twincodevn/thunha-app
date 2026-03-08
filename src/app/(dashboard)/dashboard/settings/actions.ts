@@ -64,7 +64,12 @@ export async function changePassword(current: string, newPass: string) {
     }
 }
 
-export async function updateBankInfo(data: { bankName: string; bankAccountNumber: string; bankAccountName: string }) {
+export async function updateBankInfo(data: {
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountName: string;
+    sepayApiKey?: string;
+}) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
 
@@ -74,7 +79,8 @@ export async function updateBankInfo(data: { bankName: string; bankAccountNumber
             data: {
                 bankName: data.bankName,
                 bankAccountNumber: data.bankAccountNumber,
-                bankAccountName: data.bankAccountName
+                bankAccountName: data.bankAccountName,
+                sepayApiKey: data.sepayApiKey
             }
         });
 

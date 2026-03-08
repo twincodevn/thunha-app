@@ -31,6 +31,7 @@ model User {
   zaloOaRefreshToken String? // Zalo OA refresh token
   zaloOaTokenExpiry  DateTime? // Token expiry time
   zaloOaId           String? // OA ID from Zalo developer portal
+  sepayApiKey        String? // SePay API Key for auto-payment reconciliation
   contractTemplates  ContractTemplate[]
   properties         Property[]
   tenants            Tenant[]

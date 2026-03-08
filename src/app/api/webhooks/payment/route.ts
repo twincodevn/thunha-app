@@ -29,22 +29,10 @@ import { calculateNewScore } from "@/lib/scoring-engine";
  * }
  */
 export async function POST(request: NextRequest) {
-    // ─── Security: Verify SePay apiKey header ───────────────────────────────
-    // SePay sends "Authorization: Apikey {your-api-key}" or a custom secret
+    // ─── Extract SePay apiKey header ───────────────────────────────
     const authHeader = request.headers.get("Authorization") || "";
     const apiKey = authHeader.replace("Apikey ", "").trim();
-
-    // Also support legacy x-webhook-secret for backward compat
     const legacySecret = request.headers.get("x-webhook-secret");
-
-    const isAuthorized =
-        apiKey === process.env.SEPAY_API_KEY ||
-        legacySecret === process.env.PAYMENT_WEBHOOK_SECRET;
-
-    if (!isAuthorized) {
-        console.warn("[Webhook] Unauthorized request received");
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     try {
         const body = await request.json();
@@ -82,21 +70,15 @@ export async function POST(request: NextRequest) {
         }
 
         // ─── Parse Bill ID from transfer content ──────────────────────────────
-        // Accepted patterns:
-        //   "TN-ABC123" → bill id ends with "abc123"
-        //   "THUNHA ABC123" → bill id ends with "abc123"
-        //   "HD-ABC123" → hóa đơn shortcode
         const codeMatch = rawContent.match(/(?:TN|THUNHA|HD)[-\s]?([A-Z0-9]{6,})/i);
         if (!codeMatch) {
             console.log(`[Webhook] No bill code in content: "${rawContent}". Logging unmatched.`);
-            // Return 200 so SePay doesn't retry, but log it for manual review
             return NextResponse.json({ message: "No bill code found in content", content: rawContent });
         }
 
         const shortId = codeMatch[1].toLowerCase();
 
-        // ─── Find pending bill by last-6-chars of ID ──────────────────────────
-        // Use endsWith filter to avoid loading all pending bills into memory
+        // ─── Find pending bill and its owner (Landlord) ──────────────────────────
         const matchedBill = await prisma.bill.findFirst({
             where: {
                 status: { in: ["PENDING", "OVERDUE"] },
@@ -108,26 +90,49 @@ export async function POST(request: NextRequest) {
                 month: true,
                 year: true,
                 roomTenant: {
-                    include: {
+                    select: {
+                        tenantId: true,
                         tenant: { select: { id: true, phone: true, name: true } },
                         room: {
-                            include: {
+                            select: {
+                                roomNumber: true,
                                 property: {
                                     select: {
                                         name: true,
                                         userId: true,
-                                    },
+                                        user: {
+                                            select: {
+                                                id: true,
+                                                sepayApiKey: true,
+                                            }
+                                        }
+                                    }
                                 },
                             },
                         },
                     },
                 },
             },
-        });
+        }) as any; // Cast to any to bypass stale IDE types for sepayApiKey if needed, 
+        // though the select structure is now complete.
 
         if (!matchedBill) {
             console.log(`[Webhook] No pending bill found for shortId: ${shortId}`);
             return NextResponse.json({ message: "No matching bill found", shortId });
+        }
+
+        // ─── Dynamic Authorization Check ───────────────────────────────────────
+        const landlord = matchedBill.roomTenant.room.property.user;
+        const savedApiKey = landlord.sepayApiKey;
+
+        const isAuthorized =
+            (savedApiKey && apiKey === savedApiKey) ||
+            (apiKey && apiKey === process.env.SEPAY_API_KEY) ||
+            (legacySecret && legacySecret === process.env.PAYMENT_WEBHOOK_SECRET);
+
+        if (!isAuthorized) {
+            console.warn(`[Webhook] Unauthorized request for bill ${matchedBill.id} (Landlord: ${landlord.id})`);
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         // ─── Calculate payment status ──────────────────────────────────────────

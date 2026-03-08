@@ -17,6 +17,7 @@ export default async function BillingSettingsPage() {
             bankName: true,
             bankAccountNumber: true,
             bankAccountName: true,
+            sepayApiKey: true,
         },
     });
 
@@ -37,6 +38,7 @@ export default async function BillingSettingsPage() {
                 bankName: user.bankName || "",
                 bankAccountNumber: user.bankAccountNumber || "",
                 bankAccountName: user.bankAccountName || "",
+                sepayApiKey: user.sepayApiKey || "",
             }} />
         </div>
     );
