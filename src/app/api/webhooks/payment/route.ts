@@ -31,7 +31,9 @@ import { calculateNewScore } from "@/lib/scoring-engine";
 export async function POST(request: NextRequest) {
     // ─── Extract SePay apiKey header ───────────────────────────────
     const authHeader = request.headers.get("Authorization") || "";
-    const apiKey = authHeader.replace("Apikey ", "").trim();
+    // Sử dụng Regex để match mọi case-insensitive của chữ "apikey"
+    const matchApiKey = authHeader.match(/^Apikey\s+(.+)$/i);
+    const apiKey = matchApiKey ? matchApiKey[1].trim() : authHeader.replace(/^Bearer\s+/i, "").trim();
     const legacySecret = request.headers.get("x-webhook-secret");
 
     try {
@@ -70,7 +72,10 @@ export async function POST(request: NextRequest) {
         }
 
         // ─── Parse Bill ID from transfer content ──────────────────────────────
-        const codeMatch = rawContent.match(/(?:TN|THUNHA|HD)[-\s]?([A-Z0-9]{6,})/i);
+        // Ngân hàng thường remove mọi dấu cách. 
+        // VD: TN-ABCDEF -> TNABCDEF, THUNHA ABCDEF -> THUNHAABCDEF
+        // Regex này lỏng hơn: tìm (TN hoặc THUNHA hoặc HD) đứng trước 6-10 ký tự chữ/số
+        const codeMatch = rawContent.match(/(?:TN|THUNHA|HD)[-\s]*([A-Z0-9]{6,10})/i);
         if (!codeMatch) {
             console.log(`[Webhook] No bill code in content: "${rawContent}". Logging unmatched.`);
             return NextResponse.json({ message: "No bill code found in content", content: rawContent });
@@ -113,8 +118,7 @@ export async function POST(request: NextRequest) {
                     },
                 },
             },
-        }) as any; // Cast to any to bypass stale IDE types for sepayApiKey if needed, 
-        // though the select structure is now complete.
+        }) as any;
 
         if (!matchedBill) {
             console.log(`[Webhook] No pending bill found for shortId: ${shortId}`);
@@ -131,7 +135,7 @@ export async function POST(request: NextRequest) {
             (legacySecret && legacySecret === process.env.PAYMENT_WEBHOOK_SECRET);
 
         if (!isAuthorized) {
-            console.warn(`[Webhook] Unauthorized request for bill ${matchedBill.id} (Landlord: ${landlord.id})`);
+            console.warn(`[Webhook] Unauthorized request for bill ${matchedBill.id} (Landlord: ${landlord.id}) - Expected: ${savedApiKey}, Got: ${apiKey}`);
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 

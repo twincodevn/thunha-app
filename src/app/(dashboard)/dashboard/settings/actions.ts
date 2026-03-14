@@ -80,7 +80,7 @@ export async function updateBankInfo(data: {
                 bankName: data.bankName,
                 bankAccountNumber: data.bankAccountNumber,
                 bankAccountName: data.bankAccountName,
-                sepayApiKey: data.sepayApiKey
+                sepayApiKey: data.sepayApiKey ? data.sepayApiKey.trim() : null
             }
         });
 
