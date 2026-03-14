@@ -33,16 +33,6 @@ export function OnboardingWizard({
     const [dismissed, setDismissed] = useState(true);
     const [hasFiredConfetti, setHasFiredConfetti] = useState(false);
 
-    useEffect(() => {
-        const stored = localStorage.getItem(ONBOARDING_KEY);
-        if (!stored) setDismissed(false);
-
-        const confettiFired = localStorage.getItem(CONFETTI_KEY);
-        if (confettiFired) setHasFiredConfetti(true);
-    }, []);
-
-    if (dismissed) return null;
-
     const steps: OnboardingStep[] = [
         {
             icon: <Building2 className="h-5 w-5" />,
@@ -82,6 +72,15 @@ export function OnboardingWizard({
     const progress = (completedCount / steps.length) * 100;
     const allDone = completedCount === steps.length;
 
+    // ✅ All hooks must be called BEFORE any conditional returns (Rules of Hooks)
+    useEffect(() => {
+        const stored = localStorage.getItem(ONBOARDING_KEY);
+        if (!stored) setDismissed(false);
+
+        const confettiFired = localStorage.getItem(CONFETTI_KEY);
+        if (confettiFired) setHasFiredConfetti(true);
+    }, []);
+
     useEffect(() => {
         if (allDone && !hasFiredConfetti) {
             confetti({
@@ -94,6 +93,9 @@ export function OnboardingWizard({
             localStorage.setItem(CONFETTI_KEY, "1");
         }
     }, [allDone, hasFiredConfetti]);
+
+    // Conditional return AFTER all hooks
+    if (dismissed) return null;
 
     const handleDismiss = () => {
         localStorage.setItem(ONBOARDING_KEY, "1");

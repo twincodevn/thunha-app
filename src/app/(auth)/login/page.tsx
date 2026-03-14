@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import { loginAction } from "./actions";
 export default function LoginPage() {
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const form = useForm<LoginInput>({
         resolver: zodResolver(loginSchema),
@@ -38,9 +40,13 @@ export default function LoginPage() {
             if (result?.error) {
                 setError(result.error);
                 toast.error(result.error);
+            } else {
+                // Login thành công → redirect về dashboard
+                router.push("/dashboard");
             }
         });
     }
+
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 p-4">
