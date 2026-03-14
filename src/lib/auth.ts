@@ -49,7 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             id: tenant.id,
                             email: tenant.email,
                             name: tenant.name,
-                            plan: "FREE", // Tenants don't have plans
+                            plan: "FREE",
                             role: "TENANT",
                         };
                     }
@@ -61,19 +61,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ],
     callbacks: {
         async signIn({ user, account }) {
-            // Handle OAuth sign in - create/update user in DB
             if (account?.provider === "google" && user.email) {
                 const existingUser = await prisma.user.findUnique({
                     where: { email: user.email },
                 });
 
                 if (!existingUser) {
-                    // Create new user for OAuth
                     await prisma.user.create({
                         data: {
                             email: user.email,
                             name: user.name || "Người dùng",
-                            password: "", // OAuth users don't need password
+                            password: "",
                             emailVerified: new Date(),
                         },
                     });
@@ -81,52 +79,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return true;
         },
-        async jwt({ token, user, account, trigger, session }) {
+
+        async jwt({ token, user, account }) {
+            // FIX 494: Only store MINIMUM fields in JWT to keep cookie size tiny
             if (user) {
                 token.id = user.id;
-                token.plan = user.plan;
                 token.role = user.role;
+                // ❌ DO NOT store: plan, picture, image, avatar (fetch from DB per-request)
             }
 
-            // Update session trigger
-            if (trigger === "update" && token.sub) {
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: token.sub },
-                });
-                if (dbUser) {
-                    token.name = dbUser.name;
-                    // Only include avatar if it's a short URL, not a large base64
-                    if (dbUser.avatar && !dbUser.avatar.startsWith('data:')) {
-                        token.picture = dbUser.avatar;
-                    } else {
-                        token.picture = null;
-                    }
-                }
-            }
-
-            // For OAuth users, fetch plan from DB
+            // For Google OAuth: fetch only user ID from DB
             if (account?.provider === "google" && token.email) {
                 const dbUser = await prisma.user.findUnique({
                     where: { email: token.email as string },
+                    select: { id: true },
                 });
                 if (dbUser) {
                     token.id = dbUser.id;
-                    token.plan = dbUser.plan;
-                    token.role = "LANDLORD"; // OAuth implies Landlord for now
-                    if (dbUser.avatar && !dbUser.avatar.startsWith('data:')) {
-                        token.picture = dbUser.avatar;
-                    } else {
-                        token.picture = null;
-                    }
+                    token.role = "LANDLORD";
                 }
             }
+
+            // Strip any large fields that may have sneaked into token
+            // (e.g. Google injects `picture` as full URL which adds bytes)
+            delete token.picture;
+            delete (token as Record<string, unknown>).image;
+
             return token;
         },
+
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                session.user.plan = token.plan as string;
                 session.user.role = token.role as "LANDLORD" | "TENANT";
+                // plan is NOT stored in session — fetch from DB per-request when needed
             }
             return session;
         },
@@ -138,6 +124,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days
     },
+    // FIX 494: Explicit cookie config — prevents multiple cookie chunks accumulating
+    cookies: {
+        sessionToken: {
+            name: "authjs.session-token",
+            options: {
+                httpOnly: true,
+                sameSite: "lax" as const,
+                path: "/",
+                secure: process.env.NODE_ENV === "production",
+            },
+        },
+    },
     trustHost: true,
-    debug: process.env.NODE_ENV === "development",
+    debug: false, // Never enable debug — it bloats response headers
 });

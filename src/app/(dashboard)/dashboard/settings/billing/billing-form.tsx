@@ -195,38 +195,37 @@ export function BillingForm({ initialData }: BillingFormProps) {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="rounded-lg border bg-white p-4 space-y-4">
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium">URL Webhook của bạn:</p>
-                                <div className="flex gap-2">
-                                    <code className="flex-1 bg-muted p-2 rounded text-xs break-all border select-all">
-                                        https://thunha.vercel.app/api/webhooks/payment
-                                    </code>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="shrink-0"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText("https://thunha.vercel.app/api/webhooks/payment");
-                                            toast.success("Đã copy URL Webhook");
-                                        }}
-                                    >
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
+                            <div className="space-y-4">
+                                <p className="text-sm font-medium">Làm thế nào để tích hợp?</p>
 
-                            <div className="space-y-3">
-                                <p className="text-sm font-medium">Hướng dẫn 3 bước:</p>
-                                <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
-                                    <li>
-                                        Truy cập <a href="https://sepay.vn" target="_blank" className="text-blue-600 underline font-medium inline-flex items-center gap-1">SePay.vn <ExternalLink className="h-3 w-3" /></a> và tạo tài khoản miễn phí.
+                                <ol className="text-sm space-y-4 list-decimal list-inside text-slate-700 dark:text-slate-300">
+                                    <li className="pl-1">
+                                        Đăng ký tại <a href="https://my.sepay.vn" target="_blank" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1">my.sepay.vn <ExternalLink className="h-3 w-3" /></a> (miễn phí) và thêm ngân hàng của bạn.
                                     </li>
-                                    <li>
-                                        Thêm ngân hàng của bạn (Số tài khoản: <strong>{form.getValues("bankAccountNumber") || "..."}</strong>).
+
+                                    <li className="pl-1">
+                                        Vào <strong>Tích hợp {">"} Cấu hình Webhooks</strong> và dán URL này vào:
+                                        <div className="flex gap-2 mt-2 ml-4">
+                                            <code className="flex-1 bg-slate-100 dark:bg-slate-800/50 p-2.5 rounded-md text-xs font-mono font-medium border select-all text-slate-900 dark:text-slate-100">
+                                                https://thunha.vercel.app/api/webhooks/payment
+                                            </code>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                className="shrink-0 h-auto w-10"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText("https://thunha.vercel.app/api/webhooks/payment");
+                                                    toast.success("Đã copy URL Webhook");
+                                                }}
+                                            >
+                                                <Copy className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </li>
-                                    <li>
-                                        Vào mục <strong>Tích hợp {">"} Webhooks</strong>, chọn "Thêm mới" dán URL ở trên vào và lưu lại.
+
+                                    <li className="pl-1">
+                                        Vào <strong>Tích hợp {">"} API Keys</strong> để copy <strong>API Token</strong> và dán vào dưới đây:
                                     </li>
                                 </ol>
                             </div>
@@ -235,25 +234,34 @@ export function BillingForm({ initialData }: BillingFormProps) {
                                 control={form.control}
                                 name="sepayApiKey"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex items-center gap-2">
-                                            SePay API Key (Webhook Key)
-                                        </FormLabel>
+                                    <FormItem className="mt-6 border-t pt-6 bg-slate-50/50 dark:bg-slate-900/20 p-4 rounded-xl">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <FormLabel className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                                API Token (Từ SePay)
+                                            </FormLabel>
+                                            <a
+                                                href="https://my.sepay.vn/integrations/api"
+                                                target="_blank"
+                                                className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium"
+                                            >
+                                                Lấy mã tại đây <ExternalLink className="h-3 w-3" />
+                                            </a>
+                                        </div>
                                         <FormControl>
                                             <div className="relative">
                                                 <Input
                                                     type="password"
-                                                    placeholder="Nhập API Key lấy từ SePay"
-                                                    className="pr-10"
+                                                    placeholder="Ví dụ: SP12345ABCXYZ..."
+                                                    className="font-mono text-sm bg-white dark:bg-slate-950 h-11 border-blue-200 dark:border-blue-900/50 focus-visible:ring-blue-500"
                                                     {...field}
                                                 />
-                                                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                                                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-blue-500">
+                                                    <AlertCircle className="h-4 w-4" />
                                                 </div>
                                             </div>
                                         </FormControl>
-                                        <FormDescription>
-                                            Tìm thấy trong mục <strong>Tích hợp {">"} API và Webhooks</strong> trên SePay.
+                                        <FormDescription className="text-xs text-slate-500">
+                                            Token này giúp API của chúng tôi xác thực giao dịch chuyển khoản từ SePay gửi qua an toàn.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
